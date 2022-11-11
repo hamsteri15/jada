@@ -16,8 +16,7 @@ struct d_CD2 : public TiledStencil<d_CD2> {
 
     static constexpr size_t padding = 1;
 
-    template<class F>
-    auto operator()(F f) const { return 0.5 * (f(1) - f(-1)); }
+    template <class F> auto operator()(F f) const { return 0.5 * (f(1) - f(-1)); }
 };
 
 template <class Container> bool is_unique(const Container& arr) {
