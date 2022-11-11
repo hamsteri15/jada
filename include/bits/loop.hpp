@@ -13,7 +13,8 @@ namespace jada {
 /// @param begin index set of begin indices
 /// @param end index set of end indices
 /// @return A view of index tuples from [begin, end)
-static constexpr auto md_indices(auto begin, auto end) {
+template<class B, class E>
+static constexpr auto md_indices(B begin, E end) {
 
     using Idx = typename decltype(begin)::value_type;
 
@@ -26,7 +27,8 @@ static constexpr auto md_indices(auto begin, auto end) {
 /// @brief Returns all multi-dimensional indices spanned by the extent of the input span
 /// @param span the input span to query the extent from
 /// @return A view of index tuples from [begin=0, extent(span) )
-static constexpr auto all_indices(auto span) {
+template<class Span>
+static constexpr auto all_indices(Span span) {
     using Idx = typename decltype(span)::index_type;
     return md_indices(std::array<Idx, rank(span)>{}, dimensions(span));
 }

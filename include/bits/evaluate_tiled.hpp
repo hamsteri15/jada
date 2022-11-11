@@ -14,7 +14,8 @@ namespace jada {
 /// @param out output span
 /// @param op the tiled stencil operation
 /// @param indices the indices in which to evaluate the operation in
-template <size_t Dir> void evaluate(auto in, auto out, auto op, auto indices) {
+template <size_t Dir, class Span1, class Span2, class Op, class Indices> 
+void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
     std::for_each(std::begin(indices), std::end(indices), [=](auto idx) {
         auto stencil = make_tiled_subspan<Dir>(in, idx);
@@ -32,7 +33,8 @@ template <size_t Dir> void evaluate(auto in, auto out, auto op, auto indices) {
 /// @param in input span
 /// @param out output span
 /// @param op the tiled stencil operation
-template <size_t Dir> void evaluate_tiled(auto in, auto out, auto op) {
+template <size_t Dir, class Span1, class Span2, class Op>
+ void evaluate_tiled(Span1 in, Span2 out, Op op) {
     static_assert(rank(in) == rank(out), "Rank mismatch in evaluate tiled.");
 
     runtime_assert(extent(in) == extent(out), "Dimension mismatch");

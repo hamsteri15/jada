@@ -37,6 +37,6 @@ public:
 /// @brief Queries the _static_ rank of the input type T
 /// @tparam T the type to query the static rank of_
 /// @return static rank of the input type T
-template <class T> consteval size_t rank(const T&) { return Rank<T>::value; }
+template <class T> constexpr size_t rank(const T&) { return Rank<T>::value; }
 
 } // namespace jada

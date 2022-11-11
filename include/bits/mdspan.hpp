@@ -34,7 +34,7 @@ template <class Span> static constexpr auto dimensions(const Span& span) {
 /// @param c the input container
 /// @param dims dimensions of the multi-dimensional span
 /// @return a multi-dimensional span
-template <class Container> static constexpr auto make_span(Container& c, auto dims) {
+template <class Container, class Dims> static constexpr auto make_span(Container& c, Dims dims) {
     using value_type = typename Container::value_type;
     auto ext         = make_extent(dims);
     runtime_assert(flat_size(dims) == std::size(c), "Dimension mismatch in make_span");
@@ -46,7 +46,7 @@ template <class Container> static constexpr auto make_span(Container& c, auto di
 /// @param c the input container
 /// @param dims dimensions of the multi-dimensional span
 /// @return a multi-dimensional span
-template <class Container> static constexpr auto make_span(const Container& c, auto dims) {
+template <class Container, class Dims> static constexpr auto make_span(const Container& c, Dims dims) {
     using value_type = const typename Container::value_type;
     auto ext         = make_extent(dims);
     runtime_assert(flat_size(dims) == std::size(c), "Dimension mismatch in make_span");

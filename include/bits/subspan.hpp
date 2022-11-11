@@ -10,7 +10,7 @@ namespace detail {
 
 // Dir != I -> return a
 template <size_t Dir, size_t I> struct SubspanParams {
-    static constexpr auto process(auto a, auto b) {
+    template <class A, class B> static constexpr auto process(A a, B b) {
         (void)b;
         return std::get<I>(a);
     }
@@ -18,7 +18,7 @@ template <size_t Dir, size_t I> struct SubspanParams {
 
 // Dir == I -> return a pair from a to b
 template <size_t K> struct SubspanParams<K, K> {
-    static constexpr auto process(auto a, auto b) {
+    template <class A, class B> static constexpr auto process(A a, B b) {
         return std::make_pair(std::get<K>(a), std::get<K>(b));
     }
 };
@@ -31,7 +31,8 @@ template <size_t Dir, class Arr> static constexpr auto make_tiled_subspan_params
     (std::make_index_sequence<rank(a)>{});
 }
 
-template <size_t Dir> static constexpr auto make_tiled_subspan(auto s, auto begin, auto end) {
+template <size_t Dir, class Span, class B, class E>
+static constexpr auto make_tiled_subspan(Span s, B begin, E end) {
 
     auto callable = [=](auto... params) constexpr { return stdex::submdspan(s, params...); };
 
@@ -45,7 +46,8 @@ template <size_t Dir> static constexpr auto make_tiled_subspan(auto s, auto begi
 /// @param begin set of indices describing the beginning of the subpan
 /// @param end set of indices describing the end of the subspan
 /// @return a subspan form [begin, end)
-static constexpr auto make_subspan(auto span, auto begin, auto end) {
+template <class Span, class B, class E>
+static constexpr auto make_subspan(Span span, B begin, E end) {
 
     static_assert(rank(span) == rank(begin), "Dimension mismatch in make_subspan");
     static_assert(rank(begin) == rank(end), "Dimension mismatch in make_subspan");
@@ -68,7 +70,8 @@ static constexpr auto make_subspan(auto span, auto begin, auto end) {
 /// @param begin a set of indices describing the beginning of the subspan
 /// @param extent width of the one-dimensional subspan
 /// @return a one-dimensional subspan along the direction Dir
-template <size_t Dir> static constexpr auto make_tiled_subspan(auto s, auto begin, size_t extent) {
+template <size_t Dir, class Span, class B>
+static constexpr auto make_tiled_subspan(Span s, B begin, size_t extent) {
 
     auto end(begin);
     std::get<Dir>(end) += extent;
@@ -83,7 +86,7 @@ template <size_t Dir> static constexpr auto make_tiled_subspan(auto s, auto begi
 /// @param center a set of indices describing the center of the subspan
 /// @return a one-dimensional subspan along the direction Dir. If the input center is [1,2,3] and
 /// Dir=1 the returned subspan(-1) gives values at [1,1,3] and subspan(+1) gives values at [1,3,3].
-template <size_t Dir> static inline auto make_tiled_subspan(auto s, auto center) {
+template <size_t Dir, class Span, class C> static inline auto make_tiled_subspan(Span s, C center) {
 
     return detail::make_tiled_subspan<Dir>(s, center, center);
 }

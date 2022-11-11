@@ -14,12 +14,14 @@ template <size_t N> using extents = stdex::dextents<size_t, N>;
 /// @brief Converts array-like dimensions to extents
 /// @param dims array-like object with spatial dimensions
 /// @return extents object with the same dimensions
-static constexpr auto make_extent(auto dims) { return extents<rank(dims)>{dims}; }
+template<class T>
+static constexpr auto make_extent(T dims) { return extents<rank(dims)>{dims}; }
 
 /// @brief Converts extents to std::array
 /// @param ext extensions to convert
 /// @return std::array<size_t, Rank> array with the extents
-static constexpr auto extent_to_array(auto ext) {
+template<class T>
+static constexpr auto extent_to_array(T ext) {
 
     using Idx = typename decltype(ext)::index_type;
 
@@ -32,7 +34,8 @@ static constexpr auto extent_to_array(auto ext) {
 /// @brief Computes the total element count spanned by the extents
 /// @param ext extensions to compute the flat size of
 /// @return size_t the flat size
-static constexpr size_t flat_size(auto ext) {
+template<class T>
+static constexpr size_t flat_size(T ext) {
 
     size_t ret(1);
     for (size_t i = 0; i < rank(ext); ++i) { ret *= ext.extent(i); }
@@ -43,7 +46,8 @@ static constexpr size_t flat_size(auto ext) {
 /// @param indices set of indices (array/tuple) corresponding to a spatial location
 /// @param dims input extensions
 /// @return true if all indices in bounds, false otherwise
-static constexpr bool indices_in_bounds(auto indices, auto dims) {
+template<class T, class Y>
+static constexpr bool indices_in_bounds(T indices, Y dims) {
 
     auto extents = make_extent(dims);
 
@@ -53,7 +57,7 @@ static constexpr bool indices_in_bounds(auto indices, auto dims) {
 
     auto arr = f(std::make_index_sequence<rank(extents)>{});
 
-    return std::ranges::all_of(arr, [](bool b) { return b == true; });
+    return std::all_of(std::begin(arr), std::end(arr), [](bool b) { return b == true; });
 }
 
 } // namespace jada

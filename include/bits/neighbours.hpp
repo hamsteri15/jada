@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <vector>
+#include "algorithms.hpp"
 
 namespace jada {
 
@@ -61,8 +62,17 @@ public:
     /// found. -1 otherwise.
     static constexpr idx_t idx(direction<N> dir) {
 
+        auto compare = [](direction<N> a, direction<N> b){
+            for (size_t i = 0; i < N; ++i){
+                if (a[i] != b[i]) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
         for (size_t i = 0; i < count(); ++i) {
-            if (m_neighbours[i] == dir) { return idx_t(i); }
+            if (compare(m_neighbours[i], dir)) { return idx_t(i); }
         }
         return -1;
         // throw std::logic_error("Invalid neighbour");
@@ -77,10 +87,9 @@ private:
         constexpr size_t n_count = detail::neighbour_count<N, CT>();
 
         direction<N> dir{};
-        dir[0] = 1;
-        std::sort(dir.begin(), dir.end());
-        std::array<direction<N>, n_count> all;
-
+        dir.back() = 1;
+        std::array<direction<N>, n_count> all{};
+        
         auto change_sign = [](auto a) {
             auto ret(a);
             for (auto& r : ret) { r *= -1; }
@@ -94,8 +103,8 @@ private:
             all[i + N] = change_sign(dir);
             ++i;
             // permutations.push_back(temp);
-        } while (std::next_permutation(dir.begin(), dir.end()));
-
+        } while (next_permutation(dir.begin(), dir.end()));
+        
         return all;
     }
 
@@ -105,10 +114,18 @@ private:
 
         constexpr auto n_combinations = detail::neighbour_count<N, CT>();
 
-        std::array<direction<N>, n_combinations> combinations;
+        std::array<direction<N>, n_combinations> combinations{};
+        direction<N> combination{1};
 
-        direction<N> combination;
-        for (auto& c : combination) c = 1;
+
+        auto all_zero = [](auto arr){
+            for (size_t i = 0; i < std::size(arr); ++i){
+                if (arr[i] != idx_t(0)){
+                    return false;
+                }
+            }
+            return true;
+        };
 
         size_t j = 0;
         for (size_t i = 0; i < n_combinations + 1; ++i) {
@@ -123,14 +140,12 @@ private:
             }
 
             // Neglect the no-op [0,0,0...]
-            if (std::any_of(std::begin(combination), std::end(combination), [](idx_t c) {
-                    return c != 0;
-                })) {
+            if (!all_zero(combination)) {
                 combinations[j] = combination;
                 ++j;
             }
         }
-
+        
         return combinations;
     }
 };

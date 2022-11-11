@@ -16,7 +16,8 @@ namespace jada {
 /// @param coord_dims The number of subdomains in each coordinate direction.
 /// @param grid_dims The node count in the global grid
 /// @return offset to the beginning index of the subdomain at 'coords'
-static constexpr auto offset(auto coords, auto coord_dims, auto global_grid_dims) {
+template <class T1, class T2, class T3>
+static constexpr auto offset(T1 coords, T2 coord_dims, T3 global_grid_dims) {
 
     runtime_assert(indices_in_bounds(coords, coord_dims), "Domain coordinates not in bounds.");
     using index_type = typename decltype(global_grid_dims)::value_type;
@@ -38,7 +39,8 @@ static constexpr auto offset(auto coords, auto coord_dims, auto global_grid_dims
 /// @param coord_dims The number of subdomains in each coordinate direction.
 /// @param grid_dims The node count in the global grid
 /// @return the local dimensions of the subdomain at 'coords'
-static constexpr auto local_dimensions(auto coords, auto coord_dims, auto global_grid_dims) {
+template <class T1, class T2, class T3>
+static constexpr auto local_dimensions(T1 coords, T2 coord_dims, T3 global_grid_dims) {
 
     runtime_assert(indices_in_bounds(coords, coord_dims), "Domain coordinates not in bounds.");
 
