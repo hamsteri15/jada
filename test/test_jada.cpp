@@ -572,14 +572,14 @@ TEST_CASE("Block neighbours"){
 
 //        static constexpr auto ns_const = Neighbours<2, ConnectivityType::Star>();
 
-        constexpr Neighbours<2, ConnectivityType::Star> ns_const;
+        constexpr Neighbours<2, ConnectivityType::Star> ns_const1;
+        constexpr Neighbours<2, ConnectivityType::Box> ns_const2;
 
+        CHECK(ns1.get().size() == 4);
+        CHECK(ns2.get().size() == 8);
 
-        static_assert(Neighbours<2, ConnectivityType::Star>::idx({0,1}) == 0, "Neighbours not constexpr");
-
-        CHECK(ns1.idx({0,1}) == 0);
-        CHECK(ns2.idx({0,1}) == 0);
-        static_assert(ns_const.idx({0,1}) == 0, "Neighbours not constexpr");
+        static_assert(ns_const1.get().size() == 4, "Neighbours not constexpr");
+        static_assert(ns_const2.get().size() == 8, "Neighbours not constexpr");
 
     }
 

@@ -56,27 +56,6 @@ public:
     ///@return constexpr size_t
     static constexpr size_t count() { return m_neighbours.size(); }
 
-    ///@brief Converts a neighbour direction to an idx in the neighbours array
-    ///@param neighbour direction of a neighbour
-    ///@return constexpr size_t the index of the neihbour if such neigbhour is
-    /// found. -1 otherwise.
-    static constexpr idx_t idx(direction<N> dir) {
-
-        auto compare = [](direction<N> a, direction<N> b){
-            for (size_t i = 0; i < N; ++i){
-                if (a[i] != b[i]) {
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        for (size_t i = 0; i < count(); ++i) {
-            if (compare(m_neighbours[i], dir)) { return idx_t(i); }
-        }
-        return -1;
-        // throw std::logic_error("Invalid neighbour");
-    }
 
 private:
     ///@brief Computes the star neighbours by permuting a positive and negative
