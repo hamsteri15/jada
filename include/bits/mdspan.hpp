@@ -5,6 +5,8 @@
 #include <iostream>
 #include <range/v3/view/indices.hpp>
 
+namespace jada {
+
 namespace stdex = std::experimental;
 
 template <class ElementType, size_t N, class Layout>
@@ -12,7 +14,7 @@ using span_base = stdex::mdspan<ElementType, extents<N>, Layout>;
 
 template <class ElementType, size_t N> using span = span_base<ElementType, N, stdex::layout_right>;
 
-//TODO: rename this function as extents and rename the extents object something else
+// TODO: rename this function as extents and rename the extents object something else
 /// @brief Returns the extent of the input span
 /// @tparam Span a mdspan type
 /// @param span the input span to query the extent of
@@ -67,3 +69,5 @@ template <class Span> void print(Span span) {
         throw std::logic_error("Only ranks 1 and 2 spans can be printed");
     }
 }
+
+} // namespace jada

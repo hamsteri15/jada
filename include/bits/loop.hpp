@@ -7,6 +7,8 @@
 #include "mdspan.hpp"
 #include "rank.hpp"
 
+namespace jada {
+
 /// @brief Returns a view of multi-dimensional index tuples
 /// @param begin index set of begin indices
 /// @param end index set of end indices
@@ -28,3 +30,5 @@ static constexpr auto all_indices(auto span) {
     using Idx = typename decltype(span)::index_type;
     return md_indices(std::array<Idx, rank(span)>{}, dimensions(span));
 }
+
+} // namespace jada

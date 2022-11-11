@@ -5,6 +5,8 @@
 #include <array>
 #include <experimental/mdspan>
 
+namespace jada {
+
 namespace stdex = std::experimental;
 
 template <size_t N> using extents = stdex::dextents<size_t, N>;
@@ -44,7 +46,7 @@ static constexpr size_t flat_size(auto ext) {
 static constexpr bool indices_in_bounds(auto indices, auto dims) {
 
     auto extents = make_extent(dims);
-    
+
     auto f = [=]<size_t... Is>(std::index_sequence<Is...>) {
         return std::array<bool, sizeof...(Is)>{std::get<Is>(indices) < extents.extent(Is)...};
     };
@@ -53,3 +55,5 @@ static constexpr bool indices_in_bounds(auto indices, auto dims) {
 
     return std::ranges::all_of(arr, [](bool b) { return b == true; });
 }
+
+} // namespace jada

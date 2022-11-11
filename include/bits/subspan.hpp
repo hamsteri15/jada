@@ -4,6 +4,8 @@
 #include "rank.hpp"
 #include <array>
 
+namespace jada {
+
 namespace detail {
 
 // Dir != I -> return a
@@ -85,3 +87,5 @@ template <size_t Dir> static inline auto make_tiled_subspan(auto s, auto center)
 
     return detail::make_tiled_subspan<Dir>(s, center, center);
 }
+
+} // namespace jada

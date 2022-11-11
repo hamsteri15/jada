@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <vector>
 
+namespace jada {
+
 enum class ConnectivityType { Star, Box };
 
 using idx_t = int;
@@ -132,3 +134,4 @@ private:
         return combinations;
     }
 };
+} // namespace jada

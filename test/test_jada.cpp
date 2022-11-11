@@ -3,6 +3,8 @@
 #include "include/jada.hpp"
 #include "test.hpp"
 
+using namespace jada;
+
 TEST_CASE("rank"){
 
 

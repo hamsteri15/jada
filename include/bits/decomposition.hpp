@@ -7,6 +7,8 @@
 #include <array>
 #include <cstddef>
 
+namespace jada {
+
 /// @brief Given coordinates of a subdomain returns the gird point offset wrt. position zero of the
 /// global grid. The offset can be used to convert local indices to global indices by simple
 /// addition: global = local + offset.
@@ -53,3 +55,5 @@ static constexpr auto local_dimensions(auto coords, auto coord_dims, auto global
     }
     return local_dims;
 }
+
+} // namespace jada

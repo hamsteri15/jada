@@ -5,6 +5,8 @@
 #include "subspan.hpp"
 #include "tiled_stencil.hpp"
 
+namespace jada {
+
 /// @brief Evaluates the input tiled stencil operation 'op' on all input 'indices' of the input span
 /// 'in' and stores the result to the output span 'out'.
 /// @tparam Dir the direction along which the tiled stencil is formed
@@ -43,3 +45,5 @@ template <size_t Dir> void evaluate_tiled(auto in, auto out, auto op) {
 
     evaluate<Dir>(in, out, op, md_indices(begin, end));
 }
+
+} // namespace jada
