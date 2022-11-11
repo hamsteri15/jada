@@ -1,6 +1,26 @@
 #pragma once
 
+#ifdef __CUDACC__
+#include <thrust/device_vector.h>
+#include <thrust/device_malloc_allocator.h>
+#include <thrust/host_vector.h>
+template<class T>
+using vector_t = thrust::device_vector<T>;
+#pragma message("using_cuda_vector")
+#else
+#include <vector>
+template<class T>
+using vector_t = std::vector<T>;
+#pragma message("using_std_vector")
+#endif
+
+
+
+
+
+
 namespace jada {
+
 
 template <size_t Dir, class Span> void set_linear(Span s) {
 

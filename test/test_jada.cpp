@@ -433,8 +433,8 @@ TEST_CASE("2D cd-2"){
         d_CD2 op;
         extents<2> dims{2 + 2*op.padding,3};
 
-        std::vector<int> in(flat_size(dims), 0);
-        std::vector<int> out(flat_size(dims), 0);
+        vector_t<int> in(flat_size(dims), 0);
+        vector_t<int> out(flat_size(dims), 0);
 
         set_linear<0>(make_span(in, dims));
 
@@ -455,7 +455,7 @@ TEST_CASE("2D cd-2"){
         );
         
     }    
-    
+    /* 
     SECTION("1-dir evaluate_tiled"){
 
 
@@ -534,7 +534,7 @@ TEST_CASE("2D cd-2"){
         );
 
     }
-        
+    */        
 
 
 }
