@@ -11,8 +11,9 @@ message("BINARY DIR" ${CMAKE_BINARY_DIR})
 
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
-set(STANDARD -std=c++17)
-target_compile_options(project_options INTERFACE -std=c++17) 
+target_compile_options(project_options INTERFACE -std=c++17)
+#target_compile_options(project_options INTERFACE -std=c++17 -x cu)
+
 #This does not work for nvcc correctly
 #target_compile_features(project_options INTERFACE cxx_std_14)
 

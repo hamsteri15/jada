@@ -4,8 +4,18 @@
 #include "mdspan.hpp"
 #include "subspan.hpp"
 #include "tiled_stencil.hpp"
-
+#include <tuple>
 namespace jada {
+
+/*
+#ifdef __CUDACC__
+    namespace algos = thrust;
+else
+    namespace algos = std;
+#endif
+*/
+namespace algos = std;
+
 
 /// @brief Evaluates the input tiled stencil operation 'op' on all input 'indices' of the input span
 /// 'in' and stores the result to the output span 'out'.
@@ -17,7 +27,7 @@ namespace jada {
 template <size_t Dir, class Span1, class Span2, class Op, class Indices> 
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
-    std::for_each(std::begin(indices), std::end(indices), [=](auto idx) {
+    algos::for_each(algos::begin(indices), algos::end(indices), [=](auto idx) {
         auto stencil = make_tiled_subspan<Dir>(in, idx);
         // TODO: get rid of the tuple conversion on the LHS
         out(tuple_to_array(idx)) = op(stencil);

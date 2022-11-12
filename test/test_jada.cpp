@@ -82,15 +82,7 @@ TEST_CASE("md_indices tests"){
 TEST_CASE("mdspan tests"){
 
     
-    SECTION("Indexing a span"){
-     
-        /*
-        auto s1 = make_span(a, extents<2>{2,5});
-
-        CHECK(s1(std::array<size_t, 3>{1,1,1}) == 1);
-        */
-    }
-    
+  
     SECTION("extents"){
 
         REQUIRE_NOTHROW(extents<3>{3,3,3});
@@ -433,8 +425,8 @@ TEST_CASE("2D cd-2"){
         d_CD2 op;
         extents<2> dims{2 + 2*op.padding,3};
 
-        std::vector<int> in(flat_size(dims), 0);
-        std::vector<int> out(flat_size(dims), 0);
+        vector_t<int> in(flat_size(dims), 0);
+        vector_t<int> out(flat_size(dims), 0);
 
         set_linear<0>(make_span(in, dims));
 
@@ -534,7 +526,7 @@ TEST_CASE("2D cd-2"){
         );
 
     }
-        
+            
 
 
 }
@@ -572,14 +564,14 @@ TEST_CASE("Block neighbours"){
 
 //        static constexpr auto ns_const = Neighbours<2, ConnectivityType::Star>();
 
-        constexpr Neighbours<2, ConnectivityType::Star> ns_const;
+        constexpr Neighbours<2, ConnectivityType::Star> ns_const1;
+        constexpr Neighbours<2, ConnectivityType::Box> ns_const2;
 
+        CHECK(ns1.get().size() == 4);
+        CHECK(ns2.get().size() == 8);
 
-        static_assert(Neighbours<2, ConnectivityType::Star>::idx({0,1}) == 0, "Neighbours not constexpr");
-
-        CHECK(ns1.idx({0,1}) == 0);
-        CHECK(ns2.idx({0,1}) == 0);
-        static_assert(ns_const.idx({0,1}) == 0, "Neighbours not constexpr");
+        static_assert(ns_const1.get().size() == 4, "Neighbours not constexpr");
+        static_assert(ns_const2.get().size() == 8, "Neighbours not constexpr");
 
     }
 

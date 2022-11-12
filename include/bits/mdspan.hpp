@@ -52,7 +52,7 @@ template <class Container, class Dims> static constexpr auto make_span(const Con
     runtime_assert(flat_size(dims) == std::size(c), "Dimension mismatch in make_span");
     return span<value_type, rank(ext)>(std::data(c), ext);
 }
-
+/*
 // TODO: remove
 template <class Span> void print(Span span) {
 
@@ -69,5 +69,6 @@ template <class Span> void print(Span span) {
         throw std::logic_error("Only ranks 1 and 2 spans can be printed");
     }
 }
+*/
 
 } // namespace jada

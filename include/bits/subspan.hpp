@@ -23,13 +23,28 @@ template <size_t K> struct SubspanParams<K, K> {
     }
 };
 
-template <size_t Dir, class Arr> static constexpr auto make_tiled_subspan_params(Arr a, Arr b) {
+// nvcc doesnt like template lamdas...
+template <size_t Dir> struct TupleMaker {
 
-    return [=]<size_t... Is>(std::index_sequence<Is...>) {
+    template <class T, size_t... Is>
+    static constexpr auto make(T a, T b, std::index_sequence<Is...>) {
         return std::make_tuple(SubspanParams<Dir, Is>::process(a, b)...);
     }
-    (std::make_index_sequence<rank(a)>{});
+};
+
+// nvcc doesnt like template lamdas...
+struct TupleMaker2 {
+
+    template <class Span, class B, class E, size_t... Is>
+    static constexpr auto make(Span span, B begin, E end, std::index_sequence<Is...>) {
+        return std::make_tuple(span, std::make_pair(std::get<Is>(begin), std::get<Is>(end))...);
+    }
+};
+
+template <size_t Dir, class Arr> static constexpr auto make_tiled_subspan_params(Arr a, Arr b) {
+    return TupleMaker<Dir>::make(a, b, std::make_index_sequence<rank(a)>{});
 }
+
 
 template <size_t Dir, class Span, class B, class E>
 static constexpr auto make_tiled_subspan(Span s, B begin, E end) {
@@ -52,11 +67,7 @@ static constexpr auto make_subspan(Span span, B begin, E end) {
     static_assert(rank(span) == rank(begin), "Dimension mismatch in make_subspan");
     static_assert(rank(begin) == rank(end), "Dimension mismatch in make_subspan");
 
-    auto tpl = [=]<size_t... Is>(std::index_sequence<Is...>) constexpr {
-        return std::make_tuple(span, std::make_pair(std::get<Is>(begin), std::get<Is>(end))...);
-    }
-    (std::make_index_sequence<rank(span)>{});
-
+    auto tpl = detail::TupleMaker2::make(span, begin, end, std::make_index_sequence<rank(span)>{});
     auto callable = [](auto... params) { return stdex::submdspan(params...); };
 
     return std::apply(callable, tpl);
