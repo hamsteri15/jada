@@ -53,6 +53,7 @@ TEST_CASE("extents"){
 
 TEST_CASE("md_indices tests"){
 
+    /*
     SECTION("First"){
 
         auto t = md_indices(std::array{0,0,0}, std::array{3,3,2});
@@ -74,7 +75,7 @@ TEST_CASE("md_indices tests"){
         CHECK(k3 == 1);
         
     }
-
+    */
 
 }
 
