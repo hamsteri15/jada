@@ -37,7 +37,7 @@ template <class Span> static constexpr auto dimensions(const Span& span) {
 template <class Container, class Dims> static constexpr auto make_span(Container& c, Dims dims) {
     using value_type = typename Container::value_type;
     auto ext         = make_extent(dims);
-    runtime_assert(flat_size(dims) == std::size(c), "Dimension mismatch in make_span");
+    runtime_assert(flat_size(ext) == std::size(c), "Dimension mismatch in make_span");
     return span<value_type, rank(ext)>(std::data(c), ext);
 }
 
@@ -46,29 +46,12 @@ template <class Container, class Dims> static constexpr auto make_span(Container
 /// @param c the input container
 /// @param dims dimensions of the multi-dimensional span
 /// @return a multi-dimensional span
-template <class Container, class Dims> static constexpr auto make_span(const Container& c, Dims dims) {
+template <class Container, class Dims>
+static constexpr auto make_span(const Container& c, Dims dims) {
     using value_type = const typename Container::value_type;
     auto ext         = make_extent(dims);
-    runtime_assert(flat_size(dims) == std::size(c), "Dimension mismatch in make_span");
+    runtime_assert(flat_size(ext) == std::size(c), "Dimension mismatch in make_span");
     return span<value_type, rank(ext)>(std::data(c), ext);
 }
-/*
-// TODO: remove
-template <class Span> void print(Span span) {
-
-    if constexpr (rank(span) == 1) {
-
-        for (size_t i = 0; i < span.extent(0); ++i) { std::cout << span(i) << " "; }
-        std::cout << std::endl;
-    } else if constexpr (rank(span) == 2) {
-        for (size_t i = 0; i < span.extent(0); ++i) {
-            for (size_t j = 0; j < span.extent(1); ++j) { std::cout << span(i, j) << " "; }
-            std::cout << std::endl;
-        }
-    } else {
-        throw std::logic_error("Only ranks 1 and 2 spans can be printed");
-    }
-}
-*/
 
 } // namespace jada

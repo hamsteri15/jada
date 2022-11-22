@@ -4,17 +4,17 @@
 #include "mdspan.hpp"
 #include "subspan.hpp"
 #include "tiled_stencil.hpp"
+//#include <execution>
 #include <tuple>
+#include <algorithm>
+//#include <ranges>
+//#include <thrust/for_each.h>
+//#include <thrust/device_vector.h>
+//#include <thrust/execution_policy.h>
+
+
 namespace jada {
 
-/*
-#ifdef __CUDACC__
-    namespace algos = thrust;
-else
-    namespace algos = std;
-#endif
-*/
-namespace algos = std;
 
 
 /// @brief Evaluates the input tiled stencil operation 'op' on all input 'indices' of the input span
@@ -24,14 +24,17 @@ namespace algos = std;
 /// @param out output span
 /// @param op the tiled stencil operation
 /// @param indices the indices in which to evaluate the operation in
-template <size_t Dir, class Span1, class Span2, class Op, class Indices> 
+template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
-    algos::for_each(algos::begin(indices), algos::end(indices), [=](auto idx) {
-        auto stencil = make_tiled_subspan<Dir>(in, idx);
-        // TODO: get rid of the tuple conversion on the LHS
-        out(tuple_to_array(idx)) = op(stencil);
-    });
+
+    std::for_each(
+        std::begin(indices), std::end(indices), [=](auto idx) {
+            auto stencil = make_tiled_subspan<Dir>(in, idx);
+            // TODO: get rid of the tuple conversion on the LHS
+            out(tuple_to_array(idx)) = op(stencil);
+        });
+    
 }
 
 /// @brief Evaluates the input 'op' on all possible indices based on the padding requirement of the
@@ -44,7 +47,7 @@ void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 /// @param out output span
 /// @param op the tiled stencil operation
 template <size_t Dir, class Span1, class Span2, class Op>
- void evaluate_tiled(Span1 in, Span2 out, Op op) {
+void evaluate_tiled(Span1 in, Span2 out, Op op) {
     static_assert(rank(in) == rank(out), "Rank mismatch in evaluate tiled.");
 
     runtime_assert(extent(in) == extent(out), "Dimension mismatch");

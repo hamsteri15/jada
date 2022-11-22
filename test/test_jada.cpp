@@ -23,6 +23,7 @@ TEST_CASE("extents"){
         REQUIRE_NOTHROW(extents<2>{});
         REQUIRE_NOTHROW(extents<2>{4,4});
         REQUIRE_NOTHROW(extents<3>{4,4,0});
+        
 
     }
 
@@ -53,29 +54,22 @@ TEST_CASE("extents"){
 
 TEST_CASE("md_indices tests"){
 
-    /*
     SECTION("First"){
 
-        auto t = md_indices(std::array{0,0,0}, std::array{3,3,2});
+        auto t = md_indices(std::array{0,0}, std::array{2,2});
 
-        auto [i1,j1,k1] = *t.begin();
-        CHECK(i1 == 0);
-        CHECK(j1 == 0);
-        CHECK(k1 == 0);
+        std::vector<int> is;
+        std::vector<int> js;
 
+        for (auto [i,j] : t){
+            is.push_back(i);
+            js.push_back(j);            
+        } 
         
-        auto [i2, j2, k2] = *(t.begin() + 1);
-        CHECK(i2 == 0);
-        CHECK(j2 == 0);
-        CHECK(k2 == 1);
+        CHECK(is == std::vector<int>{0,0,1,1});
+        CHECK(js == std::vector<int>{0,1,0,1});
 
-        auto [i3, j3, k3] = *(t.end() - 1);
-        CHECK(i3 == 2);
-        CHECK(j3 == 2);
-        CHECK(k3 == 1);
-        
     }
-    */
 
 }
 
