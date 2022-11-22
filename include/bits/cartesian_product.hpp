@@ -1,7 +1,7 @@
 #pragma once
 
 #include <range/v3/view/cartesian_product.hpp>
-#include <cor3ntin/rangesnext/product.hpp>
+//#include <cor3ntin/rangesnext/product.hpp>
 
 namespace jada {
 
