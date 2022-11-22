@@ -2,6 +2,7 @@
 
 #include "include/jada.hpp"
 #include "test.hpp"
+#include <range/v3/view/cartesian_product.hpp>
 
 using namespace jada;
 
@@ -52,26 +53,99 @@ TEST_CASE("extents"){
 
 }
 
+TEST_CASE("Test indices"){
+
+    auto idx = indices(0, 3);
+
+    CHECK(*std::begin(idx) == 0);
+    CHECK(*(std::begin(idx)+1) == 1);
+    CHECK(*(std::begin(idx)+2) == 2);
+    /*
+    for (auto i : idx){
+        std::cout << i << std::endl;
+    }
+    */
+
+}
+
+TEST_CASE("Test cartesian_product"){
+
+    auto i = indices(0, 2);
+    auto j = indices(0,3);
+
+    auto t = cartesian_product(i, j);
+
+    //auto tpl = std::begin(t);
+    //int tpl = std::ranges::begin(t);
+
+    //CHECK(std::ranges::get<0>(tpl) == 0);
+    //CHECK(std::ranges::get<1>(tpl) == 0);
+
+    //auto [ii, jj] = t[0];
+    //CHECK(ii == 0);
+    //CHECK(jj == 0);
+    /*
+    for (auto [ii, jj] : t){
+        std::cout << ii << std::endl;
+        std::cout << jj << std::endl;
+    }
+
+    (void) t;
+    */
+
+}
+
+
+
 TEST_CASE("md_indices tests"){
 
-    SECTION("First"){
+    SECTION("Serial"){
 
         auto t = md_indices(std::array{0,0}, std::array{2,2});
 
         std::vector<int> is;
         std::vector<int> js;
 
+        
         for (auto [i,j] : t){
             is.push_back(i);
             js.push_back(j);            
         } 
+        
         
         CHECK(is == std::vector<int>{0,0,1,1});
         CHECK(js == std::vector<int>{0,1,0,1});
 
     }
 
+    SECTION("Parallel"){
+
+        const auto t = md_indices(std::array{0,0}, std::array{2,2});
+
+        
+       std::vector<int> v(4);
+        std::for_each(
+            std::execution::par,
+            std::begin(t),
+            std::end(t),
+            [&](auto idx){
+                //std::cout << idx << std::endl;
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+                v[j*2 + i] = j*i;
+            }
+        );
+
+        CHECK(v == std::vector<int>{0,0,0,1});
+
+    }
+    
+
+
 }
+
+
+
 
 
 TEST_CASE("mdspan tests"){
@@ -197,6 +271,7 @@ TEST_CASE("mdspan tests"){
         auto v = md_indices(std::array{1,1}, std::array{2,3});
 
         std::for_each(
+            std::execution::par,
             std::begin(v),
             std::end(v),
             [=] (auto idx){
@@ -366,6 +441,8 @@ TEST_CASE("subspan tests"){
 }
 
 
+
+
 TEST_CASE("1D cd-2"){
 
     SECTION("evaluate_tiled 1"){
@@ -383,6 +460,7 @@ TEST_CASE("1D cd-2"){
         evaluate_tiled<0>(s_in, s_out, op);
         CHECK(out == std::vector<int>{0, 1, 1, 1, 1, 1, 0});
     }
+    
     
     SECTION("evaluate_tiled 2"){
 
@@ -406,10 +484,11 @@ TEST_CASE("1D cd-2"){
         CHECK(out.at(N-1) == 0);
 
     }
-
+    
     
 
 }
+
 
 TEST_CASE("2D cd-2"){
 
@@ -756,5 +835,6 @@ TEST_CASE("Test decomposition"){
         
     }
 }
+
 
 

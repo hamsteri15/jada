@@ -4,9 +4,11 @@
 #include "mdspan.hpp"
 #include "subspan.hpp"
 #include "tiled_stencil.hpp"
-//#include <execution>
+#include <execution>
 #include <tuple>
 #include <algorithm>
+#include <ranges>
+#include <range/v3/view/common.hpp>
 //#include <ranges>
 //#include <thrust/for_each.h>
 //#include <thrust/device_vector.h>
@@ -28,12 +30,23 @@ template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
 
+    // Source range converted to common_range (which supports std::begin & std::end)
+    //auto indices2 = std::ranges::common_view(indices);
+    //(void) indices2;
+
+
     std::for_each(
-        std::begin(indices), std::end(indices), [=](auto idx) {
+            //std::execution::par,
+            //std::ranges::begin(indices), std::ranges::end(indices), [=](auto idx) {
+            std::begin(indices), std::end(indices), [=](auto idx) {
+            
+            
             auto stencil = make_tiled_subspan<Dir>(in, idx);
             // TODO: get rid of the tuple conversion on the LHS
             out(tuple_to_array(idx)) = op(stencil);
-        });
+            
+    });
+
     
 }
 
@@ -58,7 +71,8 @@ void evaluate_tiled(Span1 in, Span2 out, Op op) {
     std::get<Dir>(begin) += op.padding;
     std::get<Dir>(end) -= op.padding;
 
-    evaluate<Dir>(in, out, op, md_indices(begin, end));
+    const auto indices = md_indices(begin, end);
+    evaluate<Dir>(in, out, op, indices);
 }
 
 } // namespace jada
