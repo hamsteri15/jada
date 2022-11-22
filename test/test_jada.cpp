@@ -145,9 +145,6 @@ TEST_CASE("md_indices tests"){
 }
 
 
-
-
-
 TEST_CASE("mdspan tests"){
 
     
@@ -222,6 +219,7 @@ TEST_CASE("mdspan tests"){
 
     SECTION("all_indices"){
 
+        
         std::vector<int> f(10);
 
         auto span = make_span(f, extents<2>{2,5});
@@ -237,7 +235,7 @@ TEST_CASE("mdspan tests"){
 
         CHECK(is == std::vector<int>{0,0,0,0,0,1,1,1,1,1});
         CHECK(js == std::vector<int>{0,1,2,3,4,0,1,2,3,4});
-
+        
     }
 
 
