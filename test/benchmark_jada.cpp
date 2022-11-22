@@ -2,6 +2,7 @@
 #define CATCH_CONFIG_MAIN // This tells the catch header to generate a main
 #include "catch.hpp"
 
+#include <omp.h>
 
 #include "include/jada.hpp"
 #include "test.hpp"
@@ -54,10 +55,15 @@ void ref_kernel_2d_j(Span1 in, Span2 out, double delta){
 template<class Span1, class Span2>
 void ref_kernel_3d_i(Span1 in, Span2 out, double delta){
 
+    #pragma omp parallel
+    {
+
+
     size_t nk = in.extent(0);
     size_t nj = in.extent(1);
     size_t ni = in.extent(2);
 
+    #pragma omp for schedule(dynamic)
     for (size_t k = 2; k < nk-2; ++k){
     for (size_t j = 2; j < nj-2; ++j){
     for (size_t i = 2; i < ni-2; ++i){
@@ -70,15 +76,20 @@ void ref_kernel_3d_i(Span1 in, Span2 out, double delta){
             +     in(k, j, i-2) 
         ) / 12.0 * delta;
     }}}
+    }
 }
 
 template<class Span1, class Span2>
 void ref_kernel_3d_j(Span1 in, Span2 out, double delta){
 
+    #pragma omp parallel
+    {
+
     size_t nk = in.extent(0);
     size_t nj = in.extent(1);
     size_t ni = in.extent(2);
 
+    #pragma omp for schedule(dynamic)
     for (size_t k = 2; k < nk-2; ++k){
     for (size_t j = 2; j < nj-2; ++j){
     for (size_t i = 2; i < ni-2; ++i){
@@ -91,15 +102,20 @@ void ref_kernel_3d_j(Span1 in, Span2 out, double delta){
             +     in(k, j-2, i) 
         ) / 12.0 * delta;
     }}}
+    }
 }
 
 template<class Span1, class Span2>
 void ref_kernel_3d_k(Span1 in, Span2 out, double delta){
 
+    #pragma omp parallel
+    {
+
     size_t nk = in.extent(0);
     size_t nj = in.extent(1);
     size_t ni = in.extent(2);
 
+    #pragma omp for schedule(dynamic)
     for (size_t k = 2; k < nk-2; ++k){
     for (size_t j = 2; j < nj-2; ++j){
     for (size_t i = 2; i < ni-2; ++i){
@@ -112,6 +128,7 @@ void ref_kernel_3d_k(Span1 in, Span2 out, double delta){
             +     in(k-2, j, i) 
         ) / 12.0 * delta;
     }}}
+    }
 }
 
 TEST_CASE("2D benchmarks"){
@@ -166,9 +183,9 @@ TEST_CASE("2D benchmarks"){
 
 TEST_CASE("3D benchmarks"){
     
-    size_t nk = 52;
-    size_t nj = 50;
-    size_t ni = 51;
+    size_t nk = 201;
+    size_t nj = 202;
+    size_t ni = 203;
 
     double Lx = 1.0;
     double Ly = 1.0;
@@ -214,7 +231,7 @@ TEST_CASE("3D benchmarks"){
     };
     
 
-    
+
     BENCHMARK("3D-k"){
         d_CD4 op(dz);
         evaluate_tiled<0>(in, out, op);
@@ -230,50 +247,3 @@ TEST_CASE("3D benchmarks"){
 
 }
 
-
-
-/*
-TEST_CASE("Benchmark NumericArray"){
-
-    using namespace topaz;
-
-    SECTION("Saxpy"){
-
-
-        auto do_benchmark = [] (size_t n){
-            float s = float(43.213123);
-            NVec_t<float> x(n, float(3234.32));
-            NVec_t<float> y(n, float(-31131.444444));
-            std::string name = "Saxpy n = " + std::to_string(n);
-            BENCHMARK(name.c_str()) {
-                return nxpy(s, x, y);
-            };
-        };
-
-        do_benchmark(10);
-        do_benchmark(100);
-        do_benchmark(1000);
-        //do_benchmark(1E5);
-    }
-
-    SECTION("Arithmetic1"){
-
-
-        auto do_benchmark = [] (size_t n){
-            NVec_t<float> x(n, float(3234.32));
-            NVec_t<float> y(n, float(-31131.444444));
-            NVec_t<float> z(n, float(-31131.444444));
-            std::string name = "Arithmetic1 n = " + std::to_string(n);
-            BENCHMARK(name.c_str()) {
-                return arithmetic1(x,y,z);
-            };
-        };
-
-        do_benchmark(10);
-        do_benchmark(100);
-        do_benchmark(1000);
-        //do_benchmark(1E5);
-    }
-
-}
-*/

@@ -30,13 +30,8 @@ template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
 
-    // Source range converted to common_range (which supports std::begin & std::end)
-    //auto indices2 = std::ranges::common_view(indices);
-    //(void) indices2;
-
-
     std::for_each(
-            //std::execution::par,
+            std::execution::par,
             //std::ranges::begin(indices), std::ranges::end(indices), [=](auto idx) {
             std::begin(indices), std::end(indices), [=](auto idx) {
             
