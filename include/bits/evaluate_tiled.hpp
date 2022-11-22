@@ -7,10 +7,9 @@
 #include <execution>
 #include <tuple>
 #include <algorithm>
-#include <ranges>
 #include <range/v3/view/common.hpp>
 //#include <ranges>
-//#include <thrust/for_each.h>
+#include <thrust/for_each.h>
 //#include <thrust/device_vector.h>
 //#include <thrust/execution_policy.h>
 
@@ -32,10 +31,8 @@ void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
     std::for_each(
             std::execution::par,
-            //std::ranges::begin(indices), std::ranges::end(indices), [=](auto idx) {
             std::begin(indices), std::end(indices), [=](auto idx) {
-            
-            
+           
             auto stencil = make_tiled_subspan<Dir>(in, idx);
             // TODO: get rid of the tuple conversion on the LHS
             out(tuple_to_array(idx)) = op(stencil);

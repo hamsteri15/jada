@@ -11,11 +11,13 @@ message("BINARY DIR" ${CMAKE_BINARY_DIR})
 
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
-target_compile_options(project_options INTERFACE -std=c++17)
-#target_compile_options(project_options INTERFACE -std=c++17 -x cu)
 
-#This does not work for nvcc correctly
-#target_compile_features(project_options INTERFACE cxx_std_14)
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
+  target_compile_options(project_options INTERFACE -std=c++20 -x cu) #Required for range-v3 to compile with nvc++
+else()
+  target_compile_options(project_options INTERFACE -std=c++17)
+endif()
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

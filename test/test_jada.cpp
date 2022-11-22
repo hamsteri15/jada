@@ -68,32 +68,7 @@ TEST_CASE("Test indices"){
 
 }
 
-TEST_CASE("Test cartesian_product"){
 
-    auto i = indices(0, 2);
-    auto j = indices(0,3);
-
-    auto t = cartesian_product(i, j);
-
-    //auto tpl = std::begin(t);
-    //int tpl = std::ranges::begin(t);
-
-    //CHECK(std::ranges::get<0>(tpl) == 0);
-    //CHECK(std::ranges::get<1>(tpl) == 0);
-
-    //auto [ii, jj] = t[0];
-    //CHECK(ii == 0);
-    //CHECK(jj == 0);
-    /*
-    for (auto [ii, jj] : t){
-        std::cout << ii << std::endl;
-        std::cout << jj << std::endl;
-    }
-
-    (void) t;
-    */
-
-}
 
 
 
@@ -143,6 +118,7 @@ TEST_CASE("md_indices tests"){
 
 
 }
+
 
 
 TEST_CASE("mdspan tests"){

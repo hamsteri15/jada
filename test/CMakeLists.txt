@@ -27,6 +27,6 @@ add_executable(SerialBenchmark.bin benchmark_jada.cpp)
 target_link_libraries(SerialBenchmark.bin PUBLIC project_options catch_main TBB::tbb OpenMP::OpenMP_CXX )
 target_include_directories(SerialBenchmark.bin PUBLIC ${CMAKE_SOURCE_DIR}
                           #${MPI_CXX_INCLUDE_PATH}
-                          )
+                         )
 
 add_test( NAME SerialBenchmark COMMAND SerialBenchmark.bin)
