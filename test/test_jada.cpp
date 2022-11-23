@@ -430,8 +430,8 @@ TEST_CASE("1D cd-2"){
         d_CD2 op;
         extents<1> dims{7};
 
-        std::vector<int> in(flat_size(dims));
-        std::vector<int> out(flat_size(dims));
+        vector_t<int> in(flat_size(dims));
+        vector_t<int> out(flat_size(dims));
         auto s_in = make_span(in, dims);
         auto s_out = make_span(out, dims);
         
@@ -441,7 +441,7 @@ TEST_CASE("1D cd-2"){
         CHECK(out == std::vector<int>{0, 1, 1, 1, 1, 1, 0});
     }
     
-    
+    /*
     SECTION("evaluate_tiled 2"){
 
         d_CD2 op;
@@ -464,15 +464,15 @@ TEST_CASE("1D cd-2"){
         CHECK(out.at(N-1) == 0);
 
     }
-    
+    */
     
 
 }
 
-
+/*
 TEST_CASE("2D cd-2"){
 
-    /*
+    
     SECTION("0-dir evaluate_tiled"){
 
 
@@ -501,7 +501,7 @@ TEST_CASE("2D cd-2"){
         );
         
     }
-    */    
+        
      
     SECTION("1-dir evaluate_tiled"){
 
@@ -581,11 +581,9 @@ TEST_CASE("2D cd-2"){
         );
 
     }
-            
-
-
+        
 }
-
+*/
 
 TEST_CASE("Block neighbours"){
 

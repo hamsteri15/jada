@@ -6,8 +6,15 @@
 #include "tiled_stencil.hpp"
 #include <execution>
 #include <tuple>
-#include <algorithm>
 #include <range/v3/view/common.hpp>
+
+#ifdef __CUDACC__
+#include <thrust/for_each.h>
+#include <thrust/execution_policy.h>
+#include <ranges>
+#else
+#include <algorithm>
+#endif
 
 
 namespace jada {
@@ -24,7 +31,23 @@ namespace jada {
 template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
-
+    //Im not sure if this is necessary, it appears that nvc++ is able,
+    // to use the same policies as long as the iterators are valid
+    /*
+    #ifdef __CUDACC__
+    
+        thrust::for_each(
+            thrust::device,
+            std::ranges::begin(indices), std::ranges::end(indices), [=](auto idx) {
+            
+            auto stencil = make_tiled_subspan<Dir>(in, idx);
+            // TODO: get rid of the tuple conversion on the LHS
+            out(tuple_to_array(idx)) = op(stencil);
+            
+        });
+    
+    #else
+    
         std::for_each(
             //std::execution::par,
             std::begin(indices), std::end(indices), [=](auto idx) {
@@ -33,7 +56,23 @@ void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
             // TODO: get rid of the tuple conversion on the LHS
             out(tuple_to_array(idx)) = op(stencil);
             
+        });
+    
+    #endif
+    */
+    
+    
+    
+    std::for_each(
+        std::execution::par,
+        std::begin(indices), std::end(indices), [=](auto idx) {
+        
+        auto stencil = make_tiled_subspan<Dir>(in, idx);
+        // TODO: get rid of the tuple conversion on the LHS
+        out(tuple_to_array(idx)) = op(stencil);
+        
     });
+
 
     
 }
