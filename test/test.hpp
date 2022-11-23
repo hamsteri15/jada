@@ -18,8 +18,6 @@ using vector_t = std::vector<T>;
 
 
 
-
-
 namespace jada {
 
 

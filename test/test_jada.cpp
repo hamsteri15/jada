@@ -1,8 +1,12 @@
+#include <catch2/catch_test_macros.hpp>
+/*
+#define CATCH_CONFIG_ENABLE_BENCHMARKING
+#define CATCH_CONFIG_MAIN // This tells the catch header to generate a main
 #include "catch.hpp"
+*/
 
 #include "include/jada.hpp"
 #include "test.hpp"
-#include <range/v3/view/cartesian_product.hpp>
 
 using namespace jada;
 
@@ -27,6 +31,7 @@ TEST_CASE("extents"){
         
 
     }
+    
 
     SECTION("flat_size"){
 
@@ -49,9 +54,9 @@ TEST_CASE("extents"){
         CHECK(indices_in_bounds(arr, ext1) == true);
 
     }
-
-
+    
 }
+
 
 TEST_CASE("Test indices"){
 
@@ -60,54 +65,54 @@ TEST_CASE("Test indices"){
     CHECK(*std::begin(idx) == 0);
     CHECK(*(std::begin(idx)+1) == 1);
     CHECK(*(std::begin(idx)+2) == 2);
-    /*
-    for (auto i : idx){
-        std::cout << i << std::endl;
-    }
-    */
+   
 
 }
 
 
+TEST_CASE("md_indices"){
 
-
-
-TEST_CASE("md_indices tests"){
-
-    SECTION("Serial"){
-
+    
+    SECTION("oik"){
+        
         auto t = md_indices(std::array{0,0}, std::array{2,2});
 
+        
         std::vector<int> is;
         std::vector<int> js;
 
         
         for (auto [i,j] : t){
+
             is.push_back(i);
             js.push_back(j);            
-        } 
-        
-        
+        }
+              
         CHECK(is == std::vector<int>{0,0,1,1});
         CHECK(js == std::vector<int>{0,1,0,1});
-
+        
     }
-
+    
+    
+    
     SECTION("Parallel"){
 
         const auto t = md_indices(std::array{0,0}, std::array{2,2});
 
         
-       std::vector<int> v(4);
+        std::vector<int> v(4);
+
+        auto s = make_span(v, std::array<size_t,1>{4});
+
         std::for_each(
-            std::execution::par,
+            //std::execution::par, //TODO: this does not compile with -stdpar automatically
             std::begin(t),
             std::end(t),
-            [&](auto idx){
+            [=](auto idx){
                 //std::cout << idx << std::endl;
                 auto j = std::get<0>(idx);
                 auto i = std::get<1>(idx);
-                v[j*2 + i] = j*i;
+                s[j*2 + i] = j*i;
             }
         );
 
@@ -115,10 +120,9 @@ TEST_CASE("md_indices tests"){
 
     }
     
-
+    
 
 }
-
 
 
 TEST_CASE("mdspan tests"){
@@ -245,7 +249,7 @@ TEST_CASE("mdspan tests"){
         auto v = md_indices(std::array{1,1}, std::array{2,3});
 
         std::for_each(
-            std::execution::par,
+            //std::execution::par_unseq,
             std::begin(v),
             std::end(v),
             [=] (auto idx){
@@ -261,6 +265,8 @@ TEST_CASE("mdspan tests"){
     }
 
 }
+
+
 
 TEST_CASE("subspan tests"){
 
@@ -466,7 +472,7 @@ TEST_CASE("1D cd-2"){
 
 TEST_CASE("2D cd-2"){
 
-    
+    /*
     SECTION("0-dir evaluate_tiled"){
 
 
@@ -494,7 +500,8 @@ TEST_CASE("2D cd-2"){
             }
         );
         
-    }    
+    }
+    */    
      
     SECTION("1-dir evaluate_tiled"){
 
@@ -646,7 +653,7 @@ TEST_CASE("Block neighbours"){
 
         SECTION("2D") {
 
-            using namespace Catch::Matchers;
+            //using namespace Catch::Matchers;
 
             std::array<direction<2>, 4> test = Neighbours<2, ConnectivityType::Star>().get();
 

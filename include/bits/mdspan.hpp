@@ -1,6 +1,7 @@
 #pragma once
 #include "extents.hpp"
 #include "utils.hpp"
+#include "data.hpp"
 #include <experimental/mdspan>
 #include <iostream>
 #include <range/v3/view/indices.hpp>
@@ -38,7 +39,7 @@ template <class Container, class Dims> static constexpr auto make_span(Container
     using value_type = typename Container::value_type;
     auto ext         = make_extent(dims);
     runtime_assert(flat_size(ext) == std::size(c), "Dimension mismatch in make_span");
-    return span<value_type, rank(ext)>(std::data(c), ext);
+    return span<value_type, rank(ext)>(jada::data(c), ext);
 }
 
 /// @brief Makes a multi-dimensional span of the input container
@@ -51,7 +52,7 @@ static constexpr auto make_span(const Container& c, Dims dims) {
     using value_type = const typename Container::value_type;
     auto ext         = make_extent(dims);
     runtime_assert(flat_size(ext) == std::size(c), "Dimension mismatch in make_span");
-    return span<value_type, rank(ext)>(std::data(c), ext);
+    return span<value_type, rank(ext)>(jada::data(c), ext);
 }
 
 } // namespace jada

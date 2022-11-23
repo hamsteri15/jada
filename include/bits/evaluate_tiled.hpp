@@ -8,10 +8,6 @@
 #include <tuple>
 #include <algorithm>
 #include <range/v3/view/common.hpp>
-//#include <ranges>
-#include <thrust/for_each.h>
-//#include <thrust/device_vector.h>
-//#include <thrust/execution_policy.h>
 
 
 namespace jada {
@@ -29,8 +25,8 @@ template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
 
-    std::for_each(
-            std::execution::par,
+        std::for_each(
+            //std::execution::par,
             std::begin(indices), std::end(indices), [=](auto idx) {
            
             auto stencil = make_tiled_subspan<Dir>(in, idx);

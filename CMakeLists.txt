@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(jada)
+project(jada LANGUAGES CXX)
 
 message("COMPILER ID " ${CMAKE_CXX_COMPILER_ID})
 
@@ -13,7 +13,7 @@ message("BINARY DIR" ${CMAKE_BINARY_DIR})
 add_library(project_options INTERFACE)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  target_compile_options(project_options INTERFACE -std=c++20 -x cu) #Required for range-v3 to compile with nvc++
+  target_compile_options(project_options INTERFACE -std=c++20) #Required for range-v3 to compile with nvc++
 else()
   target_compile_options(project_options INTERFACE -std=c++17)
 endif()
@@ -32,9 +32,9 @@ set_project_warnings(project_warnings)
 include(cmake/StaticAnalyzers.cmake)
 
 
+
 #Configure tbb
 find_package(TBB REQUIRED)
-
 
 
 #Configure MPI
