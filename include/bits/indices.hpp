@@ -14,8 +14,8 @@ namespace jada {
 ///
 template<class T>
 static constexpr auto indices(T&& begin, T&& end) {
-    return ranges::views::iota(begin, end);
-    //return ranges::views::indices(begin, end);
+    //return ranges::views::iota(begin, end);
+    return ranges::views::indices(begin, end);
     //return std::ranges::iota_view(begin, end);
 }
 

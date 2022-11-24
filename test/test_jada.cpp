@@ -8,6 +8,7 @@
 #include "include/jada.hpp"
 #include "test.hpp"
 
+
 using namespace jada;
 
 TEST_CASE("rank"){
@@ -58,6 +59,8 @@ TEST_CASE("extents"){
 }
 
 
+
+
 TEST_CASE("Test indices"){
 
     auto idx = indices(0, 3);
@@ -65,7 +68,6 @@ TEST_CASE("Test indices"){
     CHECK(*std::begin(idx) == 0);
     CHECK(*(std::begin(idx)+1) == 1);
     CHECK(*(std::begin(idx)+2) == 2);
-   
 
 }
 
@@ -73,7 +75,7 @@ TEST_CASE("Test indices"){
 TEST_CASE("md_indices"){
 
     
-    SECTION("oik"){
+    SECTION("Test 1"){
         
         auto t = md_indices(std::array{0,0}, std::array{2,2});
 
@@ -82,14 +84,31 @@ TEST_CASE("md_indices"){
         std::vector<int> js;
 
         
-        for (auto [i,j] : t){
+        for (auto tpl : t){
 
-            is.push_back(i);
-            js.push_back(j);            
+            is.push_back(std::get<0>(tpl));
+            js.push_back(std::get<1>(tpl));            
         }
               
         CHECK(is == std::vector<int>{0,0,1,1});
         CHECK(js == std::vector<int>{0,1,0,1});
+        
+    }
+    
+    SECTION("Test 2"){
+        
+        auto t = md_indices(std::array{0,0}, std::array{2,2});
+        
+
+        auto t1 = t.begin();
+        auto t2 = t1[1];
+        //auto t2 = t1.advance(3);
+        //auto t2 = t1[1];
+        //auto t1 = *(t.begin());
+        //auto t2 = *(t.begin().get());
+        //auto t1 = t[0];
+
+        
         
     }
     
@@ -147,7 +166,7 @@ TEST_CASE("mdspan tests"){
 
     }
 
-
+    
     SECTION("make_span"){
 
         SECTION("vector tests"){
@@ -192,9 +211,8 @@ TEST_CASE("mdspan tests"){
 
         }
 
-
-
     }
+    
 
 
     SECTION("all_indices"){
@@ -215,9 +233,7 @@ TEST_CASE("mdspan tests"){
 
         CHECK(is == std::vector<int>{0,0,0,0,0,1,1,1,1,1});
         CHECK(js == std::vector<int>{0,1,2,3,4,0,1,2,3,4});
-        
     }
-
 
 
     SECTION("index span"){
@@ -259,11 +275,7 @@ TEST_CASE("mdspan tests"){
             }
         );
 
-
-
-
     }
-
 }
 
 
@@ -425,13 +437,15 @@ TEST_CASE("subspan tests"){
 
 TEST_CASE("1D cd-2"){
 
+    
     SECTION("evaluate_tiled 1"){
 
         d_CD2 op;
         extents<1> dims{7};
 
-        vector_t<int> in(flat_size(dims));
-        vector_t<int> out(flat_size(dims));
+        vector_t<int> in(flat_size(dims), 0);
+        vector_t<int> out(flat_size(dims), 0);
+    
         auto s_in = make_span(in, dims);
         auto s_out = make_span(out, dims);
         
@@ -439,9 +453,11 @@ TEST_CASE("1D cd-2"){
         
         evaluate_tiled<0>(s_in, s_out, op);
         CHECK(out == std::vector<int>{0, 1, 1, 1, 1, 1, 0});
+        
     }
     
-    /*
+    
+    
     SECTION("evaluate_tiled 2"){
 
         d_CD2 op;
@@ -464,12 +480,12 @@ TEST_CASE("1D cd-2"){
         CHECK(out.at(N-1) == 0);
 
     }
-    */
     
 
 }
 
-/*
+
+
 TEST_CASE("2D cd-2"){
 
     
@@ -583,7 +599,7 @@ TEST_CASE("2D cd-2"){
     }
         
 }
-*/
+
 
 TEST_CASE("Block neighbours"){
 

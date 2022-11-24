@@ -5,8 +5,10 @@
 #include <thrust/device_vector.h>
 #include <thrust/device_malloc_allocator.h>
 #include <thrust/host_vector.h>
+#include <nvfunctional>
 template<class T>
 using vector_t = thrust::device_vector<T>;
+
 #pragma message("using_cuda_vector")
 #else
 #include <vector>
@@ -21,16 +23,27 @@ using vector_t = std::vector<T>;
 namespace jada {
 
 
+
+
+
 template <size_t Dir, class Span> void set_linear(Span s) {
-
-    using T = typename Span::value_type;
-
-    auto indices = all_indices(s);
-    for (auto idx : indices) {
+    
+    
+    
+    auto op = [=](auto idx){
+        using T = typename Span::value_type;
         auto ii                = std::get<Dir>(idx);
         s(tuple_to_array(idx)) = T(ii);
-    }
+    };
+    
+    for_each_index(all_indices(s), op);
+    
+    
+    
+        
 }
+
+
 struct d_CD2 : public TiledStencil<d_CD2> {
 
     static constexpr size_t padding = 1;

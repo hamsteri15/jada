@@ -13,7 +13,7 @@ message("BINARY DIR" ${CMAKE_BINARY_DIR})
 add_library(project_options INTERFACE)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  target_compile_options(project_options INTERFACE -std=c++20) #Required for range-v3 to compile with nvc++
+  target_compile_options(project_options INTERFACE -std=c++17) #Required for range-v3 to compile with nvc++
 else()
   target_compile_options(project_options INTERFACE -std=c++17)
 endif()
@@ -33,8 +33,6 @@ include(cmake/StaticAnalyzers.cmake)
 
 
 
-#Configure tbb
-find_package(TBB REQUIRED)
 
 
 #Configure MPI
