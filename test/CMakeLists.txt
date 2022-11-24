@@ -17,10 +17,10 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
   find_package(Thrust REQUIRED)
   message("${CUDA_LIBRARIES}")
   message("${THRUST_LIBRARIES}")
-  target_compile_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=multicore)
+  target_compile_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
   #target_link_directories(SerialTest.bin PUBLIC /opt/nvidia/hpc_sdk/Linux_x86_64/22.11/cuda/11.8/lib64/)
   #target_link_libraries(SerialTest.bin PUBLIC cudart_static)
-  target_link_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=multicore)
+  target_link_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
 else()
   
 #gcc
