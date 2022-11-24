@@ -18,6 +18,7 @@ static constexpr void for_each_index(Indices indices, Op op) {
         [=](auto tpl) { op(tpl); });
     */
 
+   
     std::for_each_n(
         std::execution::par,
         counting_iterator(0),
@@ -27,7 +28,7 @@ static constexpr void for_each_index(Indices indices, Op op) {
         }
 
     );
-
+    
 }
 
 } // namespace jada
