@@ -1,6 +1,6 @@
 #pragma once
 
-
+/*
 #ifdef __CUDACC__
 #include <thrust/device_vector.h>
 #include <thrust/device_malloc_allocator.h>
@@ -16,6 +16,10 @@ template<class T>
 using vector_t = std::vector<T>;
 #pragma message("using_std_vector")
 #endif
+*/
+
+template<class T>
+using vector_t = std::vector<T>;
 
 
 
@@ -23,12 +27,7 @@ using vector_t = std::vector<T>;
 namespace jada {
 
 
-
-
-
 template <size_t Dir, class Span> void set_linear(Span s) {
-    
-    
     
     auto op = [=](auto idx){
         using T = typename Span::value_type;
@@ -37,9 +36,6 @@ template <size_t Dir, class Span> void set_linear(Span s) {
     };
     
     for_each_index(all_indices(s), op);
-    
-    
-    
         
 }
 

@@ -5,7 +5,6 @@
 #include "subspan.hpp"
 #include "tiled_stencil.hpp"
 #include "for_each_index.hpp"
-#include <execution>
 #include <tuple>
 
 
@@ -23,7 +22,7 @@ namespace jada {
 template <size_t Dir, class Span1, class Span2, class Op, class Indices>
 void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
-    auto new_op = [=] CUDA_HOSTDEV (auto idx){
+    auto new_op = [=] (auto idx){
         auto stencil = make_tiled_subspan<Dir>(in, idx);
         out(tuple_to_array(idx)) = op(stencil);
     };
