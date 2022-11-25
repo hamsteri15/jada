@@ -240,28 +240,45 @@ TEST_CASE("mdspan tests"){
     }
 
 
-    SECTION("differentiate"){
+}
 
-        std::vector<int> a(3*4, 1.0);
-        const std::vector<int> b(3*4, 1.0);
-        auto aa = make_span(a, extents<2>{3,4});
-        auto bb = make_span(b, extents<2>{3,4});
+TEST_CASE("for_each_index"){
 
+        size_type ni = 3;
+        size_type nj = 4;
+        std::vector<int> a(ni*nj, 0);
+        const std::vector<int> b(ni*nj, 1);
 
-        auto v = md_indices(std::array{1,1}, std::array{2,3});
+        auto aa = make_span(a, extents<2>{nj, ni});
+        auto bb = make_span(b, extents<2>{nj, ni});
 
-        std::for_each(
-            //std::execution::par_unseq,
-            std::begin(v),
-            std::end(v),
-            [=] (auto idx){
+        
+
+        auto op = [=](auto idx){
                 auto [i, j] = idx;
+                aa(i, j) = bb(i, j);
+        };
 
-                aa(i, j) = bb(i-1, j) + bb(i+1, j);
-            }
-        );
+        std::array<index_type, 2> begin = {1,1};
+        std::array<index_type, 2> end = {2,3};
 
-    }
+        for_each_index(begin, end, op);
+
+        std::vector<int> correct = 
+        {
+            0,0,0,
+            0,1,1,
+            0,0,0,
+            0,0,0
+        };
+
+        CHECK(a == correct);
+
+}
+
+TEST_CASE("for_each_boundary_index"){
+
+
 }
 
 

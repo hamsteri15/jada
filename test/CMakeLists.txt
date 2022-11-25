@@ -11,8 +11,10 @@ target_link_libraries(SerialTest.bin PRIVATE catch_main project_options project_
 
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  target_compile_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
-  target_link_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
+  #target_compile_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
+  #target_link_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
+  target_compile_options(SerialTest.bin PUBLIC -O1 -stdpar=gpu)
+  target_link_options(SerialTest.bin PUBLIC -stdpar=gpu)
 else()
   
 #gcc
@@ -20,6 +22,10 @@ else()
   find_package(TBB REQUIRED)
   target_link_libraries(SerialTest.bin PUBLIC TBB::tbb)
   
+  #find_package(OpenMP REQUIRED)
+  #target_link_libraries(SerialTest.bin PUBLIC OpenMP::OpenMP_CXX)
+
+
   #NVCC
   #target_compile_options(SerialTest.bin PUBLIC -x cu --extended-lambda --expt-relaxed-constexpr)
   #target_link_libraries(SerialTest.bin PUBLIC tbb)
