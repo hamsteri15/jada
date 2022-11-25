@@ -1,9 +1,6 @@
 #pragma once
 
-//#include <range/v3/view/cartesian_product.hpp>
-//#include <cor3ntin/rangesnext/product.hpp>
-#include <tl/cartesian_product.hpp>
-
+#include "tl_ranges/cartesian_product_impl.hpp"
 
 namespace jada {
 
@@ -14,9 +11,6 @@ namespace jada {
 /// ...]
 template <class... Rngs> constexpr auto cartesian_product(Rngs&&... rngs) {
     return tl::views::cartesian_product(rngs...);
-    //return ranges::views::cartesian_product(rngs...);
-    //return std::ranges::views::cartesian_product(rngs...);
-    //return cor3ntin::rangesnext::product(rngs...);
 }
 
 } // namespace jada
