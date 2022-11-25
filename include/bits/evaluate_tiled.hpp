@@ -3,9 +3,7 @@
 #include "loop.hpp"
 #include "mdspan.hpp"
 #include "subspan.hpp"
-#include "tiled_stencil.hpp"
 #include "for_each_index.hpp"
-#include <tuple>
 
 
 namespace jada {

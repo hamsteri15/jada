@@ -43,14 +43,8 @@ struct simpleDiff{
     template <class F> auto operator()(F f) const { return (f(1) - f(-1)); }
 };
 
-struct d_CD2 : public TiledStencil<d_CD2> {
 
-    static constexpr size_t padding = 1;
-
-    template <class F> auto operator()(F f) const { return 0.5 * (f(1) - f(-1)); }
-};
-
-struct d_CD4 : public TiledStencil<d_CD2> {
+struct d_CD4 {
 
     static constexpr size_t padding = 2;
 

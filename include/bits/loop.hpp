@@ -9,18 +9,6 @@
 
 namespace jada {
 
-namespace detail {
-
-// nvcc doesnt like template lambdas...
-struct CallProducts {
-    template <class B, class E, size_t... Is>
-    static constexpr auto call(B begin, E end, std::index_sequence<Is...>) {
-        return cartesian_product(
-            indices(std::get<Is>(begin), std::get<Is>(end))...);
-    }
-};
-
-} // namespace detail
 
 /// @brief Returns a view of multi-dimensional index tuples
 /// @param begin index set of begin indices
@@ -28,15 +16,14 @@ struct CallProducts {
 /// @return A view of index tuples from [begin, end)
 template <class B, class E> static constexpr auto md_indices(B begin, E end) {
 
-    return detail::CallProducts::call(
-        begin, end, std::make_index_sequence<rank(begin)>{});
-    /*
+    using Idx = size_type;
+
     return [&]<Idx... Is>(std::integer_sequence<Idx, Is...>) {
         return cartesian_product(indices(std::get<Is>(begin),
     std::get<Is>(end))...);
     }
     (std::make_integer_sequence<Idx, Idx(rank(begin))>{});
-    */
+    
 }
 
 /// @brief Returns all multi-dimensional indices spanned by the extent of the
