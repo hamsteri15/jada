@@ -277,6 +277,108 @@ TEST_CASE("for_each_index"){
 }
 
 TEST_CASE("for_each_boundary_index"){
+        
+        size_type ni = 3;
+        size_type nj = 4;
+
+
+        SECTION("dir = {1,0}"){
+
+            std::vector<int> a(ni*nj, 0);
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto op = [=](auto idx){
+                    auto [i, j] = idx;
+                    aa(i, j) = 1;
+            };
+
+            std::array<index_type, 2> dir = {1,0};
+
+            for_each_boundary_index(dir, dimensions(aa), op);
+
+            std::vector<int> correct = 
+            {
+                0,0,0,
+                0,0,0,
+                0,0,0,
+                1,1,1
+            };
+
+            CHECK(a == correct);
+
+        }
+        SECTION("dir = {-1,0}"){
+
+            std::vector<int> a(ni*nj, 0);
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto op = [=](auto idx){
+                    auto [i, j] = idx;
+                    aa(i, j) = 1;
+            };
+
+            std::array<index_type, 2> dir = {-1,0};
+
+            for_each_boundary_index(dir, dimensions(aa), op);
+
+            std::vector<int> correct = 
+            {
+                1,1,1,
+                0,0,0,
+                0,0,0,
+                0,0,0
+            };
+
+            CHECK(a == correct);
+
+        }
+        SECTION("dir = {1,1}"){
+
+            std::vector<int> a(ni*nj, 0);
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto op = [=](auto idx){
+                    auto [i, j] = idx;
+                    aa(i, j) = 1;
+            };
+
+            std::array<index_type, 2> dir = {1,1};
+
+            for_each_boundary_index(dir, dimensions(aa), op);
+
+            std::vector<int> correct = 
+            {
+                0,0,0,
+                0,0,0,
+                0,0,0,
+                0,0,1
+            };
+
+            CHECK(a == correct);
+
+        }
+
+        SECTION("boundary of subspan"){
+            std::vector<int> a(ni*nj, 0);
+            auto aa_temp = make_span(a, extents<2>{nj, ni});
+            auto aa = make_subspan(aa_temp, std::array<index_type,2>{1, 0}, std::array<index_type, 2>{3,3});
+            auto op = [=](auto idx){
+                    auto [i, j] = idx;
+                    aa(i, j) = 1;
+            };
+
+            std::array<index_type, 2> dir = {0,-1};
+
+            for_each_boundary_index(dir, dimensions(aa), op);
+
+            std::vector<int> correct = 
+            {
+                0,0,0,
+                1,0,0,
+                1,0,0,
+                0,0,0
+            };
+
+            CHECK(a == correct);
+
+        }
 
 
 }
@@ -433,8 +535,47 @@ TEST_CASE("subspan tests"){
             
         }
     }
+
 }
 
+TEST_CASE("Test BoundarySubspan"){
+
+
+    std::vector<int> a = 
+    {
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 14, 15, 16
+    };
+    auto s = make_span(a, extents<2>{4,4});
+
+    std::array<size_type, 2> center = {1,1};
+
+    auto ss = make_subspan(s, center, center);
+
+    SECTION("direction = {0,1}"){
+        auto sss = make_boundary_subspan(ss, std::array<index_type, 2>{0, 1});
+
+        CHECK(sss(-1) == 5);
+        CHECK(sss(0) == 6);
+        CHECK(sss(1) == 7);
+
+    }
+
+    SECTION("direction = {0,-1}"){
+        auto sss = make_boundary_subspan(ss, std::array<index_type, 2>{0, -1});
+
+        CHECK(sss(-1) == 7);
+        CHECK(sss(0) == 6);
+        CHECK(sss(1) == 5);
+
+    }
+
+
+
+
+}
 
 
 

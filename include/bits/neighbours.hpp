@@ -1,5 +1,6 @@
 #pragma once
 #include "algorithms.hpp"
+#include "integer_types.hpp"
 #include <array>
 #include <cstddef>
 #include <vector>
@@ -8,9 +9,8 @@ namespace jada {
 
 enum class ConnectivityType { Star, Box };
 
-using idx_t = int;
 
-template <size_t N> using direction = std::array<idx_t, N>;
+template <size_t N> using direction = std::array<index_type, N>;
 
 namespace detail {
 
@@ -99,7 +99,7 @@ private:
 
         auto all_zero = [](auto arr) {
             for (size_t i = 0; i < std::size(arr); ++i) {
-                if (arr[i] != idx_t(0)) { return false; }
+                if (arr[i] != index_type(0)) { return false; }
             }
             return true;
         };
