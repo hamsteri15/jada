@@ -1,14 +1,13 @@
 
 # Build catch main
-#add_library(catch_main STATIC catch_main.cpp)
-find_package(Catch2 3 REQUIRED)
+add_library(catch_main STATIC catch_main.cpp)
 
 
 #Unit tests#
 add_executable(SerialTest.bin test_jada.cpp)
 
 
-target_link_libraries(SerialTest.bin PRIVATE Catch2::Catch2WithMain project_options project_warnings)
+target_link_libraries(SerialTest.bin PRIVATE catch_main project_options project_warnings)
 
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
