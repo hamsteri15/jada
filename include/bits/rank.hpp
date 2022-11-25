@@ -20,7 +20,8 @@ private:
     using my_type = std::tuple<Idx...>;
 
 public:
-    static_assert(all_of<std::is_integral, my_type>::value, "Not an integer tuple.");
+    static_assert(all_of<std::is_integral, my_type>::value,
+                  "Not an integer tuple.");
     static constexpr size_t value = sizeof...(Idx);
 };
 
@@ -30,7 +31,8 @@ private:
     using my_type = std::pair<Idx...>;
 
 public:
-    //static_assert(all_of<std::is_integral, my_type>::value, "Not an integer tuple.");
+    // static_assert(all_of<std::is_integral, my_type>::value, "Not an integer
+    // tuple.");
     static constexpr size_t value = 2;
 };
 
@@ -41,8 +43,8 @@ private:
     using my_type = std::tuple<Idx...>;
 
 public:
-    // static_assert(all_of<std::is_integral, my_type>::value, "Not an integer tuple.");
-    static constexpr size_t value = sizeof...(Idx);
+    // static_assert(all_of<std::is_integral, my_type>::value, "Not an integer
+tuple."); static constexpr size_t value = sizeof...(Idx);
 };
 */
 

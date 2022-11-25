@@ -9,13 +9,16 @@
 namespace jada {
 
 // Trait to type check all types of a std::tuple
-template <template <typename, typename...> class Trait, typename Tuple> struct all_of;
+template <template <typename, typename...> class Trait, typename Tuple>
+struct all_of;
 
 template <template <typename, typename...> class Trait, typename... Types>
-struct all_of<Trait, std::tuple<Types...>> : std::conjunction<Trait<Types>...> {};
+struct all_of<Trait, std::tuple<Types...>> : std::conjunction<Trait<Types>...> {
+};
 
 #ifdef NDEBUG
-constexpr void runtime_assert([[maybe_unused]] bool condition, [[maybe_unused]] const char* msg) {}
+constexpr void runtime_assert([[maybe_unused]] bool        condition,
+                              [[maybe_unused]] const char* msg) {}
 #else
 constexpr void runtime_assert(bool condition, const char* msg) {
     if (!condition) throw std::runtime_error(msg);

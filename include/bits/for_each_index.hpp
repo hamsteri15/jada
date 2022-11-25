@@ -4,6 +4,7 @@
 #include <execution>
 
 #include "counting_iterator.hpp"
+#include "loop.hpp"
 
 namespace jada {
 
@@ -30,5 +31,17 @@ static constexpr void for_each_index(Indices indices, Op op) {
     );
     
 }
+
+template<class B, class E, class Op>
+static constexpr void for_each_index(B begin, E end, Op op){
+
+    for_each_index(
+        md_indices(begin, end),
+        op
+    );
+
+}
+
+
 
 } // namespace jada

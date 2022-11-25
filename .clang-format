@@ -17,7 +17,7 @@ AllowShortIfStatementsOnASingleLine: 'true'
 AllowShortLoopsOnASingleLine: 'true'
 BinPackArguments: 'false'
 BinPackParameters: 'false'
-ColumnLimit: '100'
+ColumnLimit: '80'
 IndentWidth: '4'
 PointerAlignment: Left
 SortIncludes: 'true'

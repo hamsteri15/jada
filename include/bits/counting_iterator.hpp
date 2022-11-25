@@ -1,10 +1,8 @@
 #pragma once
 
-
 #include <vector>
 
-namespace jada{
-
+namespace jada {
 
 using Index_t = std::ptrdiff_t;
 
@@ -55,20 +53,40 @@ public:
         return *this;
     }
 
-    friend self            operator+(self const& i, difference_type n) { return self(i.value + n); }
-    friend self            operator+(difference_type n, self const& i) { return self(i.value + n); }
-    friend difference_type operator-(self const& x, self const& y) { return x.value - y.value; }
-    friend self            operator-(self const& i, difference_type n) { return self(i.value - n); }
+    friend self operator+(self const& i, difference_type n) {
+        return self(i.value + n);
+    }
+    friend self operator+(difference_type n, self const& i) {
+        return self(i.value + n);
+    }
+    friend difference_type operator-(self const& x, self const& y) {
+        return x.value - y.value;
+    }
+    friend self operator-(self const& i, difference_type n) {
+        return self(i.value - n);
+    }
 
-    friend bool operator==(self const& x, self const& y) { return x.value == y.value; }
-    friend bool operator!=(self const& x, self const& y) { return x.value != y.value; }
-    friend bool operator<(self const& x, self const& y) { return x.value < y.value; }
-    friend bool operator<=(self const& x, self const& y) { return x.value <= y.value; }
-    friend bool operator>(self const& x, self const& y) { return x.value > y.value; }
-    friend bool operator>=(self const& x, self const& y) { return x.value >= y.value; }
+    friend bool operator==(self const& x, self const& y) {
+        return x.value == y.value;
+    }
+    friend bool operator!=(self const& x, self const& y) {
+        return x.value != y.value;
+    }
+    friend bool operator<(self const& x, self const& y) {
+        return x.value < y.value;
+    }
+    friend bool operator<=(self const& x, self const& y) {
+        return x.value <= y.value;
+    }
+    friend bool operator>(self const& x, self const& y) {
+        return x.value > y.value;
+    }
+    friend bool operator>=(self const& x, self const& y) {
+        return x.value >= y.value;
+    }
 
 private:
     value_type value;
 };
 
-}
+} // namespace jada

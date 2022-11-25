@@ -1,8 +1,8 @@
 #pragma once
+#include "algorithms.hpp"
 #include <array>
 #include <cstddef>
 #include <vector>
-#include "algorithms.hpp"
 
 namespace jada {
 
@@ -14,7 +14,8 @@ template <size_t N> using direction = std::array<idx_t, N>;
 
 namespace detail {
 
-template <size_t N, ConnectivityType CT> static constexpr size_t neighbour_count() {
+template <size_t N, ConnectivityType CT>
+static constexpr size_t neighbour_count() {
 
     if constexpr (CT == ConnectivityType::Star) { return 2 * N; }
 
@@ -56,11 +57,11 @@ public:
     ///@return constexpr size_t
     static constexpr size_t count() { return m_neighbours.size(); }
 
-
 private:
     ///@brief Computes the star neighbours by permuting a positive and negative
     /// unit vectors pos =  {1,0,0,0 ... N}, neg = {-1, 0, 0, 0 ... N}
-    ///@return std::array<direction<N>, 2*N> neighbours which correspond negative
+    ///@return std::array<direction<N>, 2*N> neighbours which correspond
+    ///negative
     /// and positive unit vectors of an N-dimensional space (hence the 2*N)
     static constexpr auto star_neighbours() {
         constexpr size_t n_count = detail::neighbour_count<N, CT>();
@@ -68,7 +69,7 @@ private:
         direction<N> dir{};
         dir.back() = 1;
         std::array<direction<N>, n_count> all{};
-        
+
         auto change_sign = [](auto a) {
             auto ret(a);
             for (auto& r : ret) { r *= -1; }
@@ -83,7 +84,7 @@ private:
             ++i;
             // permutations.push_back(temp);
         } while (next_permutation(dir.begin(), dir.end()));
-        
+
         return all;
     }
 
@@ -94,14 +95,11 @@ private:
         constexpr auto n_combinations = detail::neighbour_count<N, CT>();
 
         std::array<direction<N>, n_combinations> combinations{};
-        direction<N> combination{1};
+        direction<N>                             combination{1};
 
-
-        auto all_zero = [](auto arr){
-            for (size_t i = 0; i < std::size(arr); ++i){
-                if (arr[i] != idx_t(0)){
-                    return false;
-                }
+        auto all_zero = [](auto arr) {
+            for (size_t i = 0; i < std::size(arr); ++i) {
+                if (arr[i] != idx_t(0)) { return false; }
             }
             return true;
         };
@@ -124,7 +122,7 @@ private:
                 ++j;
             }
         }
-        
+
         return combinations;
     }
 };
