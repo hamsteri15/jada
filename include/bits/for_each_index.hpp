@@ -22,7 +22,7 @@ static constexpr void for_each_index(Indices indices, Op op) {
     std::for_each_n(std::execution::par,
                     counting_iterator(index_type(0)),
                     indices.size(),
-                    [=](auto i) { op(indices[i]); });
+                    [=](index_type i) { op(indices[i]); });
     
 }
 

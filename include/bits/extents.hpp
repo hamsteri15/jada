@@ -25,8 +25,7 @@ struct MakeArray {
 
     template <class T, size_t... Is>
     static constexpr auto make(T extents, std::index_sequence<Is...>) {
-        using Idx = typename decltype(extents)::index_type;
-        return std::array<Idx, sizeof...(Is)>{extents.extent(Is)...};
+        return std::array{extents.extent(Is)...};
     }
 };
 
