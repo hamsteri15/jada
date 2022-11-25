@@ -41,7 +41,7 @@ template <class T> static constexpr auto extent_to_array(T ext) {
 /// @brief Computes the total element count spanned by the extents
 /// @param ext extensions to compute the flat size of
 /// @return size_t the flat size
-template <class T> static constexpr size_t flat_size(T ext) {
+template <class T> static constexpr size_type flat_size(T ext) {
 
     size_type ret(1);
     for (size_t i = 0; i < rank(ext); ++i) { ret *= ext.extent(i); }

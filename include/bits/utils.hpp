@@ -16,6 +16,10 @@ template <template <typename, typename...> class Trait, typename... Types>
 struct all_of<Trait, std::tuple<Types...>> : std::conjunction<Trait<Types>...> {
 };
 
+template <template <typename, typename...> class Trait, typename... Types>
+struct all_of<Trait, std::pair<Types...>> : std::conjunction<Trait<Types>...> {
+};
+
 #ifdef NDEBUG
 constexpr void runtime_assert([[maybe_unused]] bool        condition,
                               [[maybe_unused]] const char* msg) {}

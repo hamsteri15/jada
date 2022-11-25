@@ -96,7 +96,7 @@ static constexpr auto make_tiled_subspan(Span s, B begin, Int extent) {
 
     static_assert(std::is_integral<Int>::value, "Extent is not an integral type");
     auto end(begin);
-    std::get<Dir>(end) += static_cast<size_t>(extent);
+    std::get<Dir>(end) += static_cast<size_type>(extent);
     return detail::make_tiled_subspan<Dir>(s, begin, end);
 }
 

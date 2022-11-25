@@ -31,8 +31,8 @@ private:
     using my_type = std::pair<Idx...>;
 
 public:
-    // static_assert(all_of<std::is_integral, my_type>::value, "Not an integer
-    // tuple.");
+    static_assert(all_of<std::is_integral, my_type>::value,
+                  "Not an integer pair.");
     static constexpr size_t value = 2;
 };
 
