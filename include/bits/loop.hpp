@@ -45,19 +45,7 @@ template <class B, class E> static constexpr auto md_indices(B begin, E end) {
 /// @return A view of index tuples from [begin=0, extent(span) )
 template <class Span> static constexpr auto all_indices(Span span) {
 
-    // TODO: make this less insane
-    // nvc++ wants integers...
-    using Idx = int;
-
-    std::array<Idx, rank(span)> begin{};
-    std::array<Idx, rank(span)> end{};
-
-    auto dims = dimensions(span);
-    for (size_t i = 0; i < rank(span); ++i) { end[i] = Idx(dims[i]); }
-    return md_indices(begin, end);
-
-    // using Idx = typename decltype(span)::index_type;
-    // return md_indices(std::array<Idx, rank(span)>{}, dimensions(span));
+     return md_indices(std::array<size_type, rank(span)>{}, dimensions(span));
 }
 
 } // namespace jada

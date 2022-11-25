@@ -2,7 +2,6 @@
 #include "data.hpp"
 #include "extents.hpp"
 #include "utils.hpp"
-#include "mdspan_impl.hpp"
 #include <iostream>
 
 namespace jada {

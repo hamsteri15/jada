@@ -46,17 +46,8 @@ void evaluate_tiled(Span1 in, Span2 out, Op op) {
 
     runtime_assert(extent(in) == extent(out), "Dimension mismatch");
 
-    //TODO: make some sense to this
-    std::array<int, rank(in)> begin{};
-    std::array<int, rank(in)> end{};
-
-    auto dims = dimensions(in);
-    for (size_t i = 0; i < rank(in); ++i){
-        end[i] = int(dims[i]);
-    }
-
-    //auto          end = dimensions(in);
-    //decltype(end) begin{};
+    auto          end = dimensions(in);
+    decltype(end) begin{};
 
     std::get<Dir>(begin) += op.padding;
     std::get<Dir>(end) -= op.padding;

@@ -2,9 +2,10 @@
 
 #include <vector>
 
+#include "integer_types.hpp"
+
 namespace jada {
 
-using Index_t = std::ptrdiff_t;
 
 struct counting_iterator {
 
@@ -12,10 +13,10 @@ private:
     using self = counting_iterator;
 
 public:
-    using value_type        = Index_t;
-    using difference_type   = typename std::make_signed<Index_t>::type;
-    using pointer           = Index_t*;
-    using reference         = Index_t&;
+    using value_type        = index_type;
+    using difference_type   = typename std::make_signed<index_type>::type;
+    using pointer           = index_type*;
+    using reference         = index_type&;
     using iterator_category = std::random_access_iterator_tag;
 
     counting_iterator()

@@ -20,11 +20,11 @@ template <class T1, class T2, class T3>
 static constexpr auto offset(T1 coords, T2 coord_dims, T3 global_grid_dims) {
 
     runtime_assert(indices_in_bounds(coords, coord_dims), "Domain coordinates not in bounds.");
-    using index_type = typename decltype(global_grid_dims)::value_type;
+    using idx = typename decltype(global_grid_dims)::value_type;
 
     auto offset(coords);
     for (size_t i = 0; i < rank(coords); ++i) {
-        offset[i] = index_type(global_grid_dims[i] / coord_dims[i]) * coords[i];
+        offset[i] = idx(global_grid_dims[i] / coord_dims[i]) * coords[i];
     }
     return offset;
 }
@@ -45,14 +45,14 @@ static constexpr auto local_dimensions(T1 coords, T2 coord_dims, T3 global_grid_
     runtime_assert(indices_in_bounds(coords, coord_dims), "Domain coordinates not in bounds.");
 
     decltype(global_grid_dims) local_dims{};
-    using index_type = typename decltype(local_dims)::value_type;
+    using idx = typename decltype(local_dims)::value_type;
 
     for (size_t i = 0; i < rank(coords); ++i) {
-        local_dims[i] = index_type(global_grid_dims[i] / coord_dims[i]);
+        local_dims[i] = idx(global_grid_dims[i] / coord_dims[i]);
 
         // Uneven points added to the last subdomain in the corresponding direction
-        if (coords[i] == index_type(coord_dims[i] - 1)) {
-            local_dims[i] += index_type(global_grid_dims[i] % coord_dims[i]);
+        if (coords[i] == idx(coord_dims[i] - 1)) {
+            local_dims[i] += idx(global_grid_dims[i] % coord_dims[i]);
         }
     }
     return local_dims;

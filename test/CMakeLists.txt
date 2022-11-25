@@ -8,7 +8,7 @@ find_package(Catch2 3 REQUIRED)
 add_executable(SerialTest.bin test_jada.cpp)
 
 
-target_link_libraries(SerialTest.bin PRIVATE Catch2::Catch2WithMain project_options)
+target_link_libraries(SerialTest.bin PRIVATE Catch2::Catch2WithMain project_options project_warnings)
 
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")

@@ -2,22 +2,16 @@
 
 #include "rank.hpp"
 #include "utils.hpp"
-#include "mdspan_impl.hpp"
+#include "integer_types.hpp"
+#include <experimental/mdspan>
+//#include "mdspan_impl.hpp"
 #include <array>
 
 namespace jada {
-/*
-#ifdef __CUDACC__
-#include <thrust/device_vector.h>
-namespace stdlib = thrust;
-#else
-namespace stdlib = std;
-#endif
-*/
 
 namespace stdex = std::experimental;
 
-template <size_t N> using extents = stdex::dextents<size_t, N>;
+template <size_t N> using extents = stdex::dextents<size_type, N>;
 
 /// @brief Converts array-like dimensions to extents
 /// @param dims array-like object with spatial dimensions
@@ -50,7 +44,7 @@ template <class T> static constexpr auto extent_to_array(T ext) {
 /// @return size_t the flat size
 template <class T> static constexpr size_t flat_size(T ext) {
 
-    size_t ret(1);
+    size_type ret(1);
     for (size_t i = 0; i < rank(ext); ++i) { ret *= ext.extent(i); }
     return ret;
 }

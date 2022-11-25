@@ -95,22 +95,6 @@ TEST_CASE("md_indices"){
         
     }
     
-    SECTION("Test 2"){
-        
-        auto t = md_indices(std::array{0,0}, std::array{2,2});
-        
-
-        auto t1 = t.begin();
-        auto t2 = t1[1];
-        //auto t2 = t1.advance(3);
-        //auto t2 = t1[1];
-        //auto t1 = *(t.begin());
-        //auto t2 = *(t.begin().get());
-        //auto t1 = t[0];
-
-        
-        
-    }
     
     
     
@@ -250,6 +234,8 @@ TEST_CASE("mdspan tests"){
             CHECK(span(tt) == 43);
         }
 
+        //auto t = std::make_tuple<size_t, size_t>(1,1);
+        //span(t) = 21;
 
     }
 
@@ -386,7 +372,7 @@ TEST_CASE("subspan tests"){
             auto s = make_span(a, extents<2>{4,4});
 
 
-            auto ss = make_tiled_subspan<1>(s, std::make_tuple(2,1), size_t(2));
+            auto ss = make_tiled_subspan<1>(s, std::make_tuple(size_t(2),size_t(1)), size_t(2));
 
             CHECK(ss(0) == 10);
             CHECK(ss(1) == 11);
@@ -440,7 +426,6 @@ TEST_CASE("1D cd-2"){
     
     SECTION("evaluate_tiled 1"){
 
-        d_CD2 op;
         extents<1> dims{7};
 
         vector_t<int> in(flat_size(dims), 0);
@@ -451,8 +436,8 @@ TEST_CASE("1D cd-2"){
         
         set_linear<0>(s_in);
         
-        evaluate_tiled<0>(s_in, s_out, op);
-        CHECK(out == std::vector<int>{0, 1, 1, 1, 1, 1, 0});
+        evaluate_tiled<0>(s_in, s_out, simpleDiff());
+        CHECK(out == std::vector<int>{0, 2, 2, 2, 2, 2, 0});
         
     }
     
@@ -460,7 +445,6 @@ TEST_CASE("1D cd-2"){
     
     SECTION("evaluate_tiled 2"){
 
-        d_CD2 op;
         size_t N = 3000;
         extents<1> dims{N};
 
@@ -471,10 +455,10 @@ TEST_CASE("1D cd-2"){
         
         set_linear<0>(s_in);
         
-        evaluate_tiled<0>(s_in, s_out, op);
+        evaluate_tiled<0>(s_in, s_out, simpleDiff());
 
         for (size_t i = 1; i < N-2; ++i){
-            REQUIRE(out.at(i) == 1);
+            REQUIRE(out.at(i) == 2);
         }
         CHECK(out.at(0) == 0);
         CHECK(out.at(N-1) == 0);
@@ -491,9 +475,9 @@ TEST_CASE("2D cd-2"){
     
     SECTION("0-dir evaluate_tiled"){
 
+        simpleDiff op;
 
-        d_CD2 op;
-        extents<2> dims{2 + 2*op.padding,3};
+        extents<2> dims{2 + op.padding*2,3};
 
         vector_t<int> in(flat_size(dims), 0);
         vector_t<int> out(flat_size(dims), 0);
@@ -510,8 +494,8 @@ TEST_CASE("2D cd-2"){
             out == std::vector<int>
             {
                 0, 0, 0,
-                1, 1, 1,
-                1, 1, 1,
+                2, 2, 2,
+                2, 2, 2,
                 0, 0, 0
             }
         );
@@ -521,8 +505,7 @@ TEST_CASE("2D cd-2"){
      
     SECTION("1-dir evaluate_tiled"){
 
-
-        d_CD2 op;
+        simpleDiff op;
         extents<2> dims{2,3 + 2*op.padding};
 
         std::vector<int> in(flat_size(dims), 0);
@@ -540,8 +523,8 @@ TEST_CASE("2D cd-2"){
         CHECK(
             out == std::vector<int>
             {
-                0, 1, 1, 1, 0,
-                0, 1, 1, 1, 0
+                0, 2, 2, 2, 0,
+                0, 2, 2, 2, 0
             }
         );
         
@@ -550,8 +533,8 @@ TEST_CASE("2D cd-2"){
     SECTION("Both dirs evaluate_tiled"){
 
 
-        d_CD2 op0;
-        d_CD2 op1;
+        simpleDiff op0;
+        simpleDiff op1;
         extents<2> dims{2 + 2*op0.padding,3 + 2*op1.padding};
 
         std::vector<int> in(flat_size(dims), 0);
@@ -570,8 +553,8 @@ TEST_CASE("2D cd-2"){
             out == std::vector<int>
             {
                 0, 0, 0, 0, 0,
-                1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1,
+                2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2,
                 0, 0, 0, 0, 0
             }
         );
@@ -589,10 +572,10 @@ TEST_CASE("2D cd-2"){
         CHECK(
             out == std::vector<int>
             {
-                0, 1, 1, 1, 0,
-                0, 1, 1, 1, 0,
-                0, 1, 1, 1, 0,
-                0, 1, 1, 1, 0
+                0, 2, 2, 2, 0,
+                0, 2, 2, 2, 0,
+                0, 2, 2, 2, 0,
+                0, 2, 2, 2, 0
             }
         );
 

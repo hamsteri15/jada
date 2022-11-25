@@ -38,7 +38,10 @@ template <size_t Dir, class Span> void set_linear(Span s) {
     for_each_index(all_indices(s), op);
         
 }
-
+struct simpleDiff{
+    static constexpr size_t padding = 1;
+    template <class F> auto operator()(F f) const { return (f(1) - f(-1)); }
+};
 
 struct d_CD2 : public TiledStencil<d_CD2> {
 
@@ -94,7 +97,7 @@ template <class Span> void print(Span span) {
 
 double fRand(double fMin, double fMax)
 {
-    double f = (double)rand() / RAND_MAX;
+    double f = static_cast<double>(rand()) / RAND_MAX;
     return fMin + f * (fMax - fMin);
 }
 

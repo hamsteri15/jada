@@ -91,11 +91,12 @@ static constexpr auto make_subspan(Span span, B begin, E end) {
 /// @param begin a set of indices describing the beginning of the subspan
 /// @param extent width of the one-dimensional subspan
 /// @return a one-dimensional subspan along the direction Dir
-template <size_t Dir, class Span, class B>
-static constexpr auto make_tiled_subspan(Span s, B begin, size_t extent) {
+template <size_t Dir, class Span, class B, class Int>
+static constexpr auto make_tiled_subspan(Span s, B begin, Int extent) {
 
+    static_assert(std::is_integral<Int>::value, "Extent is not an integral type");
     auto end(begin);
-    std::get<Dir>(end) += extent;
+    std::get<Dir>(end) += static_cast<size_t>(extent);
     return detail::make_tiled_subspan<Dir>(s, begin, end);
 }
 
