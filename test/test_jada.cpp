@@ -446,65 +446,7 @@ TEST_CASE("subspan tests"){
 
     SECTION("make_tiled_subspan"){
         
-        SECTION("with given begin and end"){
-            
-            std::vector<int> a = 
-            {
-                1,  2,  3,  4,
-                5,  6,  7,  8,
-                9,  10, 11, 12,
-                13, 14, 15, 16
-            };
-            auto s = make_span(a, extents<2>{4,4});
-
-            std::array<size_t, 2> begin1 = {2,1};
-            std::array<size_t, 2> end1 = {2,3};
-
-
-            auto ss = detail::make_tiled_subspan<1>(s, begin1, end1);
-
-            CHECK(ss(0) == 10);
-            CHECK(ss(1) == 11);
-            CHECK(ss(2) == 12);
-            
-            std::array<size_t, 2> begin2 = {1,2};
-            std::array<size_t, 2> end2 = {3,2};
-
-            
-            auto ss2 = detail::make_tiled_subspan<0>(s, begin2, end2);
-
-            CHECK(ss2(0) == 7);
-            CHECK(ss2(1) == 11);
-            CHECK(ss2(2) == 15);
-            
-        }
         
-        SECTION("with given begin and width"){
-            
-            std::vector<int> a = 
-            {
-                1,  2,  3,  4,
-                5,  6,  7,  8,
-                9,  10, 11, 12,
-                13, 14, 15, 16
-            };
-            auto s = make_span(a, extents<2>{4,4});
-
-
-            auto ss = make_tiled_subspan<1>(s, std::make_tuple(size_t(2),size_t(1)), size_t(2));
-
-            CHECK(ss(0) == 10);
-            CHECK(ss(1) == 11);
-            CHECK(ss(2) == 12);
-            
-            
-            auto ss2 = make_tiled_subspan<0>(s, std::array<size_t, 2>{1,2}, size_t(2));
-
-            CHECK(ss2(0) == 7);
-            CHECK(ss2(1) == 11);
-            CHECK(ss2(2) == 15);
-            
-        }
         
         SECTION("with only center index given"){
             
@@ -520,14 +462,14 @@ TEST_CASE("subspan tests"){
             std::array<size_t, 2> center = {2,2};
 
 
-            auto ss = make_tiled_subspan<1>(s, center);
+            auto ss = make_good<1>(s, center);
 
             CHECK(ss(-1) == 10);
             CHECK(ss(0) == 11);
             CHECK(ss(1) == 12);
             
             
-            auto ss2 = make_tiled_subspan<0>(s, center);
+            auto ss2 = make_good<0>(s, center);
 
             CHECK(ss2(-1) == 7);
             CHECK(ss2(0) == 11);
@@ -552,7 +494,7 @@ TEST_CASE("Test BoundarySubspan"){
 
     std::array<size_type, 2> center = {1,1};
 
-    auto ss = make_subspan(s, center, center);
+    auto ss = make_subspan(s, center);
 
     SECTION("direction = {0,1}"){
         auto sss = make_boundary_subspan(ss, std::array<index_type, 2>{0, 1});
@@ -572,7 +514,54 @@ TEST_CASE("Test BoundarySubspan"){
 
     }
 
+}
 
+static constexpr void
+good_function(auto span, auto dir, auto op){
+
+    auto new_op = [=](auto idx){
+
+        auto ss = make_subspan(span, tuple_to_array(idx));
+        auto sss = make_boundary_subspan(ss, dir);
+        op(sss);
+    };
+
+    for_each_boundary_index(dir, dimensions(span), new_op);
+
+}
+
+
+TEST_CASE("boundary_condition"){
+
+
+    std::vector<int> a = 
+    {
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 14, 15, 16
+    };
+    auto s = make_span(a, extents<2>{4,4});
+    auto internal = make_subspan(s, std::array<index_type, 2>{1,1}, std::array<index_type, 2>{3,3});
+
+    auto boundary_op = [](auto f){
+        f(1) = f(0);
+    };
+
+    std::array<index_type, 2> dir = {1,0};
+    
+    good_function(internal, dir, boundary_op);
+
+
+    std::vector<int> correct = 
+    {
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 10, 11, 16
+    };
+
+    CHECK(a == correct);
 
 
 }
