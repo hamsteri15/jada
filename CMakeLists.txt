@@ -46,7 +46,6 @@ add_compile_definitions(USE_MPI)
 endif()
 
 
-option(ENABLE_TESTING "Enable Test Builds" ON)
 
 #Set library and binary paths
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -55,16 +54,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
 
-#Build apps
-#INCLUDE_DIRECTORIES(apps)
-#ADD_SUBDIRECTORY(apps)
 
-if(ENABLE_TESTING)
+option(BUILD_TESTS "Build tests" ON)
+
+if(BUILD_TESTS)
   enable_testing()
   message(
-    "Building Tests."
+    "Building tests."
   )
   add_subdirectory(test)
 endif()
 
 
+option(BUILD_BENCHMARKS "Build benchmarks" ON)
+
+if(BUILD_BENCHMARKS)
+  enable_testing()
+  message(
+    "Building benchmarks."
+  )
+  add_subdirectory(benchmark)
+endif()

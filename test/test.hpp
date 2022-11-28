@@ -1,23 +1,5 @@
 #pragma once
 
-/*
-#ifdef __CUDACC__
-#include <thrust/device_vector.h>
-#include <thrust/device_malloc_allocator.h>
-#include <thrust/host_vector.h>
-#include <nvfunctional>
-template<class T>
-using vector_t = thrust::device_vector<T>;
-
-#pragma message("using_cuda_vector")
-#else
-#include <vector>
-template<class T>
-using vector_t = std::vector<T>;
-#pragma message("using_std_vector")
-#endif
-*/
-
 template<class T>
 using vector_t = std::vector<T>;
 
@@ -43,21 +25,6 @@ struct simpleDiff{
     template <class F> auto operator()(F f) const { return (f(1) - f(-1)); }
 };
 
-
-struct d_CD4 {
-
-    static constexpr size_t padding = 2;
-
-    d_CD4(double delta) : m_delta(delta) {}
-
-    template <class F> auto operator()(F f) const { 
-       return (-f(+2) + 8.0 * f(+1) - 8.0 * f(-1) + f(-2)) / m_delta;
-    }
-
-private:
-    double m_delta;
-
-};
 
 
 
@@ -89,21 +56,6 @@ template <class Span> void print(Span span) {
 }
 
 
-double fRand(double fMin, double fMax)
-{
-    double f = static_cast<double>(rand()) / RAND_MAX;
-    return fMin + f * (fMax - fMin);
-}
-
-template<class C>
-void assign_random(C& c){
-
-    for (auto& e : c){
-        e = fRand(-32.8, 4532.3245);
-    }
-
-
-}
 
 
 } // namespace jada

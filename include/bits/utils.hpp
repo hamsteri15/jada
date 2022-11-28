@@ -20,13 +20,13 @@ template <template <typename, typename...> class Trait, typename... Types>
 struct all_of<Trait, std::pair<Types...>> : std::conjunction<Trait<Types>...> {
 };
 
-#ifdef NDEBUG
-constexpr void runtime_assert([[maybe_unused]] bool        condition,
-                              [[maybe_unused]] const char* msg) {}
-#else
+#ifdef DEBUG
 constexpr void runtime_assert(bool condition, const char* msg) {
     if (!condition) throw std::runtime_error(msg);
 }
+#else
+constexpr void runtime_assert([[maybe_unused]] bool        condition,
+                              [[maybe_unused]] const char* msg) {}
 #endif
 
 /// @brief Converts all tuple elements to an array of elements of the same size

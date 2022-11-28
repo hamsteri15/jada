@@ -189,10 +189,12 @@ TEST_CASE("mdspan tests"){
         }
 
         SECTION("non-equal size span"){
+            
+            #ifdef DEBUG
             std::vector<double> f(10, 1.0);
 
             REQUIRE_THROWS(make_span(f, extents<2>{3,5}));
-
+            #endif
         }
 
     }
@@ -538,9 +540,6 @@ TEST_CASE("evaluate_boundary"){
     };
 
     CHECK(a == correct);
-    
-
-
 }
 
 
@@ -898,8 +897,9 @@ TEST_CASE("Test decomposition"){
             CHECK(offset(std::array<size_t, 1>{2}, coord_dims, global_grid_dims) == std::array<size_t, 1>{2});
             CHECK(offset(std::array<size_t, 1>{3}, coord_dims, global_grid_dims) == std::array<size_t, 1>{3});
 
+            #ifdef DEBUG
             REQUIRE_THROWS(offset(std::array<size_t, 1>{4}, coord_dims, global_grid_dims));
-
+            #endif
         }
         
     }
@@ -918,8 +918,9 @@ TEST_CASE("Test decomposition"){
             CHECK(local_dimensions(std::array<size_t, 3>{0,1,0}, coord_dims, global_grid_dims) == std::array<size_t, 3>{1,1,1});
             CHECK(local_dimensions(std::array<size_t, 3>{3,1,0}, coord_dims, global_grid_dims) == std::array<size_t, 3>{1,1,1});
 
+            #ifdef DEBUG
             REQUIRE_THROWS(local_dimensions(std::array<size_t, 3>{4,0,0}, coord_dims, global_grid_dims));
-
+            #endif
         }
         SECTION("Uneven splitting"){
             std::array<size_t, 3> global_grid_dims  = {4,5,4};
