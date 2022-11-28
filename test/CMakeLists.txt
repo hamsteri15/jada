@@ -22,13 +22,6 @@ else()
   find_package(TBB REQUIRED)
   target_link_libraries(SerialTest.bin PUBLIC TBB::tbb)
   
-  #find_package(OpenMP REQUIRED)
-  #target_link_libraries(SerialTest.bin PUBLIC OpenMP::OpenMP_CXX)
-
-
-  #NVCC
-  #target_compile_options(SerialTest.bin PUBLIC -x cu --extended-lambda --expt-relaxed-constexpr)
-  #target_link_libraries(SerialTest.bin PUBLIC tbb)
 endif()
 
 

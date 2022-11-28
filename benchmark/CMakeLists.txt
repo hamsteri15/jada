@@ -12,8 +12,6 @@ target_link_libraries(BenchmarkJada.bin PRIVATE test_main project_options projec
 
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  #target_compile_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
-  #target_link_options(SerialTest.bin PUBLIC -w -fast -Mnouniform -Mfprelaxed -stdpar=gpu)
   target_compile_options(BenchmarkJada.bin PUBLIC -stdpar=gpu)
   target_link_options(BenchmarkJada.bin PUBLIC -stdpar=gpu)
 else()
