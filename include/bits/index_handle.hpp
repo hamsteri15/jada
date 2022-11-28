@@ -18,6 +18,8 @@ namespace jada {
 template <class Span, class Idx>
 static constexpr auto idxhandle_md_to_md(Span in, Idx center) {
 
+    static_assert(rank(in) == rank(center), "Rank mismatch in idxhandle_md_to_md.");
+
     //TODO: make it so that md_idx can be a parameter pack also
     return [=](auto md_idx) {
         auto new_span = make_subspan(in, center);
@@ -38,6 +40,7 @@ static constexpr auto idxhandle_md_to_md(Span in, Idx center) {
 template <size_t Dir, class Span, class Idx>
 static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
 
+    static_assert(rank(in) == rank(center), "Rank mismatch in idxhandle_md_to_oned.");
     constexpr size_t N = rank(in);
 
     return [=](index_type oned_idx) {
@@ -47,5 +50,33 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
         return h(mod_idx);
     };
 }
+
+
+template <class Span, class Idx, class Dir>
+static constexpr auto idxhandle_boundary_md_to_oned(Span in, Idx center, Dir dir) {
+
+    static_assert(rank(in) == rank(center), "Rank mismatch in idxhandle_boundary_md_to_oned.");
+    static_assert(rank(in) == rank(dir), "Rank mismatch in idxhandle_boundary_md_to_oned.");
+
+    constexpr size_t N = rank(in);
+
+    return [=](index_type oned_idx) {
+
+        std::array<index_type, N> mod_idx{};
+
+        for (size_t i = 0; i < N; ++i){
+            if (dir[i] == 1){
+                mod_idx[i] = oned_idx;
+            }
+            if (dir[i] == -1){
+                mod_idx[i] = -oned_idx;
+            }
+        }        
+        const auto h = idxhandle_md_to_md(in, center);
+        return h(mod_idx);
+    };
+}
+
+
 
 } // namespace jada

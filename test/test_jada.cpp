@@ -482,95 +482,40 @@ TEST_CASE("Test index_handle"){
         CHECK(ss2(1) == 15);
         
     }
+        
+    SECTION("idxhandle_boundary_md_to_oned"){
+        std::vector<int> a = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 14, 15, 16
+        };
+        auto s = make_span(a, extents<2>{4,4});
 
+        std::array<index_type, 2> center = {2,2};
 
-}
+        auto ss = idxhandle_boundary_md_to_oned(s, center, std::array<index_type, 2>{0,1});
 
-TEST_CASE("Test BoundarySubspan"){
+        CHECK(ss(-1) == 10);
+        CHECK(ss(0) == 11);
+        CHECK(ss(1) == 12);
+        
+        auto ss2 = idxhandle_boundary_md_to_oned(s, center, std::array<index_type, 2>{0,-1});
+        
 
+        CHECK(ss2(-1) == 12);
+        CHECK(ss2(0) == 11);
+        CHECK(ss2(1) == 10);
+        
+        
 
-    std::vector<int> a = 
-    {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9,  10, 11, 12,
-        13, 14, 15, 16
-    };
-    auto s = make_span(a, extents<2>{4,4});
-
-    std::array<size_type, 2> center = {1,1};
-
-    auto ss = make_subspan(s, center);
-
-    SECTION("direction = {0,1}"){
-        auto sss = make_boundary_subspan(ss, std::array<index_type, 2>{0, 1});
-
-        CHECK(sss(-1) == 5);
-        CHECK(sss(0) == 6);
-        CHECK(sss(1) == 7);
 
     }
 
-    SECTION("direction = {0,-1}"){
-        auto sss = make_boundary_subspan(ss, std::array<index_type, 2>{0, -1});
-
-        CHECK(sss(-1) == 7);
-        CHECK(sss(0) == 6);
-        CHECK(sss(1) == 5);
-
-    }
 
 }
 
-static constexpr void
-good_function(auto span, auto dir, auto op){
-
-    auto new_op = [=](auto idx){
-
-        auto ss = make_subspan(span, tuple_to_array(idx));
-        auto sss = make_boundary_subspan(ss, dir);
-        op(sss);
-    };
-
-    for_each_boundary_index(dir, dimensions(span), new_op);
-
-}
-
-
-TEST_CASE("boundary_condition"){
-
-
-    std::vector<int> a = 
-    {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9,  10, 11, 12,
-        13, 14, 15, 16
-    };
-    auto s = make_span(a, extents<2>{4,4});
-    auto internal = make_subspan(s, std::array<index_type, 2>{1,1}, std::array<index_type, 2>{3,3});
-
-    auto boundary_op = [](auto f){
-        f(1) = f(0);
-    };
-
-    std::array<index_type, 2> dir = {1,0};
-    
-    good_function(internal, dir, boundary_op);
-
-
-    std::vector<int> correct = 
-    {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9,  10, 11, 12,
-        13, 10, 11, 16
-    };
-
-    CHECK(a == correct);
-
-
-}
 
 
 
