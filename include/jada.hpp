@@ -9,4 +9,5 @@
 #include "bits/for_each_index.hpp"
 #include "bits/for_each_boundary_index.hpp"
 #include "bits/evaluate_tiled.hpp"
+#include "bits/evaluate_boundary.hpp"
 #include "bits/rank.hpp"

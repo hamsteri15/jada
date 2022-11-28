@@ -443,15 +443,6 @@ TEST_CASE("Test index_handle"){
         CHECK(ss(std::make_tuple(-1,-1)) == 1);
         CHECK(ss(std::make_tuple(1,0)) == 10);
         CHECK(ss(std::array<index_type, 2>{1,0}) == 10);
-        //CHECK(ss(1,0) == 10);
-        
-        /*
-        auto ss2 = idxhandle_md_to_oned<0>(s, center);
-
-        CHECK(ss2(-1) == 7);
-        CHECK(ss2(0) == 11);
-        CHECK(ss2(1) == 15);
-        */
         
     }
 
@@ -516,7 +507,7 @@ TEST_CASE("Test index_handle"){
 
 }
 
-TEST_CASE("boundary_condition"){
+TEST_CASE("evaluate_boundary"){
 
     
     std::vector<int> a = 
@@ -531,20 +522,13 @@ TEST_CASE("boundary_condition"){
     auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
 
     auto boundary_op = [](auto f){
-        //f(1) = f(0);
         f(1) = f(0);
     };
 
     std::array<index_type, 2> dir = {1,0};
-    auto kernel = [=](auto idx){
-        auto h = idxhandle_boundary_md_to_oned(internal, idx, dir);
-        boundary_op(h);
-    };
-
-    for_each_boundary_index(
-        dir, dimensions(internal), kernel
-    );
     
+    evaluate_boundary(internal, boundary_op, dir);
+
     std::vector<int> correct = 
     {
         1,  2,  3,  4,

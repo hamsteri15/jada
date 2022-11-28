@@ -70,7 +70,6 @@ idxhandle_boundary_md_to_oned(Span in, Idx center, Dir dir) {
 
     return [=](index_type oned_idx) -> RT {
         std::array<index_type, N> mod_idx{};
-
         for (size_t i = 0; i < N; ++i) { mod_idx[i] = oned_idx * dir[i]; }
         auto new_span = make_subspan(in, center);
         return new_span(mod_idx);

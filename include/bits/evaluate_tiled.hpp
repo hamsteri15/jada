@@ -29,6 +29,8 @@ void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
     
 }
 
+
+
 /// @brief Evaluates the input 'op' on all possible indices based on the padding requirement of the
 /// input operation. If the padding requirement of the operation is 2 and the spans are
 /// one-dimensional, the operation is evaluated at indices [2, size(in) - 2]. The operations are
