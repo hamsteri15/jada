@@ -4,23 +4,10 @@
 #include "mdspan.hpp"
 #include "subspan.hpp"
 #include "for_each_index.hpp"
-
+#include "index_handle.hpp"
 
 namespace jada {
 
-template<size_t Dir>
-static constexpr auto make_good(auto in, auto idx){
-
-    return [=](index_type i){
-
-        auto new_span = make_subspan(in, tuple_to_array(idx));
-        std::array<index_type, rank(new_span)> mod_idx{};
-        mod_idx[Dir] = i;
-        return new_span(mod_idx);
-    };
-    //return ret;
-
-} 
 
 /// @brief Evaluates the input tiled stencil operation 'op' on all input 'indices' of the input span
 /// 'in' and stores the result to the output span 'out'.
@@ -34,8 +21,7 @@ void evaluate(Span1 in, Span2 out, Op op, Indices indices) {
 
 
     auto new_op = [=] (auto idx){
-        //auto stencil = make_tiled_subspan<Dir>(in, idx);
-        const auto stencil = make_good<Dir>(in, idx);
+        const auto stencil = idxhandle_md_to_oned<Dir>(in, idx);
         out(tuple_to_array(idx)) = op(stencil);
     };
 

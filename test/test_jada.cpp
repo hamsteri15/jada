@@ -419,8 +419,12 @@ TEST_CASE("subspan tests"){
 
     }
     
-    SECTION("rank reduction subspan"){
 
+}
+
+TEST_CASE("Test index_handle"){
+
+    SECTION("idxhandle_md_to_md"){
         std::vector<int> a = 
         {
             1,  2,  3,  4,
@@ -430,53 +434,55 @@ TEST_CASE("subspan tests"){
         };
         auto s = make_span(a, extents<2>{4,4});
 
-        auto ss = stdex::submdspan(
-            s,
-            0, //j = 0
-            std::pair(0, 3) // i = 0 ... 3
-        );
+        std::array<size_t, 2> center = {1,1};
 
-        CHECK(ss(0) == 1);
-        CHECK(ss(1) == 2);
-        CHECK(ss(2) == 3);
 
+        auto ss = idxhandle_md_to_md(s, center);
+
+        CHECK(ss(std::make_tuple(-1,0)) == 2);
+        CHECK(ss(std::make_tuple(-1,-1)) == 1);
+        CHECK(ss(std::make_tuple(1,0)) == 10);
+        CHECK(ss(std::array<index_type, 2>{1,0}) == 10);
+        //CHECK(ss(1,0) == 10);
+        
+        /*
+        auto ss2 = idxhandle_md_to_oned<0>(s, center);
+
+        CHECK(ss2(-1) == 7);
+        CHECK(ss2(0) == 11);
+        CHECK(ss2(1) == 15);
+        */
+        
     }
 
+    SECTION("idxhandle_md_to_oned"){
+        std::vector<int> a = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 14, 15, 16
+        };
+        auto s = make_span(a, extents<2>{4,4});
+
+        std::array<size_t, 2> center = {2,2};
 
 
-    SECTION("make_tiled_subspan"){
+        auto ss = idxhandle_md_to_oned<1>(s, center);
+
+        CHECK(ss(-1) == 10);
+        CHECK(ss(0) == 11);
+        CHECK(ss(1) == 12);
         
         
+        auto ss2 = idxhandle_md_to_oned<0>(s, center);
+
+        CHECK(ss2(-1) == 7);
+        CHECK(ss2(0) == 11);
+        CHECK(ss2(1) == 15);
         
-        SECTION("with only center index given"){
-            
-            std::vector<int> a = 
-            {
-                1,  2,  3,  4,
-                5,  6,  7,  8,
-                9,  10, 11, 12,
-                13, 14, 15, 16
-            };
-            auto s = make_span(a, extents<2>{4,4});
-
-            std::array<size_t, 2> center = {2,2};
-
-
-            auto ss = make_good<1>(s, center);
-
-            CHECK(ss(-1) == 10);
-            CHECK(ss(0) == 11);
-            CHECK(ss(1) == 12);
-            
-            
-            auto ss2 = make_good<0>(s, center);
-
-            CHECK(ss2(-1) == 7);
-            CHECK(ss2(0) == 11);
-            CHECK(ss2(1) == 15);
-            
-        }
     }
+
 
 }
 

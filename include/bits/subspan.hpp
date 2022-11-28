@@ -9,7 +9,7 @@ namespace jada {
 namespace detail {
 
 // nvcc doesnt like template lamdas...
-struct TupleMaker2 {
+struct TupleMaker {
 
     template <class Span, class B, class E, size_t... Is>
     static constexpr auto
@@ -37,7 +37,7 @@ static constexpr auto make_subspan(Span span, B begin, E end) {
     static_assert(rank(begin) == rank(end),
                   "Dimension mismatch in make_subspan");
 
-    auto tpl = detail::TupleMaker2::make(
+    auto tpl = detail::TupleMaker::make(
         span, begin, end, std::make_index_sequence<rank(span)>{});
     auto callable = [](auto... params) { return stdex::submdspan(params...); };
 
