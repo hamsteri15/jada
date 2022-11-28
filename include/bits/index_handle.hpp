@@ -65,12 +65,7 @@ static constexpr auto idxhandle_boundary_md_to_oned(Span in, Idx center, Dir dir
         std::array<index_type, N> mod_idx{};
 
         for (size_t i = 0; i < N; ++i){
-            if (dir[i] == 1){
-                mod_idx[i] = oned_idx;
-            }
-            if (dir[i] == -1){
-                mod_idx[i] = -oned_idx;
-            }
+            mod_idx[i] = oned_idx * dir[i];
         }        
         const auto h = idxhandle_md_to_md(in, center);
         return h(mod_idx);
