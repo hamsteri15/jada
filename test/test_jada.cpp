@@ -497,6 +497,7 @@ TEST_CASE("Test index_handle"){
 
         auto ss = idxhandle_boundary_md_to_oned(s, center, std::array<index_type, 2>{0,1});
 
+        CHECK(ss(-2) == 9);
         CHECK(ss(-1) == 10);
         CHECK(ss(0) == 11);
         CHECK(ss(1) == 12);
@@ -507,15 +508,56 @@ TEST_CASE("Test index_handle"){
         CHECK(ss2(-1) == 12);
         CHECK(ss2(0) == 11);
         CHECK(ss2(1) == 10);
+        ss2(0) = 43;
+        CHECK(ss2(0) == 43);
         
-        
-
-
     }
 
 
 }
 
+TEST_CASE("boundary_condition"){
+
+    
+    std::vector<int> a = 
+    {
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 14, 15, 16
+    };
+
+    auto s = make_span(a, extents<2>{4,4});
+    auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
+
+    auto boundary_op = [](auto f){
+        //f(1) = f(0);
+        f(1) = f(0);
+    };
+
+    std::array<index_type, 2> dir = {1,0};
+    auto kernel = [=](auto idx){
+        auto h = idxhandle_boundary_md_to_oned(internal, idx, dir);
+        boundary_op(h);
+    };
+
+    for_each_boundary_index(
+        dir, dimensions(internal), kernel
+    );
+    
+    std::vector<int> correct = 
+    {
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 10, 11, 16
+    };
+
+    CHECK(a == correct);
+    
+
+
+}
 
 
 
