@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 
 project(jada LANGUAGES CXX)
 
-message("COMPILER ID " ${CMAKE_CXX_COMPILER_ID})
-
-
-message("BINARY DIR" ${CMAKE_BINARY_DIR})
-
 
 
 # Link this 'library' to set the c++ standard / compile-time options requested
