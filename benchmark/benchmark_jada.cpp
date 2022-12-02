@@ -1,5 +1,5 @@
+#define CATCH_CONFIG_MAIN // No idea why this has to be redefined here...
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#define CATCH_CONFIG_MAIN // This tells the catch header to generate a main
 #include "catch.hpp"
 
 

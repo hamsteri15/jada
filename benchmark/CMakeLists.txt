@@ -1,34 +1,9 @@
 
-# Build catch main
-add_library(benchmark_main STATIC benchmark_main.cpp)
-
-
-#Unit tests#
+#Benchmarks
 add_executable(BenchmarkJada.bin benchmark_jada.cpp)
 
 find_package(OpenMP)
-
-target_link_libraries(BenchmarkJada.bin PRIVATE test_main project_options project_warnings OpenMP::OpenMP_CXX)
-
-
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  target_compile_options(BenchmarkJada.bin PUBLIC -stdpar=gpu)
-  target_link_options(BenchmarkJada.bin PUBLIC -stdpar=gpu)
-else()
-  
-#gcc
-  #Configure tbb
-  find_package(TBB REQUIRED)
-  target_link_libraries(BenchmarkJada.bin PUBLIC TBB::tbb)
-  
-  #find_package(OpenMP REQUIRED)
-  #target_link_libraries(SerialTest.bin PUBLIC OpenMP::OpenMP_CXX)
-
-
-  #NVCC
-  #target_compile_options(SerialTest.bin PUBLIC -x cu --extended-lambda --expt-relaxed-constexpr)
-  #target_link_libraries(SerialTest.bin PUBLIC tbb)
-endif()
+target_link_libraries(BenchmarkJada.bin PRIVATE project_options project_warnings OpenMP::OpenMP_CXX)
 
 
 #target_compile_options(SerialTest.bin PRIVATE -DDEBUG)

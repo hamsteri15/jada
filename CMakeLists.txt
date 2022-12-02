@@ -12,9 +12,16 @@ message("BINARY DIR" ${CMAKE_BINARY_DIR})
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
 
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
-  target_compile_options(project_options INTERFACE -std=c++20) #Required for range-v3 to compile with nvc++
-else()
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "PGI")
+  set(flags -std=c++20 --gcc-toolchain=g++ -stdpar=gpu)
+  target_compile_options(project_options INTERFACE ${flags})
+  #This is annoying, cmake wants the flags defined above to be also specified to
+  #link flags when nvc++ is used... probably some bug in cmake
+  target_link_options(project_options INTERFACE ${flags})
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES ".*Clang")
+  
+  find_package(TBB REQUIRED)
+  target_link_libraries(project_options INTERFACE TBB::tbb)
   target_compile_options(project_options INTERFACE -std=c++20)
 endif()
 
@@ -32,18 +39,13 @@ set_project_warnings(project_warnings)
 include(cmake/StaticAnalyzers.cmake)
 
 
-
-
-
 #Configure MPI
-option(USE_MPI "Enable building with mpi" No)
-
-
-if (USE_MPI)
-find_package(MPI REQUIRED)
-message("STATUS MPI FOUND: ${MPI_CXX_FOUND}")
-add_compile_definitions(USE_MPI)
-endif()
+#option(USE_MPI "Enable building with mpi" No)
+#if (USE_MPI)
+#find_package(MPI REQUIRED)
+#message("STATUS MPI FOUND: ${MPI_CXX_FOUND}")
+#add_compile_definitions(USE_MPI)
+#endif()
 
 
 

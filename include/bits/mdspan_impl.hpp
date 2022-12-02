@@ -1,3 +1,4 @@
+#pragma GCC system_header
 #ifndef _MDSPAN_SINGLE_HEADER_INCLUDE_GUARD_
 #define _MDSPAN_SINGLE_HEADER_INCLUDE_GUARD_
 #  include <version>
