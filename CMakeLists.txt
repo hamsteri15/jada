@@ -63,7 +63,7 @@ if(BUILD_TESTS)
 endif()
 
 
-option(BUILD_BENCHMARKS "Build benchmarks" ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 
 if(BUILD_BENCHMARKS)
   enable_testing()
