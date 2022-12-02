@@ -21,11 +21,19 @@ jobs:
     - uses: actions/checkout@v3
 
     #GCC Set-up
-    - name: Set up GCC
-      uses: egor-tensin/setup-gcc@v1
+    #- name: Set up GCC
+    #  uses: egor-tensin/setup-gcc@v1
+    #  with:
+    #    version: 11
+    #    platform: x64
+
+    #Clang Set-up
+    - name: Set up Clang
+      uses: egor-tensin/setup-clang@v1
       with:
-        version: 12
+        version: latest
         platform: x64
+
 
     #Tbb set-up
     - name: Set up TBB
