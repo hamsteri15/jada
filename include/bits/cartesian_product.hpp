@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tl_ranges/cartesian_product_impl.hpp"
+#include "cartesian_product_impl.hpp"
 
 namespace jada {
 
