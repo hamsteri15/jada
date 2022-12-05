@@ -78,8 +78,8 @@ TEST_CASE("md_indices"){
         auto t = md_indices(std::array{0,0}, std::array{2,2});
 
         
-        std::vector<int> is;
-        std::vector<int> js;
+        std::vector<index_type> is;
+        std::vector<index_type> js;
 
         
         for (auto tpl : t){
@@ -88,8 +88,8 @@ TEST_CASE("md_indices"){
             js.push_back(std::get<1>(tpl));            
         }
               
-        CHECK(is == std::vector<int>{0,0,1,1});
-        CHECK(js == std::vector<int>{0,1,0,1});
+        CHECK(is == std::vector<index_type>{0,0,1,1});
+        CHECK(js == std::vector<index_type>{0,1,0,1});
         
     }
     
@@ -101,7 +101,7 @@ TEST_CASE("md_indices"){
         const auto t = md_indices(std::array{0,0}, std::array{2,2});
 
         
-        std::vector<int> v(4);
+        std::vector<index_type> v(4);
 
         auto s = make_span(v, std::array<size_t,1>{4});
 
@@ -117,7 +117,7 @@ TEST_CASE("md_indices"){
             }
         );
 
-        CHECK(v == std::vector<int>{0,0,0,1});
+        CHECK(v == std::vector<index_type>{0,0,0,1});
 
     }
     
@@ -202,21 +202,21 @@ TEST_CASE("mdspan tests"){
     SECTION("all_indices"){
 
         
-        std::vector<int> f(10);
+        std::vector<index_type> f(10);
 
         auto span = make_span(f, extents<2>{2,5});
 
 
-        std::vector<int> is;
-        std::vector<int> js;
+        std::vector<index_type> is;
+        std::vector<index_type> js;
 
         for (auto [i, j] : all_indices(span)){
             is.push_back(i);
             js.push_back(j);
         }
 
-        CHECK(is == std::vector<int>{0,0,0,0,0,1,1,1,1,1});
-        CHECK(js == std::vector<int>{0,1,2,3,4,0,1,2,3,4});
+        CHECK(is == std::vector<index_type>{0,0,0,0,0,1,1,1,1,1});
+        CHECK(js == std::vector<index_type>{0,1,2,3,4,0,1,2,3,4});
     }
 
 

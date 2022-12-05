@@ -13,9 +13,7 @@ namespace jada {
 /// @return one-dimensional view of indices [begin, end)
 ///
 template <class T> static constexpr auto indices(T&& begin, T&& end) {
-    // TODO: No idea why the int conversion is required here. If it is removed,
-    // everything just breaks.
-    return std::ranges::views::iota(int(begin), int(end));
+    return std::ranges::views::iota(begin, end);
 }
 
 } // namespace jada
