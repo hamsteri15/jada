@@ -1,4 +1,4 @@
-//This file is directly copied from https://github.com/TartanLlama/ranges which provides support for the c++23 ranges
+//This file is directly copied from https://github.com/TartanLlama/ranges which provides support for the c++23 ranges for c++20
 
 #ifndef TL_RANGES_CARTESIAN_PRODUCT_HPP
 #define TL_RANGES_CARTESIAN_PRODUCT_HPP
@@ -8,6 +8,8 @@
 #include <type_traits>
 #include <tuple>
 #include <utility>
+#include <functional>
+#include <algorithm>
 
 //This chunk is from tl_ranges: meta.hpp file
 namespace tl {
