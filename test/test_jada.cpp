@@ -509,35 +509,70 @@ TEST_CASE("Test index_handle"){
 
 TEST_CASE("evaluate_boundary"){
 
+    SECTION("Assign to ghost"){
+        std::vector<int> a = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 14, 15, 16
+        };
+
+        auto s = make_span(a, extents<2>{4,4});
+        auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
+
+        auto boundary_op = [](auto f){
+            f(1) = f(0);
+        };
+
+        std::array<index_type, 2> dir = {1,0};
+
+        evaluate_boundary(internal, boundary_op, dir);
+
+        std::vector<int> correct = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 10, 11, 16
+        };
+
+        CHECK(a == correct);
+
+    }
     
-    std::vector<int> a = 
-    {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9,  10, 11, 12,
-        13, 14, 15, 16
-    };
+    SECTION("Assign to internal"){
+        std::vector<int> a = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 14, 15, 16
+        };
 
-    auto s = make_span(a, extents<2>{4,4});
-    auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
+        auto s = make_span(a, extents<2>{4,4});
+        auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
 
-    auto boundary_op = [](auto f){
-        f(1) = f(0);
-    };
+        auto boundary_op = [](auto f){
+            f(0) = f(1);
+        };
 
-    std::array<index_type, 2> dir = {1,0};
+        std::array<index_type, 2> dir = {1,0};
+
+        evaluate_boundary(internal, boundary_op, dir);
+
+        std::vector<int> correct = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  14, 15, 12,
+            13, 14, 15, 16
+        };
+
+        CHECK(a == correct);
+
+    }
     
-    evaluate_boundary(internal, boundary_op, dir);
-
-    std::vector<int> correct = 
-    {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9,  10, 11, 12,
-        13, 10, 11, 16
-    };
-
-    CHECK(a == correct);
 }
 
 
