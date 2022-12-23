@@ -276,7 +276,7 @@ TEST_CASE("for_each_index"){
 
 }
 
-TEST_CASE("for_each_boundary_index"){
+TEST_CASE("boundary_indices"){
         
         size_type ni = 3;
         size_type nj = 4;
@@ -293,7 +293,7 @@ TEST_CASE("for_each_boundary_index"){
 
             std::array<index_type, 2> dir = {1,0};
 
-            for_each_boundary_index(dir, dimensions(aa), op);
+            for_each_index(boundary_indices(dimensions(aa), dir), op);
 
             std::vector<int> correct = 
             {
@@ -317,7 +317,7 @@ TEST_CASE("for_each_boundary_index"){
 
             std::array<index_type, 2> dir = {-1,0};
 
-            for_each_boundary_index(dir, dimensions(aa), op);
+            for_each_index(boundary_indices(dimensions(aa), dir), op);
 
             std::vector<int> correct = 
             {
@@ -341,7 +341,7 @@ TEST_CASE("for_each_boundary_index"){
 
             std::array<index_type, 2> dir = {1,1};
 
-            for_each_boundary_index(dir, dimensions(aa), op);
+            for_each_index(boundary_indices(dimensions(aa), dir), op);
 
             std::vector<int> correct = 
             {
@@ -366,7 +366,7 @@ TEST_CASE("for_each_boundary_index"){
 
             std::array<index_type, 2> dir = {0,-1};
 
-            for_each_boundary_index(dir, dimensions(aa), op);
+            for_each_index(boundary_indices(dimensions(aa), dir), op);
 
             std::vector<int> correct = 
             {
