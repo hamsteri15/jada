@@ -63,7 +63,7 @@ if(BUILD_TESTS)
 endif()
 
 
-option(BUILD_BENCHMARKS "Build benchmarks" ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 
 if(BUILD_BENCHMARKS)
   enable_testing()
@@ -71,4 +71,13 @@ if(BUILD_BENCHMARKS)
     "Building benchmarks."
   )
   add_subdirectory(benchmark)
+endif()
+
+option(BUILD_EXAMPLES "Build examples" OFF)
+
+if(BUILD_EXAMPLES)
+  message(
+    "Building examples."
+  )
+  add_subdirectory(examples)
 endif()
