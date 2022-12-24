@@ -35,14 +35,11 @@ static constexpr void for_each_index(B begin, E end, Op op) {
 template<class Span, class Op>
 static constexpr void assign_for_each_index(Span s, Op op) {
 
-    auto end = dimensions(s);
-    decltype(end) begin{};
-
     auto new_op = [=](auto idx){
         s(tuple_to_array(idx)) = op(idx);
     };
 
-    for_each_index(md_indices(begin, end), new_op);
+    for_each_index(all_indices(s), new_op);
 }
 
 

@@ -505,6 +505,7 @@ TEST_CASE("Test index_handle"){
     }
 
 
+
 }
 
 TEST_CASE("evaluate_boundary"){
@@ -527,7 +528,7 @@ TEST_CASE("evaluate_boundary"){
 
         std::array<index_type, 2> dir = {1,0};
 
-        evaluate_boundary(internal, boundary_op, dir);
+        evaluate_boundary_condition(internal, boundary_op, dir);
 
         std::vector<int> correct = 
         {
@@ -559,7 +560,7 @@ TEST_CASE("evaluate_boundary"){
 
         std::array<index_type, 2> dir = {1,0};
 
-        evaluate_boundary(internal, boundary_op, dir);
+        evaluate_boundary_condition(internal, boundary_op, dir);
 
         std::vector<int> correct = 
         {
@@ -567,6 +568,40 @@ TEST_CASE("evaluate_boundary"){
             5,  6,  7,  8,
             9,  14, 15, 12,
             13, 14, 15, 16
+        };
+
+        CHECK(a == correct);
+
+    }
+
+    SECTION("evaluate_spatial_boundary_condition"){
+        std::vector<int> a = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 14, 15, 16
+        };
+
+        auto s = make_span(a, extents<2>{4,4});
+        auto internal = make_subspan(s, std::array<index_type,2>{1,1}, std::array<index_type, 2>{3,3});
+
+        auto boundary_op = [](auto f, auto idx){
+            auto j = std::get<0>(idx);
+            auto i = std::get<1>(idx);
+            f(1) = i;
+        };
+
+        std::array<index_type, 2> dir = {1,0};
+
+        evaluate_spatial_boundary_condition(internal, boundary_op, dir);
+
+        std::vector<int> correct = 
+        {
+            1,  2,  3,  4,
+            5,  6,  7,  8,
+            9,  10, 11, 12,
+            13, 0, 1, 16
         };
 
         CHECK(a == correct);
