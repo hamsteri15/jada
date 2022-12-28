@@ -126,30 +126,7 @@ auto dirichlet_boundary_condition(Grid grid, auto u_wall) {
     };
 }
 
-auto boundary_x0(Grid grid) {
-    (void)grid;
-    auto u_wall = [](auto coord) {
-        (void)coord;
-        return double(0);
-    };
-    return dirichlet_boundary_condition(grid, u_wall);
-}
 
-auto boundary_x1(Grid grid) { return boundary_x0(grid); }
-
-auto boundary_y0(Grid grid) { return boundary_x0(grid); }
-auto boundary_y1(Grid grid) {
-
-    auto u_wall = [](auto coord) {
-        auto x = std::get<Dir::x>(coord);
-        if (x < double(2.0 / 3.0)) {
-            return 75.0 * x;
-        } else {
-            return 150.0 * (1.0 - x);
-        }
-    };
-    return dirichlet_boundary_condition(grid, u_wall);
-}
 template <class Span> void print(Span span) {
 
     if constexpr (rank(span) == 1) {
@@ -183,10 +160,27 @@ auto get_direction(Dir dir) {
 
 template <Dir dir> auto get_boundary_conditions(Grid grid) {
 
+    auto u_wall_zero = [](auto coord){(void) coord; return double(0);};
+
+    auto u_wall_profile = [](auto coord){
+        auto x = std::get<Dir::x>(coord);
+        if (x < double(2.0 / 3.0)) {
+            return 75.0 * x;
+        } else {
+            return 150.0 * (1.0 - x);
+        }
+    };
+
     if constexpr (dir == Dir::x) {
-        return std::make_pair(boundary_x0(grid), boundary_x1(grid));
+        return std::make_pair(
+            dirichlet_boundary_condition(grid, u_wall_zero),
+            dirichlet_boundary_condition(grid, u_wall_zero)
+        );
     } else {
-        return std::make_pair(boundary_y0(grid), boundary_y1(grid));
+        return std::make_pair(
+            dirichlet_boundary_condition(grid, u_wall_zero),
+            dirichlet_boundary_condition(grid, u_wall_profile)
+        );
     }
 }
 
@@ -318,8 +312,8 @@ double compute_time_step(Grid grid, double kappa) {
 
 int main() {
 
-    size_t nx      = 50;
-    size_t ny      = 50;
+    size_t nx      = 512;
+    size_t ny      = 512;
     size_t padding = 1;
     double Lx      = 1.0;
     double Ly      = 1.0;
@@ -344,6 +338,7 @@ int main() {
         //newU = U + dU;
         std::transform
         (
+            std::execution::par_unseq,
             std::begin(U), std::end(U),
             std::begin(dU),
             std::begin(newU),
