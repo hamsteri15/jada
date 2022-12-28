@@ -215,7 +215,11 @@ std::vector<double> operator+(std::vector<double> lhs,
                               std::vector<double> rhs) {
 
     std::vector<double> ret(lhs.size(), 0);
-    for (size_t i = 0; i < ret.size(); ++i) { ret[i] = lhs[i] + rhs[i]; }
+    std::transform(
+        std::execution::par_unseq,
+        std::begin(lhs), std::end(lhs), std::begin(rhs), std::begin(ret),
+        std::plus{}
+    );
     return ret;
 }
 
@@ -223,14 +227,23 @@ std::vector<double> operator-(std::vector<double> lhs,
                               std::vector<double> rhs) {
 
     std::vector<double> ret(lhs.size(), 0);
-    for (size_t i = 0; i < ret.size(); ++i) { ret[i] = lhs[i] - rhs[i]; }
+    std::transform(
+        std::execution::par_unseq,
+        std::begin(lhs), std::end(lhs), std::begin(rhs), std::begin(ret),
+        std::minus{}
+    );
     return ret;
 }
 
 std::vector<double> operator*(double lhs, std::vector<double> rhs) {
 
     std::vector<double> ret(rhs.size(), 0);
-    for (size_t i = 0; i < ret.size(); ++i) { ret[i] = lhs * rhs[i]; }
+    std::transform(
+        std::execution::par_unseq,
+        std::begin(rhs), std::end(rhs), std::begin(ret),
+        [=](auto d){return lhs * d;}
+    );
+    //for (size_t i = 0; i < ret.size(); ++i) { ret[i] = lhs * rhs[i]; }
     return ret;
 }
 
@@ -293,9 +306,15 @@ auto mag(const std::vector<double>& v, Grid grid) {
     evaluate_spatial_boundary_condition(
         span, boundary_zero, std::array<index_type, 2>{1, 0});
 
-    auto l =
-        std::inner_product(copy.begin(), copy.end(), copy.begin(), double(0));
-
+    auto l = 
+        std::transform_reduce(
+            std::execution::par_unseq,
+            copy.begin(),
+            copy.end(),
+            double(0),
+            std::plus<double>{},
+            [](auto d){return d*d;}
+        );
     return std::sqrt(l);
 
 }
@@ -325,8 +344,8 @@ double compute_time_step(Grid grid, double kappa) {
 
 int main() {
 
-    size_t nx      = 150;
-    size_t ny      = 150;
+    size_t nx      = 250;
+    size_t ny      = 250;
     size_t padding = 1;
     double Lx      = 1.0;
     double Ly      = 1.0;
