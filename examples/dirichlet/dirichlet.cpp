@@ -325,8 +325,8 @@ double compute_time_step(Grid grid, double kappa) {
 
 int main() {
 
-    size_t nx      = 12;
-    size_t ny      = 12;
+    size_t nx      = 150;
+    size_t ny      = 150;
     size_t padding = 1;
     double Lx      = 1.0;
     double Ly      = 1.0;
