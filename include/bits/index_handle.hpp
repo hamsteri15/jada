@@ -21,9 +21,9 @@ static constexpr auto idxhandle_md_to_md(Span in, Idx center) {
     static_assert(rank(in) == rank(center),
                   "Rank mismatch in idxhandle_md_to_md.");
 
+    const auto new_span = make_subspan(in, center);
     // TODO: make it so that md_idx can be a parameter pack also
     return [=](auto md_idx) {
-        auto new_span = make_subspan(in, center);
         return new_span(tuple_to_array(md_idx));
     };
 }
@@ -45,10 +45,11 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
                   "Rank mismatch in idxhandle_md_to_oned.");
     constexpr size_t N = rank(in);
 
+    const auto h = idxhandle_md_to_md(in, center);
+
     return [=](index_type oned_idx) {
         std::array<index_type, N> mod_idx{};
         mod_idx[Dir] = oned_idx;
-        const auto h = idxhandle_md_to_md(in, center);
         return h(mod_idx);
     };
 }
@@ -68,10 +69,11 @@ idxhandle_boundary_md_to_oned(Span in, Idx center, Dir dir) {
     // used in boundary conditions
     using RT = decltype(in(tuple_to_array(center)));
 
+    const auto new_span = make_subspan(in, center);
+    
     return [=](index_type oned_idx) -> RT {
         std::array<index_type, N> mod_idx{};
         for (size_t i = 0; i < N; ++i) { mod_idx[i] = oned_idx * dir[i]; }
-        auto new_span = make_subspan(in, center);
         return new_span(mod_idx);
     };
 }
