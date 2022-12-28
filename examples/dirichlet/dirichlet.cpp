@@ -9,6 +9,8 @@ using namespace jada;
 
 enum Dir { x = 1, y = 0 };
 
+
+
 struct Grid {
 
     Grid(double Lx,
@@ -296,7 +298,6 @@ auto mag(const std::vector<double>& v, Grid grid) {
 
     return std::sqrt(l);
 
-    return double(1);
 }
 
 auto l2_norm(const std::vector<double>& v1,
