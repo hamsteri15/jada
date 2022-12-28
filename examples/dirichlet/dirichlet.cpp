@@ -9,8 +9,6 @@ using namespace jada;
 
 enum Dir { x = 1, y = 0 };
 
-
-
 struct Grid {
 
     Grid(double Lx,
@@ -173,86 +171,61 @@ template <class Span> void print(Span span) {
     }
 }
 
-auto D2_dx(std::vector<double> f, Grid grid) {
+auto get_direction(Dir dir) {
 
-    std::vector<double> df(f.size());
+    std::array<index_type, 2> pos{};
+    std::array<index_type, 2> neg{};
 
-    auto bc_0 = boundary_x0(grid);
-    auto bc_1 = boundary_x1(grid);
-
-    auto i_span = internal_span(f, grid);
-    auto o_span = internal_span(df, grid);
-
-    evaluate_spatial_boundary_condition(
-        i_span, bc_0, std::array<index_type, 2>{0, -1});
-    evaluate_spatial_boundary_condition(
-        i_span, bc_1, std::array<index_type, 2>{0, 1});
-    evaluate<size_t(Dir::x)>(
-        i_span, o_span, CD2(grid.delta(Dir::x)), all_indices(i_span));
-
-    return df;
+    pos[dir] = 1;
+    neg[dir] = -1;
+    return std::make_pair(neg, pos);
 }
 
-auto D2_dy(std::vector<double> f, Grid grid) {
+template <Dir dir> auto get_boundary_conditions(Grid grid) {
 
-    std::vector<double> df(f.size());
-
-    auto bc_0   = boundary_y0(grid);
-    auto bc_1   = boundary_y1(grid);
-    auto i_span = internal_span(f, grid);
-    auto o_span = internal_span(df, grid);
-    evaluate_spatial_boundary_condition(
-        i_span, bc_0, std::array<index_type, 2>{-1, 0});
-    evaluate_spatial_boundary_condition(
-        i_span, bc_1, std::array<index_type, 2>{1, 0});
-
-    evaluate<size_t(Dir::y)>(
-        i_span, o_span, CD2(grid.delta(Dir::y)), all_indices(i_span));
-    return df;
+    if constexpr (dir == Dir::x) {
+        return std::make_pair(boundary_x0(grid), boundary_x1(grid));
+    } else {
+        return std::make_pair(boundary_y0(grid), boundary_y1(grid));
+    }
 }
 
-std::vector<double> operator+(std::vector<double> lhs,
-                              std::vector<double> rhs) {
+template <Dir dir> void D2_di(auto i_span, auto o_span, Grid grid) {
 
-    std::vector<double> ret(lhs.size(), 0);
-    std::transform(
-        std::execution::par_unseq,
-        std::begin(lhs), std::end(lhs), std::begin(rhs), std::begin(ret),
-        std::plus{}
-    );
-    return ret;
+    auto [neg, pos]   = get_direction(dir);
+    auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
+
+    evaluate_spatial_boundary_condition(i_span, bc_0, neg);
+    evaluate_spatial_boundary_condition(i_span, bc_1, pos);
+    evaluate<size_t(dir)>(
+        i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
 }
 
-std::vector<double> operator-(std::vector<double> lhs,
-                              std::vector<double> rhs) {
+void compute_increment(std::vector<double>& f,
+            std::vector<double>& ddx,
+            std::vector<double>& ddy,
+            std::vector<double>& df,
+            Grid                 grid,
+            double               kappa,
+            double               dt) {
 
-    std::vector<double> ret(lhs.size(), 0);
-    std::transform(
-        std::execution::par_unseq,
-        std::begin(lhs), std::end(lhs), std::begin(rhs), std::begin(ret),
-        std::minus{}
-    );
-    return ret;
-}
+    D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid);
 
-std::vector<double> operator*(double lhs, std::vector<double> rhs) {
+    D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid);
 
-    std::vector<double> ret(rhs.size(), 0);
-    std::transform(
-        std::execution::par_unseq,
-        std::begin(rhs), std::end(rhs), std::begin(ret),
-        [=](auto d){return lhs * d;}
-    );
-    //for (size_t i = 0; i < ret.size(); ++i) { ret[i] = lhs * rhs[i]; }
-    return ret;
-}
+    auto op = [=](double dd_dx, double dd_dy) {
+        return (dt / kappa) * (dd_dx + dd_dy);
+    };
 
-auto nabla(std::vector<double> f, Grid grid) {
+    std::transform(std::execution::par_unseq,
+                   std::begin(ddx),
+                   std::end(ddx),
+                   std::begin(ddy),
+                   std::begin(df),
+                   op);
 
-    auto ddx = D2_dx(f, grid);
-    auto ddy = D2_dy(f, grid);
+    // new_f = f + new_f;
 
-    return ddx + ddy;
 }
 
 auto analytic(double x, double y) {
@@ -290,45 +263,46 @@ auto analytic(Grid grid) {
     return ret;
 }
 
-auto mag(const std::vector<double>& v, Grid grid) {
+auto mag(const std::vector<double>& v) {
 
-    auto copy(v);
-
-    auto boundary_zero = boundary_x0(grid);
-
-    auto span = internal_span(copy, grid);
-    evaluate_spatial_boundary_condition(
-        span, boundary_zero, std::array<index_type, 2>{0, -1});
-    evaluate_spatial_boundary_condition(
-        span, boundary_zero, std::array<index_type, 2>{0, 1});
-    evaluate_spatial_boundary_condition(
-        span, boundary_zero, std::array<index_type, 2>{-1, 0});
-    evaluate_spatial_boundary_condition(
-        span, boundary_zero, std::array<index_type, 2>{1, 0});
-
-    auto l = 
-        std::transform_reduce(
-            std::execution::par_unseq,
-            copy.begin(),
-            copy.end(),
-            double(0),
-            std::plus<double>{},
-            [](auto d){return d*d;}
-        );
+    
+    auto l = std::transform_reduce(std::execution::par_unseq,
+                                   v.begin(),
+                                   v.end(),
+                                   double(0),
+                                   std::plus<double>{},
+                                   [](auto d) { return d * d; });
     return std::sqrt(l);
-
-}
-
-auto l2_norm(const std::vector<double>& v1,
-             const std::vector<double>& v2,
-             Grid                       grid) {
-
-    return mag(v1 - v2, grid) / mag(v2, grid);
 }
 
 auto l2_error(const std::vector<double>& U, Grid grid) {
 
-    return l2_norm(U, analytic(grid), grid);
+    auto v2 = analytic(grid);
+
+    auto s1 = internal_span(U, grid);
+    auto s2 = internal_span(v2, grid);
+
+    auto indices = all_indices(s1);
+
+    double mag_diff = 0.0;
+    double mag_v2 = 0.0;
+    
+    //NOTE! capture by reference here, i.e. does not run parallel.
+    auto op = [&](auto idx){
+        
+        auto idx_arr = tuple_to_array(idx);
+        auto diff = s1(idx_arr) - s2(idx_arr);
+        mag_diff += (diff*diff);
+        mag_v2   += (s2(idx_arr)*s2(idx_arr));
+    };
+
+    std::for_each(
+        std::execution::seq, //!
+        std::begin(indices), std::end(indices),
+        op
+    );
+
+    return std::sqrt(mag_diff) / std::sqrt(mag_v2);
 }
 
 double compute_time_step(Grid grid, double kappa) {
@@ -344,8 +318,8 @@ double compute_time_step(Grid grid, double kappa) {
 
 int main() {
 
-    size_t nx      = 250;
-    size_t ny      = 250;
+    size_t nx      = 50;
+    size_t ny      = 50;
     size_t padding = 1;
     double Lx      = 1.0;
     double Ly      = 1.0;
@@ -356,16 +330,30 @@ int main() {
     double dt = compute_time_step(grid, kappa);
 
     std::vector<double> U(grid.padded_size(), double(0));
+    std::vector<double> dU(grid.padded_size(), double(0));
+    std::vector<double> ddx(grid.padded_size(), double(0));
+    std::vector<double> ddy(grid.padded_size(), double(0));
     std::vector<double> newU(grid.padded_size(), double(0));
 
     assign_for_each_index(internal_span(U, grid), initial_condition(grid));
 
     while (1) {
 
-        newU = U + (dt / kappa) * nabla(U, grid);
+        compute_increment(U, ddx, ddy, dU, grid, kappa, dt);
+        
+        //newU = U + dU;
+        std::transform
+        (
+            std::begin(U), std::end(U),
+            std::begin(dU),
+            std::begin(newU),
+            std::plus{}
+        );
+        
         std::swap(newU, U);
 
-        auto norm = l2_norm(newU, U, grid);
+        //auto norm = l2_norm(newU, U, grid);
+        auto norm = mag(dU);
         std::cout << norm << " " << dt << std::endl;
         if (norm < 1E-5) { break; }
     }
