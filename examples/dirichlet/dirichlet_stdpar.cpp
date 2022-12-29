@@ -5,18 +5,6 @@
 #include <vector>
 
 
-struct CD2 {
-
-    CD2(double delta)
-        : m_delta(delta) {}
-
-    auto operator()(auto f) const {
-        return (f(-1) - 2.0 * f(0) + f(1)) / (m_delta * m_delta);
-    }
-
-private:
-    double m_delta;
-};
 
 
 
@@ -37,7 +25,6 @@ void compute_increment(std::vector<double>& f,
             std::vector<double>& ddy,
             std::vector<double>& df,
             Grid                 grid,
-            double               kappa,
             double               dt) {
 
     D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid);
@@ -45,7 +32,7 @@ void compute_increment(std::vector<double>& f,
     D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid);
 
     auto op = [=](double dd_dx, double dd_dy) {
-        return (dt / kappa) * (dd_dx + dd_dy);
+        return (dt / grid.kappa()) * (dd_dx + dd_dy);
     };
 
     std::transform(std::execution::par_unseq,
@@ -66,13 +53,10 @@ int main() {
     size_t nx      = 128;
     size_t ny      = 128;
     size_t padding = 1;
-    double Lx      = 1.0;
-    double Ly      = 1.0;
 
-    double kappa = 1;
-    Grid   grid(Lx, Ly, nx, ny, padding, padding);
+    Grid   grid(nx, ny, padding, padding);
 
-    double dt = compute_time_step(grid, kappa);
+    double dt = compute_time_step(grid);
 
     std::vector<double> U(grid.padded_size(), double(0));
     std::vector<double> dU(grid.padded_size(), double(0));
@@ -84,7 +68,7 @@ int main() {
 
     while (1) {
 
-        compute_increment(U, ddx, ddy, dU, grid, kappa, dt);
+        compute_increment(U, ddx, ddy, dU, grid, dt);
         
         //newU = U + dU;
         std::transform

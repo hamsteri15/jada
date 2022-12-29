@@ -3,6 +3,19 @@
 #include <cmath>
 #include "grid.hpp"
 
+struct CD2 {
+
+    CD2(double delta)
+        : m_delta(delta) {}
+
+    auto operator()(auto f) const {
+        return (f(-1) - 2.0 * f(0) + f(1)) / (m_delta * m_delta);
+    }
+
+private:
+    double m_delta;
+};
+
 auto analytic(double x, double y) {
     size_t N  = 100;
     double pi = 3.14;
@@ -125,13 +138,13 @@ auto mag(const std::vector<double>& v) {
 }
 
 
-double compute_time_step(Grid grid, double kappa) {
+double compute_time_step(Grid grid) {
 
     double dx = grid.delta(Dir::x);
     double dy = grid.delta(Dir::y);
 
-    double dtx = dx * dx / (2.0 * kappa);
-    double dty = dy * dy / (2.0 * kappa);
+    double dtx = dx * dx / (2.0 * grid.kappa());
+    double dty = dy * dy / (2.0 * grid.kappa());
 
     return 0.3 * std::min(dtx, dty);
 }

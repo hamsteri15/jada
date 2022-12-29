@@ -5,21 +5,19 @@
 #include <iomanip>
 #include <iostream>
 
-
 using namespace jada;
 
 enum Dir { x = 1, y = 0 };
 
 struct Grid {
 
-    Grid(double Lx,
-         double Ly,
+    Grid(
          size_t nx,
          size_t ny,
          size_t padding_x,
          size_t padding_y) {
-        std::get<Dir::x>(m_L)           = Lx;
-        std::get<Dir::y>(m_L)           = Ly;
+        std::get<Dir::x>(m_L)           = 1.0;
+        std::get<Dir::y>(m_L)           = 1.0;
         std::get<Dir::x>(m_point_count) = nx;
         std::get<Dir::y>(m_point_count) = ny;
         std::get<Dir::x>(m_padding)     = padding_x;
@@ -67,12 +65,14 @@ struct Grid {
         return ret;
     }
 
+    double kappa() const { return m_kappa; }
+
 private:
     std::array<double, 2> m_L;
     std::array<size_t, 2> m_point_count;
     std::array<size_t, 2> m_padding;
+    double                m_kappa = 1.0;
 };
-
 
 template <class field> auto full_span(const field& f, Grid grid) {
     return make_span(f, grid.padded_extent());
