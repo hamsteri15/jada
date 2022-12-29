@@ -589,6 +589,7 @@ TEST_CASE("evaluate_boundary"){
         auto boundary_op = [](auto f, auto idx){
             auto j = std::get<0>(idx);
             auto i = std::get<1>(idx);
+            (void) j;
             f(1) = i;
         };
 

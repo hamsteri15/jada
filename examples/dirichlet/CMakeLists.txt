@@ -1,11 +1,8 @@
 
-add_executable(DirichletSolver.bin dirichlet.cpp)
+add_executable(DirichletSolverStdpar.bin dirichlet_stdpar.cpp)
+target_link_libraries(DirichletSolverStdpar.bin PRIVATE project_options project_warnings)
+target_include_directories(DirichletSolverStdpar.bin PUBLIC ${CMAKE_SOURCE_DIR})
 
-target_link_libraries(DirichletSolver.bin PRIVATE project_options project_warnings)
-
-
-#target_compile_options(SerialTest.bin PRIVATE -DDEBUG)
-target_include_directories(DirichletSolver.bin PUBLIC
-                            ${CMAKE_SOURCE_DIR}
-#                            #${MPI_CXX_INCLUDE_PATH}
-                          )
+add_executable(DirichletSolverNvexec.bin dirichlet_nvexec.cpp)
+target_link_libraries(DirichletSolverNvexec.bin PRIVATE project_options project_warnings)
+target_include_directories(DirichletSolverNvexec.bin PUBLIC ${CMAKE_SOURCE_DIR})
