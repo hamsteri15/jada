@@ -20,33 +20,48 @@ auto maxwell_eqs_snr(float dt,
 }
 */
 
-template <Dir dir> std::vector<double> D2_di(std::vector<double> f, Grid grid) {
-
-    std::vector<double> df(f.size(), 0);
-    auto i_span = internal_span(f, grid);
-    auto o_span = internal_span(df, grid);
+template<Dir dir> stdexec::sender auto call_bcs(auto span, Grid grid){
 
     auto [neg, pos]   = get_direction(dir);
     auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
 
-    evaluate_spatial_boundary_condition(i_span, bc_0, neg);
-    evaluate_spatial_boundary_condition(i_span, bc_1, pos);
-    evaluate<size_t(dir)>(
-        i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
 
-    return df;
+    auto call_bc1 = [=](){
+        evaluate_spatial_boundary_condition(span, bc_0, neg);
+    };
+    auto call_bc2 = [=](){
+        evaluate_spatial_boundary_condition(span, bc_1, pos);
+    };
+
+    return stdexec::just() | stdexec::then(call_bc1) | stdexec::then(call_bc2);
+}
+
+
+
+template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
+
+    auto call_inner = [=](){
+        evaluate<size_t(dir)>(
+            i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
+
+    };
+    return call_bcs<dir>(i_span, grid) | stdexec::then(call_inner);
+
 }
 
 auto compute_increment(std::vector<double> f,
             Grid                 grid,
             double               dt) {
 
-    auto df_x = [=](auto v){
-        return D2_di<Dir::x>(v, grid);
-    };
-    auto df_y = [=](auto v){
-        return D2_di<Dir::y>(v, grid);
-    };
+
+    std::vector<double> df(f.size(), double(0));
+    std::vector<double> ddx(f.size(), double(0));
+    std::vector<double> ddy(f.size(), double(0));
+
+
+    stdexec::sender auto d2_dx = D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid); 
+    stdexec::sender auto d2_dy = D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid); 
+
 
     // Declare a pool of 8 worker threads:
     exec::static_thread_pool pool(8);
@@ -54,20 +69,15 @@ auto compute_increment(std::vector<double> f,
     // Get a handle to the thread pool:
     auto sched = pool.get_scheduler();
 
-    stdexec::sender auto first = stdexec::just(f) | stdexec::then(df_x);
-    stdexec::sender auto second = stdexec::just(f) | stdexec::then(df_y);
-
     auto work = stdexec::when_all
     (
-        stdexec::on(sched, first),
-        stdexec::on(sched, second)
+        stdexec::on(sched, d2_dx),
+        stdexec::on(sched, d2_dy)
     );
 
+    stdexec::sync_wait(std::move(work));
 
-    auto [ddx, ddy] = stdexec::sync_wait(std::move(work)).value();
 
-
-    std::vector<double> df(f.size(), double(0));
 
     auto op = [=](double dd_dx, double dd_dy) {
         return (dt / grid.kappa()) * (dd_dx + dd_dy);
@@ -80,30 +90,10 @@ auto compute_increment(std::vector<double> f,
                    op);
 
 
+
+
     return df;
 
-
-
-    /*
-
-    auto third = [=](std::vector<double> f1, std::vector<double> f2){
-
-        auto op = [=](double dd_dx, double dd_dy) {
-            return (dt / grid.kappa()) * (dd_dx + dd_dy);
-        };
-        std::vector<double> ret(f1.size());
-        std::transform(
-            std::begin(f1), std::end(f1),
-            std::begin(f2),
-            std::begin(ret),
-            op
-        );
-        return ret;
-
-    };
-
-    return stdexec::when_all(first, second) | stdexec::then(third);
-    */
     
 }
 
