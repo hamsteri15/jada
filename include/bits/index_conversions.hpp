@@ -43,8 +43,8 @@ static constexpr size_t get_shift(auto dim) {
 ///@param dimension the maximum extent of the multidimensional array
 ///@return constexpr std::array<idx_t, N> the shifts in all N directions
 template <StorageOrder storage> static constexpr auto get_shifts(auto dim) {
-    return [&]<auto... Is>(std::index_sequence<Is...>) {
-        return std::array<size_type, rank(dim)>{get_shift<Is, storage>(dim)...};
+    return [=]<size_t... Is>(std::index_sequence<Is...>) {
+        return std::array<size_type, Rank<decltype(dim)>::value>{get_shift<Is, storage>(dim)...};
     }
     (std::make_index_sequence<rank(dim)>{});
 }

@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include <experimental/stdexec/execution.hpp>
 #include <experimental/exec/static_thread_pool.hpp>
-
+//#include "experimental/nvexec/stream_context.cuh"
 
 /*
 auto maxwell_eqs_snr(float dt,
@@ -19,6 +19,31 @@ auto maxwell_eqs_snr(float dt,
        | ex::then(dump_vtk(write_results, accessor));
 }
 */
+
+stdexec::sender auto for_each_lazy_idx(auto indices, auto op) {
+
+    auto   new_op = [=](index_type i) { op(indices[i]); };
+    size_t n      = indices.size();
+    return stdexec::just() | stdexec::then(stdexec::bulk(n, new_op));
+
+    // return stdexec::just();
+}
+
+template <size_t Dir, class Span1, class Span2, class Op, class Indices>
+stdexec::sender auto nv_evaluate(Span1 in, Span2 out, Op op, Indices indices) {
+
+
+    auto new_op = [=] (auto idx){
+        const auto stencil = idxhandle_md_to_oned<Dir>(in, idx);
+        out(tuple_to_array(idx)) = op(stencil);
+    };
+
+    return for_each_lazy_idx(indices, new_op);
+    
+}
+
+
+
 
 template<Dir dir> stdexec::sender auto call_bcs(auto span, Grid grid){
 
@@ -40,12 +65,37 @@ template<Dir dir> stdexec::sender auto call_bcs(auto span, Grid grid){
 
 template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
 
+    /*
     auto call_inner = [=](){
         evaluate<size_t(dir)>(
             i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
 
     };
+    
     return call_bcs<dir>(i_span, grid) | stdexec::then(call_inner);
+    */
+
+    auto indices = all_indices(i_span);
+    auto cd_op = CD2(grid.delta(dir));
+
+    auto single_md_op = [=](auto md_idx){
+        const auto stencil = idxhandle_md_to_oned<size_t(dir)>(i_span, md_idx);
+        o_span(tuple_to_array(md_idx)) = cd_op(stencil);
+    };
+
+    auto single_op = [=](auto i){
+        single_md_op(indices[i]);
+    };
+
+    //This is missing a then from the last pipe, no idea why that it
+    return call_bcs<dir>(i_span, grid) | stdexec::bulk(indices.size(), single_op);
+
+
+
+
+
+
+    
 
 }
 
@@ -65,9 +115,13 @@ auto compute_increment(std::vector<double> f,
 
     // Declare a pool of 8 worker threads:
     exec::static_thread_pool pool(8);
-
+    //exec::static_thread_pool pool{std::thread::hardware_concurrency()};
     // Get a handle to the thread pool:
     auto sched = pool.get_scheduler();
+
+    //nvexec::stream_context stream_context{};
+    //nvexec::stream_scheduler sched = stream_context.get_scheduler(nvexec::stream_priority::low);
+
 
     auto work = stdexec::when_all
     (
@@ -121,8 +175,8 @@ ex::sender auto handle_classify_request(const http_request& req) {
 
 int main() {
 
-    size_t nx      = 5;
-    size_t ny      = 5;
+    size_t nx      = 50;
+    size_t ny      = 50;
     size_t padding = 1;
 
     Grid   grid(nx, ny, padding, padding);
@@ -166,12 +220,12 @@ int main() {
     }
 
 
-
+    /*
     print(internal_span(U, grid));
     std::cout << " ================= "<< std::endl;
     auto correct = analytic(grid);
     print(internal_span(correct, grid));
-    
+    */
     std::cout << l2_error(U, grid) << std::endl;
     std::cout << "done" << std::endl;
 
