@@ -53,7 +53,7 @@ struct Compare {
 
     template <class T, class Y, size_t... Is>
     static constexpr auto op(T indices, Y extents, std::index_sequence<Is...>) {
-        return std::array<bool, sizeof...(Is)>{std::get<Is>(indices) < extents.extent(Is)...};
+        return std::array<bool, sizeof...(Is)>{index_type(std::get<Is>(indices)) < index_type(extents.extent(Is))...};
     }
 };
 
