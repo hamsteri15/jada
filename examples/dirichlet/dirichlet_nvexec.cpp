@@ -2,106 +2,60 @@
 #include "common.hpp"
 #include <experimental/stdexec/execution.hpp>
 #include <experimental/exec/static_thread_pool.hpp>
+#include <span>
 //#include "experimental/nvexec/stream_context.cuh"
-
-/*
-auto maxwell_eqs_snr(float dt,
-                     float *time,
-                     bool write_results,
-                     std::size_t n_iterations,
-                     fields_accessor accessor,
-                     stdexec::scheduler auto &&computer) {
-  return ex::just()
-       | exec::on(computer,
-                  repeat_n(n_iterations,
-                           ex::bulk(accessor.cells, update_h(accessor))
-                         | ex::bulk(accessor.cells, update_e(time, dt, accessor))))
-       | ex::then(dump_vtk(write_results, accessor));
-}
-*/
-
-stdexec::sender auto for_each_lazy_idx(auto indices, auto op) {
-
-    auto   new_op = [=](index_type i) { op(indices[i]); };
-    size_t n      = indices.size();
-    return stdexec::just() | stdexec::then(stdexec::bulk(n, new_op));
-
-    // return stdexec::just();
-}
-
-template <size_t Dir, class Span1, class Span2, class Op, class Indices>
-stdexec::sender auto nv_evaluate(Span1 in, Span2 out, Op op, Indices indices) {
-
-
-    auto new_op = [=] (auto idx){
-        const auto stencil = idxhandle_md_to_oned<Dir>(in, idx);
-        out(tuple_to_array(idx)) = op(stencil);
-    };
-
-    return for_each_lazy_idx(indices, new_op);
-    
-}
-
-
-
-
-template<Dir dir> stdexec::sender auto call_bcs(auto span, Grid grid){
-
-    auto [neg, pos]   = get_direction(dir);
-    auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
-
-
-    auto call_bc1 = [=](){
-        evaluate_spatial_boundary_condition(span, bc_0, neg);
-    };
-    auto call_bc2 = [=](){
-        evaluate_spatial_boundary_condition(span, bc_1, pos);
-    };
-
-    return stdexec::just() | stdexec::then(call_bc1) | stdexec::then(call_bc2);
-}
-
 
 
 template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
 
-    /*
-    auto call_inner = [=](){
-        evaluate<size_t(dir)>(
-            i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
 
+    // boundary ops
+    auto [neg, pos]   = get_direction(dir);
+    auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
+
+    auto call_bc1 = [=](){
+        evaluate_spatial_boundary_condition(i_span, bc_0, neg);
     };
-    
-    return call_bcs<dir>(i_span, grid) | stdexec::then(call_inner);
-    */
+    auto call_bc2 = [=](){
+        evaluate_spatial_boundary_condition(i_span, bc_1, pos);
+    };
 
+    // inner op
     auto indices = all_indices(i_span);
     auto cd_op = CD2(grid.delta(dir));
 
-    auto single_md_op = [=](auto md_idx){
-        const auto stencil = idxhandle_md_to_oned<size_t(dir)>(i_span, md_idx);
-        o_span(tuple_to_array(md_idx)) = cd_op(stencil);
+    auto call_inner = [=](auto i){
+        const auto stencil = idxhandle_md_to_oned<size_t(dir)>(i_span, indices[i]);
+        o_span(tuple_to_array(indices[i])) = cd_op(stencil);
     };
 
-    auto single_op = [=](auto i){
-        single_md_op(indices[i]);
-    };
-
-    //This is missing a then from the last pipe, no idea why that it
-    return call_bcs<dir>(i_span, grid) | stdexec::bulk(indices.size(), single_op);
 
 
-
-
-
-
+    stdexec::sender auto first =  stdexec::just() | stdexec::then(call_bc1);
+    stdexec::sender auto second = stdexec::just() | stdexec::then(call_bc2);
+    stdexec::sender auto third =  stdexec::just() | stdexec::bulk(indices.size(), call_inner);
     
+    return stdexec::when_all(first, second) | stdexec::let_value([=]() { return third;});
+
 
 }
 
 auto compute_increment(std::vector<double> f,
             Grid                 grid,
             double               dt) {
+
+    // Declare a pool of 8 worker threads:
+    //exec::static_thread_pool pool(8);
+    //exec::static_thread_pool pool{std::thread::hardware_concurrency()};
+    // Get a handle to the thread pool:
+    exec::static_thread_pool pool;
+    auto sched = pool.get_scheduler();
+
+    //nvexec::stream_context stream_context{};
+    //nvexec::stream_scheduler sched = stream_context.get_scheduler(nvexec::stream_priority::low);
+    //nvexec::stream_scheduler sched = stream_context.get_scheduler();
+
+
 
 
     std::vector<double> df(f.size(), double(0));
@@ -111,38 +65,22 @@ auto compute_increment(std::vector<double> f,
 
     stdexec::sender auto d2_dx = D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid); 
     stdexec::sender auto d2_dy = D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid); 
+    
 
-
-    // Declare a pool of 8 worker threads:
-    exec::static_thread_pool pool(8);
-    //exec::static_thread_pool pool{std::thread::hardware_concurrency()};
-    // Get a handle to the thread pool:
-    auto sched = pool.get_scheduler();
-
-    //nvexec::stream_context stream_context{};
-    //nvexec::stream_scheduler sched = stream_context.get_scheduler(nvexec::stream_priority::low);
-
-
-    auto work = stdexec::when_all
-    (
-        stdexec::on(sched, d2_dx),
-        stdexec::on(sched, d2_dy)
-    );
-
-    stdexec::sync_wait(std::move(work));
-
-
-
-    auto op = [=](double dd_dx, double dd_dy) {
-        return (dt / grid.kappa()) * (dd_dx + dd_dy);
+    auto lhs = std::span{ddx.begin(), ddx.size()};
+    auto rhs = std::span{ddy.begin(), ddy.size()};
+    auto ret = std::span{df.begin(), df.size()};
+    auto increment2 = [=](auto i){
+        ret[i] = (dt/grid.kappa()) * (lhs[i] + rhs[i]);
     };
-    std::transform(//std::execution::par_unseq,
-                   std::begin(ddx),
-                   std::end(ddx),
-                   std::begin(ddy),
-                   std::begin(df),
-                   op);
 
+
+    stdexec::sender auto last =  stdexec::just() | stdexec::bulk(df.size(), increment2);
+
+    auto compute = stdexec::when_all(d2_dx, d2_dy) | stdexec::let_value([=](){return last;});
+
+    auto work = stdexec::on(sched, compute);
+    stdexec::sync_wait(std::move(work));
 
 
 
@@ -151,27 +89,6 @@ auto compute_increment(std::vector<double> f,
     
 }
 
-/*
-// Handler for the "classify" request type
-ex::sender auto handle_classify_request(const http_request& req) {
-    return
-        // start with the input buffer
-        ex::just(req)
-        // extract the image from the input request
-        | ex::then(extract_image)
-        // analyze the content of the image and classify it
-        // we are doing the processing on the same thread
-        | ex::then(do_classify)
-        // handle errors
-        | ex::upon_error(on_classification_error)
-        // handle cancellation
-        | ex::upon_stopped(on_classification_cancelled)
-        // transform this into a response
-        | ex::then(to_response)
-        // done
-        ;
-}
-*/
 
 int main() {
 
