@@ -1,10 +1,9 @@
 #include "grid.hpp"
 #include "common.hpp"
+#include <span>
+#include "experimental/nvexec/stream_context.cuh"
 #include <experimental/stdexec/execution.hpp>
 #include <experimental/exec/static_thread_pool.hpp>
-#include <span>
-//#include "experimental/nvexec/stream_context.cuh"
-
 
 template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
 
@@ -66,16 +65,15 @@ stdexec::sender auto compute_increment(std::vector<double>& f,
 }
 
 
+
 int main() {
-    // Declare a pool of 8 worker threads:
-    //exec::static_thread_pool pool(8);
-    //exec::static_thread_pool pool{std::thread::hardware_concurrency()};
-    // Get a handle to the thread pool:
+
+    
+    
     exec::static_thread_pool pool;
     auto sched = pool.get_scheduler();
 
     //nvexec::stream_context stream_context{};
-    //nvexec::stream_scheduler sched = stream_context.get_scheduler(nvexec::stream_priority::low);
     //nvexec::stream_scheduler sched = stream_context.get_scheduler();
 
     size_t nx      = 128;
@@ -122,7 +120,7 @@ int main() {
 
 
     }
-
+    
 
     /*
     print(internal_span(U, grid));
@@ -130,8 +128,8 @@ int main() {
     auto correct = analytic(grid);
     print(internal_span(correct, grid));
     */
-    std::cout << l2_error(U, grid) << std::endl;
-    std::cout << "done" << std::endl;
+    //std::cout << l2_error(U, grid) << std::endl;
+    //std::cout << "done" << std::endl;
 
 
     return 0;
