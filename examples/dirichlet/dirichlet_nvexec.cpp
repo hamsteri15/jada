@@ -39,30 +39,82 @@ template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid gri
 
 }
 
-stdexec::sender auto compute_increment(std::vector<double>& f,
-            std::vector<double>& ddx,
-            std::vector<double>& ddy,
-            std::vector<double>& df,
-            Grid                 grid,
-            double               dt) {
+template<Dir dir>
+auto Ri(std::vector<double> f, Grid grid, double dt){
 
+    std::vector<double> df(f.size(), 0);
 
-    stdexec::sender auto d2_dx = D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid); 
-    stdexec::sender auto d2_dy = D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid); 
+    auto i_span = internal_span(f, grid);
+    auto o_span = internal_span(df, grid);
     
+    // boundary ops
+    auto [neg, pos]   = get_direction(dir);
+    auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
 
-    auto lhs = std::span{ddx.begin(), ddx.size()};
-    auto rhs = std::span{ddy.begin(), ddy.size()};
-    auto ret = std::span{df.begin(), df.size()};
-    auto increment2 = [=](auto i){
-        ret[i] = (dt/grid.kappa()) * (lhs[i] + rhs[i]);
+
+    evaluate_spatial_boundary_condition(i_span, bc_0, neg);
+    evaluate_spatial_boundary_condition(i_span, bc_1, pos);
+
+    evaluate<size_t(dir)>(i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
+
+
+    for (auto& e : df){
+        e *= (dt/grid.kappa());
+    }
+
+    return df;
+
+}
+
+
+auto residual(std::vector<double> f, Grid grid, double dt){
+
+    auto op = [](std::vector<double> lhs, std::vector<double> rhs){
+
+        std::vector<double> ret(lhs.size(), 0);
+
+        for (size_t i = 0; i < ret.size(); ++i){
+            ret[i] = lhs[i] + rhs[i];
+        }
+        return ret;
     };
 
+    auto dx = stdexec::just(f, grid, dt) | stdexec::then(Ri<Dir::x>);
+    auto dy = stdexec::just(f, grid, dt) | stdexec::then(Ri<Dir::y>);
 
-    stdexec::sender auto last =  stdexec::just() | stdexec::bulk(df.size(), increment2);
 
-    return stdexec::when_all(d2_dx, d2_dy) | stdexec::let_value([=](){return last;});
+    return stdexec::when_all(dx, dy) | stdexec::then(op);
+
+
+    //return op(Ri<Dir::x>(f, grid, dt), Ri<Dir::y>(f, grid, dt));
 }
+
+auto add(std::vector<double> lhs, std::vector<double> rhs){
+
+
+    auto op = [=](auto l, auto r){
+        std::vector<double> ret(lhs.size(), 0);
+        std::transform
+        (
+            std::execution::par_unseq,
+            std::begin(l),
+            std::end(l),
+            std::begin(r),
+            std::begin(ret),
+            std::plus{}
+        );
+        return ret;
+    };
+
+    return
+    stdexec::just(lhs, rhs) | stdexec::then(op);
+
+
+}
+
+
+
+
 
 
 
@@ -70,7 +122,7 @@ int main() {
 
     
     
-    exec::static_thread_pool pool;
+    exec::static_thread_pool pool(3);
     auto sched = pool.get_scheduler();
 
     //nvexec::stream_context stream_context{};
@@ -86,41 +138,28 @@ int main() {
     double dt = compute_time_step(grid);
 
     std::vector<double> U(grid.padded_size(), double(0));
-    std::vector<double> dU(U.size(), double(0));
-    std::vector<double> newU(U.size(), double(0));
-    std::vector<double> ddx(U.size(), double(0));
-    std::vector<double> ddy(U.size(), double(0));
 
     assign_for_each_index(internal_span(U, grid), initial_condition(grid));
 
 
+    while(1) {
 
-    while(1){
 
-        stdexec::sender auto compute = compute_increment(U, ddx, ddy, dU, grid, dt);
-        auto work = stdexec::on(sched, compute);
-        stdexec::sync_wait(std::move(work));
+        stdexec::sender auto dU = residual(U, grid, dt);
+        auto& ref = dU;
 
-        std::transform
-        (
-            std::execution::par_unseq,
-            std::begin(U), std::end(U),
-            std::begin(dU),
-            std::begin(newU),
-            std::plus{}
+        stdexec::sender auto compute = stdexec::when_all(
+            ref | stdexec::let_value(
+                      [=](std::vector<double> v) { return add(v, U); }),
+            ref | stdexec::then(mag)
         );
-        
-        std::swap(newU, U);
 
-        auto norm = mag(dU);
+        auto work = stdexec::on(sched, compute);
+        auto [newU, norm] = stdexec::sync_wait(std::move(work)).value();
+        std::swap(newU, U);
         std::cout << norm << " " << dt << std::endl;
         if (norm < 1E-5) { break; }
-
-        dU = std::vector<double>(U.size(), double(0));
-
-
     }
-    
 
     /*
     print(internal_span(U, grid));
