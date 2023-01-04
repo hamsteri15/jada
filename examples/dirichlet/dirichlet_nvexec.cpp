@@ -5,7 +5,7 @@
 #include <experimental/stdexec/execution.hpp>
 #include <experimental/exec/static_thread_pool.hpp>
 
-template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
+template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid, double dt) {
 
 
     // boundary ops
@@ -25,7 +25,7 @@ template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid gri
 
     auto call_inner = [=](auto i){
         const auto stencil = idxhandle_md_to_oned<size_t(dir)>(i_span, indices[i]);
-        o_span(tuple_to_array(indices[i])) = cd_op(stencil);
+        o_span(tuple_to_array(indices[i])) = (dt/grid.kappa()) * cd_op(stencil);
     };
 
 
@@ -42,6 +42,7 @@ template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid gri
 template<Dir dir>
 auto Ri(std::vector<double> f, Grid grid, double dt){
 
+
     std::vector<double> df(f.size(), 0);
 
     auto i_span = internal_span(f, grid);
@@ -57,10 +58,13 @@ auto Ri(std::vector<double> f, Grid grid, double dt){
 
     evaluate<size_t(dir)>(i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
 
-
-    for (auto& e : df){
-        e *= (dt/grid.kappa());
-    }
+    std::transform
+    (
+        std::execution::par_unseq,
+        std::begin(df), std::end(df),
+        std::begin(df),
+        [=](auto e) {return e * (dt/grid.kappa());}
+    );
 
     return df;
 
@@ -73,9 +77,15 @@ auto residual(std::vector<double> f, Grid grid, double dt){
 
         std::vector<double> ret(lhs.size(), 0);
 
-        for (size_t i = 0; i < ret.size(); ++i){
-            ret[i] = lhs[i] + rhs[i];
-        }
+        std::transform
+        (
+            std::execution::par_unseq,
+            std::begin(lhs), std::end(lhs),
+            std::begin(rhs),
+            std::begin(ret),
+            std::plus<double>{}
+        );
+        
         return ret;
     };
 
