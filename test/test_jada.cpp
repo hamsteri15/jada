@@ -570,7 +570,7 @@ TEST_CASE("algorithms"){
             auto op = [](auto idx, int& asd){
                 auto j = std::get<0>(idx);
                 auto i = std::get<1>(idx);
-                asd = i + j;
+                asd = int(i + j);
             };
 
             for_each_indexed(aa, op);
@@ -595,7 +595,7 @@ TEST_CASE("algorithms"){
             auto op = [](auto idx, int& asd){
                 auto j = std::get<0>(idx);
                 auto i = std::get<1>(idx);
-                asd = i + j;
+                asd = int(i + j);
             };
 
             for_each_indexed(std::execution::par_unseq, aa, op);
@@ -610,12 +610,28 @@ TEST_CASE("algorithms"){
 
         }
 
-
-
     }
-
-
     SECTION("transform"){
+
+        SECTION("serial"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto bb = make_span(b, extents<2>{nj, ni});
+
+            auto op = [](int e){
+                return e + 2;
+            };
+
+            transform(aa, bb, op);
+
+
+            CHECK(b == std::vector<int>(ni*nj, 3));
+
+        }
         
         SECTION("parallel"){
             size_type ni = 3;
@@ -638,6 +654,240 @@ TEST_CASE("algorithms"){
         }
 
     }
+    
+    SECTION("transform_indexed"){
+        
+        SECTION("serial"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto bb = make_span(b, extents<2>{nj, ni});
+
+            auto op = [](auto idx, int e){
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+
+                return e + int(i + j);
+            };
+
+            transform_indexed(aa, bb, op);
+
+            std::vector<int> correct = 
+            {
+                1,2,3,
+                2,3,4
+            };
+
+            CHECK(b == correct);
+
+        }
+
+        SECTION("parallel"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto bb = make_span(b, extents<2>{nj, ni});
+
+            auto op = [](auto idx, int e){
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+
+                return e + int(i + j);
+            };
+
+            transform_indexed(std::execution::par_unseq, aa, bb, op);
+
+            std::vector<int> correct = 
+            {
+                1,2,3,
+                2,3,4
+            };
+
+            CHECK(b == correct);
+
+        }
+
+    }
+
+    SECTION("window_transform"){
+        
+        SECTION("serial"){
+            size_type ni = 4;
+            size_type nj = 3;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto temp1 = make_span(a, extents<2>{nj, ni});
+            auto temp2 = make_span(b, extents<2>{nj, ni});
+
+            auto aa = make_subspan(temp1,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+            auto bb = make_subspan(temp2,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+
+            auto op = [](auto f) {
+                return f(0,-1) + f(0,1);
+            };
+
+            window_transform(aa, bb, op);
+
+            std::vector<int> correct = 
+            {
+                -1,-1,-1,-1,
+                -1,+2,+2,-1,
+                -1,-1,-1,-1
+            };
+
+            CHECK(b == correct);
+
+        }
+
+        SECTION("parallel"){
+            size_type ni = 4;
+            size_type nj = 3;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto temp1 = make_span(a, extents<2>{nj, ni});
+            auto temp2 = make_span(b, extents<2>{nj, ni});
+
+            auto aa = make_subspan(temp1,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+            auto bb = make_subspan(temp2,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+
+            auto op = [](auto f) {
+                return f(0,-1) + f(0,1);
+            };
+
+            window_transform(std::execution::par_unseq, aa, bb, op);
+
+            std::vector<int> correct = 
+            {
+                -1,-1,-1,-1,
+                -1,+2,+2,-1,
+                -1,-1,-1,-1
+            };
+
+            CHECK(b == correct);
+
+        }
+
+    }
+
+
+    SECTION("tile_transform"){
+
+        
+        SECTION("serial"){
+            size_type ni = 4;
+            size_type nj = 3;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto temp1 = make_span(a, extents<2>{nj, ni});
+            auto temp2 = make_span(b, extents<2>{nj, ni});
+
+            auto aa = make_subspan(temp1,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+            auto bb = make_subspan(temp2,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+
+            auto op = [](auto f) {
+                return f(-1) + f(1);
+            };
+
+            tile_transform<0>(aa, bb, op);
+
+            std::vector<int> correct1 = 
+            {
+                -1,-1,-1,-1,
+                -1,+2,+2,-1,
+                -1,-1,-1,-1
+            };
+
+            CHECK(b == correct1);
+
+            b.assign(b.size(), -3);
+            tile_transform<1>(aa, bb, op);
+            
+            std::vector<int> correct2 = 
+            {
+                -3,-3,-3,-3,
+                -3,+2,+2,-3,
+                -3,-3,-3,-3
+            };
+
+            CHECK(b == correct2);
+
+
+
+
+
+        }
+        
+        SECTION("parallel"){
+            size_type ni = 4;
+            size_type nj = 3;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto temp1 = make_span(a, extents<2>{nj, ni});
+            auto temp2 = make_span(b, extents<2>{nj, ni});
+
+            auto aa = make_subspan(temp1,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+            auto bb = make_subspan(temp2,
+                                   std::array<index_type, 2>{1, 1},
+                                   std::array<index_type, 2>{2, 3});
+
+            auto op = [](auto f) {
+                return f(-1) + f(1);
+            };
+
+            tile_transform<0>(std::execution::par, aa, bb, op);
+
+            std::vector<int> correct1 = 
+            {
+                -1,-1,-1,-1,
+                -1,+2,+2,-1,
+                -1,-1,-1,-1
+            };
+
+            CHECK(b == correct1);
+
+            b.assign(b.size(), -3);
+            tile_transform<1>(std::execution::par, aa, bb, op);
+            
+            std::vector<int> correct2 = 
+            {
+                -3,-3,-3,-3,
+                -3,+2,+2,-3,
+                -3,-3,-3,-3
+            };
+
+            CHECK(b == correct2);
+
+        }
+
+    }
+    
+
+    
+
 
 }
 
@@ -1010,169 +1260,101 @@ TEST_CASE("evaluate_boundary"){
     
 }
 
+TEST_CASE("Stencil operations"){
 
-
-TEST_CASE("1D cd-2"){
-
-    
-    SECTION("evaluate_tiled 1"){
-
+    SECTION("1D cd-2"){
         extents<1> dims{7};
 
-        vector_t<int> in(flat_size(dims), 0);
-        vector_t<int> out(flat_size(dims), 0);
+        std::vector<int> in(flat_size(dims), 0);
+        std::vector<int> out(flat_size(dims), 0);
     
-        auto s_in = make_span(in, dims);
-        auto s_out = make_span(out, dims);
+        auto temp1 = make_span(in, dims);
+        auto temp2 = make_span(out, dims);
+        set_linear<0>(temp1);
+
+        auto s_in = make_subspan(temp1, std::array<index_type, 1>{1}, std::array<index_type, 1>{6});
+        auto s_out = make_subspan(temp2, std::array<index_type, 1>{1}, std::array<index_type, 1>{6});
         
-        set_linear<0>(s_in);
-        
-        evaluate_tiled<0>(s_in, s_out, simpleDiff());
+        tile_transform<0>(s_in, s_out, simpleDiff());         
+
+
         CHECK(out == std::vector<int>{0, 2, 2, 2, 2, 2, 0});
-        
+
     }
-    
-    
-    
-    SECTION("evaluate_tiled 2"){
 
-        size_t N = 3000;
-        extents<1> dims{N};
+    SECTION("2D cd-2"){
 
-        std::vector<int> in(flat_size(dims));
-        std::vector<int> out(flat_size(dims));
-        auto s_in = make_span(in, dims);
-        auto s_out = make_span(out, dims);
-        
-        set_linear<0>(s_in);
-        
-        evaluate_tiled<0>(s_in, s_out, simpleDiff());
+        SECTION("dir=0"){
+            simpleDiff op;
 
-        for (size_t i = 1; i < N-2; ++i){
-            REQUIRE(out.at(i) == 2);
+            extents<2> dims{2 + op.padding*2,3};
+
+            std::vector<int> in(flat_size(dims), 0);
+            std::vector<int> out(flat_size(dims), 0);
+
+            auto temp1 = make_span(in, dims);
+            auto temp2 = make_span(out, dims);
+            set_linear<0>(temp1);
+
+            auto s_in  = make_subspan(temp1,
+                                    std::array<index_type, 2>{1, 0},
+                                    std::array<index_type, 2>{3, 3});
+            auto s_out = make_subspan(temp2,
+                                    std::array<index_type, 2>{1, 0},
+                                    std::array<index_type, 2>{3, 3});
+
+            tile_transform<0>(std::execution::par, s_in, s_out, op);         
+
+            CHECK(
+                out == std::vector<int>
+                {
+                    0, 0, 0,
+                    2, 2, 2,
+                    2, 2, 2,
+                    0, 0, 0
+                }
+            );
         }
-        CHECK(out.at(0) == 0);
-        CHECK(out.at(N-1) == 0);
+
+        SECTION("dir=1"){
+            simpleDiff op;
+            extents<2> dims{2,3 + 2*op.padding};
+
+            std::vector<int> in(flat_size(dims), 0);
+            std::vector<int> out(flat_size(dims), 0);
+            
+            auto temp1 = make_span(in, dims);
+            auto temp2 = make_span(out, dims);
+            set_linear<1>(temp1);
+
+            auto s_in  = make_subspan(temp1,
+                                    std::array<index_type, 2>{0, 1},
+                                    std::array<index_type, 2>{2, 4});
+            auto s_out = make_subspan(temp2,
+                                    std::array<index_type, 2>{0, 1},
+                                    std::array<index_type, 2>{2, 4});
+
+            tile_transform<1>(std::execution::par, s_in, s_out, op);         
+
+
+
+            CHECK(
+                out == std::vector<int>
+                {
+                    0, 2, 2, 2, 0,
+                    0, 2, 2, 2, 0
+                }
+            );
+
+        }
+
 
     }
-    
+
 
 }
 
 
-
-TEST_CASE("2D cd-2"){
-
-    
-    SECTION("0-dir evaluate_tiled"){
-
-        simpleDiff op;
-
-        extents<2> dims{2 + op.padding*2,3};
-
-        vector_t<int> in(flat_size(dims), 0);
-        vector_t<int> out(flat_size(dims), 0);
-
-        set_linear<0>(make_span(in, dims));
-
-        evaluate_tiled<0>(
-            make_span(in, dims),
-            make_span(out, dims),
-            op
-        );        
-
-        CHECK(
-            out == std::vector<int>
-            {
-                0, 0, 0,
-                2, 2, 2,
-                2, 2, 2,
-                0, 0, 0
-            }
-        );
-        
-    }
-        
-     
-    SECTION("1-dir evaluate_tiled"){
-
-        simpleDiff op;
-        extents<2> dims{2,3 + 2*op.padding};
-
-        std::vector<int> in(flat_size(dims), 0);
-        std::vector<int> out(flat_size(dims), 0);
-
-        set_linear<1>(make_span(in, dims));
-
-        evaluate_tiled<1>(
-            make_span(in, dims),
-            make_span(out, dims),
-            op
-        );        
-
-
-        CHECK(
-            out == std::vector<int>
-            {
-                0, 2, 2, 2, 0,
-                0, 2, 2, 2, 0
-            }
-        );
-        
-    }    
-    
-    SECTION("Both dirs evaluate_tiled"){
-
-
-        simpleDiff op0;
-        simpleDiff op1;
-        extents<2> dims{2 + 2*op0.padding,3 + 2*op1.padding};
-
-        std::vector<int> in(flat_size(dims), 0);
-        std::vector<int> out(flat_size(dims), 0);
-
-        set_linear<0>(make_span(in, dims));
-
-        evaluate_tiled<0>(
-            make_span(in, dims),
-            make_span(out, dims),
-            op0
-        );        
-
-
-        CHECK(
-            out == std::vector<int>
-            {
-                0, 0, 0, 0, 0,
-                2, 2, 2, 2, 2,
-                2, 2, 2, 2, 2,
-                0, 0, 0, 0, 0
-            }
-        );
-
-        std::transform(out.begin(), out.end(), out.begin(), [](auto a){(void) a; return 0.0;});
-
-        set_linear<1>(make_span(in, dims));
-
-        evaluate_tiled<1>(
-            make_span(in, dims),
-            make_span(out, dims),
-            op1
-        );        
-        
-        CHECK(
-            out == std::vector<int>
-            {
-                0, 2, 2, 2, 0,
-                0, 2, 2, 2, 0,
-                0, 2, 2, 2, 0,
-                0, 2, 2, 2, 0
-            }
-        );
-
-    }
-        
-}
 
 
 TEST_CASE("Block neighbours"){
