@@ -1,9 +1,9 @@
 #pragma once
-#include "algorithms.hpp"
 #include "integer_types.hpp"
 #include <array>
 #include <cstddef>
 #include <vector>
+#include <algorithm>
 
 namespace jada {
 
@@ -83,7 +83,7 @@ private:
             all[i + N] = change_sign(dir);
             ++i;
             // permutations.push_back(temp);
-        } while (next_permutation(dir.begin(), dir.end()));
+        } while (std::next_permutation(dir.begin(), dir.end()));
 
         return all;
     }
