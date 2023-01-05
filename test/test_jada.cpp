@@ -518,6 +518,129 @@ TEST_CASE("mdspan tests"){
 
 }
 
+TEST_CASE("algorithms"){
+
+    SECTION("for_each"){
+        
+        SECTION("serial"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 0);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+
+            auto op = [](int& asd){
+                asd = 43;
+            };
+
+            for_each( aa, op);
+
+            CHECK(a == std::vector<int>(ni*nj, 43));
+
+        }
+
+        SECTION("parallel"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 0);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+
+            auto op = [](int& asd){
+                asd = 43;
+            };
+
+            for_each(std::execution::par_unseq, aa, op);
+
+            CHECK(a == std::vector<int>(ni*nj, 43));
+
+        }
+
+    }
+
+    SECTION("for_each_indexed"){
+        
+        SECTION("serial"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 0);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+
+            auto op = [](auto idx, int& asd){
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+                asd = i + j;
+            };
+
+            for_each_indexed(aa, op);
+
+            std::vector<int> correct = 
+            {
+                0,1,2,
+                1,2,3
+            };
+
+            CHECK(a == correct);
+
+        }
+        
+        SECTION("parallel"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 0);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+
+            auto op = [](auto idx, int& asd){
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+                asd = i + j;
+            };
+
+            for_each_indexed(std::execution::par_unseq, aa, op);
+
+            std::vector<int> correct = 
+            {
+                0,1,2,
+                1,2,3
+            };
+
+            CHECK(a == correct);
+
+        }
+
+
+
+    }
+
+
+    SECTION("transform"){
+        
+        SECTION("parallel"){
+            size_type ni = 3;
+            size_type nj = 2;
+            std::vector<int> a(ni*nj, 1);
+            std::vector<int> b(ni*nj, -1);
+
+            auto aa = make_span(a, extents<2>{nj, ni});
+            auto bb = make_span(b, extents<2>{nj, ni});
+
+            auto op = [](int e){
+                return e + 2;
+            };
+
+            transform(std::execution::par_unseq, aa, bb, op);
+
+
+            CHECK(b == std::vector<int>(ni*nj, 3));
+
+        }
+
+    }
+
+}
+
 TEST_CASE("for_each_index"){
 
         size_type ni = 3;
