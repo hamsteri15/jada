@@ -55,6 +55,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(BUILD_TESTS "Build tests" ON)
 
 if(BUILD_TESTS)
+  add_subdirectory(catch)
   enable_testing()
   message(
     "Building tests."
@@ -66,6 +67,7 @@ endif()
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 
 if(BUILD_BENCHMARKS)
+  add_subdirectory(catch)
   enable_testing()
   message(
     "Building benchmarks."

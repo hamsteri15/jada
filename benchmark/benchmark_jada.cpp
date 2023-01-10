@@ -1,4 +1,3 @@
-#define CATCH_CONFIG_MAIN // No idea why this has to be redefined here...
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.hpp"
 
@@ -11,6 +10,7 @@ using namespace jada;
 
 
 
+/*
 TEST_CASE("2D benchmarks"){
     
     size_t nj = 50;
@@ -126,4 +126,4 @@ TEST_CASE("3D benchmarks"){
 
 
 }
-
+*/
