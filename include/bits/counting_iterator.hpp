@@ -6,7 +6,6 @@
 
 namespace jada {
 
-
 struct counting_iterator {
 
 private:
@@ -14,7 +13,7 @@ private:
 
 public:
     using value_type        = index_type;
-    using difference_type   = index_type; //std::ptrdiff_t;
+    using difference_type   = index_type; // std::ptrdiff_t;
     using pointer           = index_type*;
     using reference         = index_type&;
     using iterator_category = std::random_access_iterator_tag;

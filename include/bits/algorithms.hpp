@@ -4,6 +4,7 @@
 #include <execution>
 
 #include "counting_iterator.hpp"
+#include "index_conversions.hpp"
 #include "loop.hpp"
 #include "mdspan.hpp"
 #include "utils.hpp"

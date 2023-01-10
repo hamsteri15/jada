@@ -13,3 +13,7 @@
 #include "bits/index_conversions.hpp"
 #include "bits/algorithms.hpp"
 #include "bits/divide_equally.hpp"
+#include "bits/split_to_subspans.hpp"
+#include "bits/min_max_offset.hpp"
+
+

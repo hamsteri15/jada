@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.hpp"
 
+#include <string>
 #include <ranges>
 #include "include/jada.hpp"
 #include "benchmark.hpp"
@@ -9,43 +10,103 @@
 using namespace jada;
 
 
+auto to_string(auto arr){
 
-TEST_CASE("serial"){
-
-    SECTION("for_each"){
-
-        size_t n = 200;
-
-        
-        BENCHMARK("1d"){
-            std::vector<int> v(n, 0);
-            auto op = [](auto& e){e = 42;};
-            auto span = make_span(v, std::array<size_t, 1>{n});
-            for_each(span, op);
-            return v;
-        };
-        
-        BENCHMARK("2d"){
-            auto dims = divide_equally<2>(n);
-            size_t ni = dims[1];
-            size_t nj = dims[0];
-
-            CHECK(n == ni*nj);
-
-            std::vector<int> v(ni*nj, 0);
-            auto op = [](auto& e){e = 42;};
-            auto span = make_span(v, std::array<size_t, 2>{nj, ni});
-            for_each(span, op);
-            return v;
-        
-        };
-        
-
-
+    std::string ret = "{";
+    for (auto e : arr){
+        ret += std::to_string(e) + " ";
     }
+    ret += std::string("}");
+    return ret;
+}
 
+template<class Policy>
+void for_each_benchmarks(Policy&& policy, size_t n){
+        
+        std::vector<int> v(n, 0);
+
+        auto op = [](auto& e){e = 42;};
+
+        {
+            auto span = make_span(v, std::array<size_t, 1>{n});
+            std::string name = std::string("1d for each ") + to_string(dimensions(span));
+            BENCHMARK(std::move(name)){
+                for_each(policy, span, op);
+                return v;
+            };
+
+        }
+
+
+        { 
+            auto [nj, ni] = divide_equally<2>(n);
+            auto span = make_span(v, std::array<size_t, 2>{nj, ni});
+            std::string name = std::string("2d for each ") + to_string(dimensions(span));
+
+            BENCHMARK(std::move(name)){
+                for_each(policy, span, op);
+                return v;
+            };
+
+        }
+        
+        { 
+            auto [nk, nj, ni] = divide_equally<3>(n);
+            auto span = make_span(v, std::array<size_t, 3>{nk, nj, ni});
+            std::string name = std::string("3d for each ") + to_string(dimensions(span));
+
+            BENCHMARK(std::move(name)){
+                for_each(policy, span, op);
+                return v;
+            };
+
+        }
+
+
+        {
+            std::string name = std::string("std::for_each n=") + std::to_string(n);
+
+            BENCHMARK(std::move(name)){
+                std::for_each(policy, std::begin(v), std::end(v), op);
+                return v;
+            };
+
+        }
+
+
+        {
+            auto [nk, nj, ni] = divide_equally<3>(n);
+            auto span = make_span(v, std::array<size_t, 3>{nk, nj, ni});
+            std::string name = std::string("3d raw loop ") + to_string(dimensions(span));
+
+            BENCHMARK(std::move(name)){
+
+                for (size_t k = 0; k < nk; ++k){
+                for (size_t j = 0; j < nj; ++j){
+                for (size_t i = 0; i < ni; ++i){
+                    op(span(k,j,i));
+                }}}
+
+
+                return v;
+            };
+        }
 
 }
+
+
+TEST_CASE("Serial for_each"){
+
+    for_each_benchmarks(std::execution::seq, 1E5);
+}
+
+/*
+TEST_CASE("Parallel for_each"){
+
+    for_each_benchmarks(std::execution::par, 1E5);
+}
+*/
+
 
 /*
 TEST_CASE("2D benchmarks"){

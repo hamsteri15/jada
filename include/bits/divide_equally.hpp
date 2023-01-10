@@ -64,8 +64,8 @@ template <size_t N> auto divide_equally(size_t n) {
     auto sum_abs_diff = [](auto arr) {
         size_t diff = 0;
 
-        for (auto e1 : arr){
-            for (auto e2 : arr){
+        for (auto e1 : arr) {
+            for (auto e2 : arr) {
                 diff += size_t(std::abs(long(e1) - long(e2)));
             }
         }

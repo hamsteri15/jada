@@ -1286,8 +1286,7 @@ TEST_CASE("Stencil operations"){
 
         SECTION("dir=0"){
             simpleDiff op;
-
-            extents<2> dims{2 + op.padding*2,3};
+            extents<2> dims{2 + op.begin_padding*2,3};
 
             std::vector<int> in(flat_size(dims), 0);
             std::vector<int> out(flat_size(dims), 0);
@@ -1318,7 +1317,7 @@ TEST_CASE("Stencil operations"){
 
         SECTION("dir=1"){
             simpleDiff op;
-            extents<2> dims{2,3 + 2*op.padding};
+            extents<2> dims{2,3 + 2*op.begin_padding};
 
             std::vector<int> in(flat_size(dims), 0);
             std::vector<int> out(flat_size(dims), 0);
@@ -1354,7 +1353,193 @@ TEST_CASE("Stencil operations"){
 
 }
 
+TEST_CASE("split_to_subspans"){
 
+
+
+    size_t nj = 6;
+    size_t ni = 5;
+
+
+    std::vector<int> v(ni * nj, 0);
+
+
+    auto span = make_span(v, extents<2>{nj, ni});
+
+    auto [beg, mid, end] = split_to_subspans<0>(span, 1, 2);
+
+    for_each(beg, [](auto& e){e = 1;});
+    for_each(mid, [](auto& e){e = 2;});
+    for_each(end, [](auto& e){e = 3;});
+
+    std::vector<int> correct = 
+    {
+        1,1,1,1,1,
+        2,2,2,2,2,
+        2,2,2,2,2,
+        2,2,2,2,2,
+        3,3,3,3,3,
+        3,3,3,3,3
+    };
+
+
+    CHECK(v == correct);
+
+}
+
+
+TEST_CASE("min_max_offset"){
+
+
+    SECTION("Test 1"){
+
+        auto [min, max] = min_max_offset([](auto f){
+            return f(-3) + f(324) + f(-65);
+        });
+        
+        CHECK(min == -65);
+        CHECK(max == 324);
+
+    }
+    
+    SECTION("Test 2"){
+
+        auto [min, max] = min_max_offset(simpleDiff{});
+        
+        CHECK(min == -1);
+        CHECK(max == 1);
+
+    }
+
+    SECTION("Test 3"){
+        constexpr auto pair = min_max_offset(simpleDiff{});
+
+        constexpr auto min = std::get<0>(pair);
+        constexpr auto max = std::get<1>(pair);
+
+        static_assert(min == -1, "min_max_offset not constexpr");
+        static_assert(max ==  1, "min_max_offset not constexpr");
+
+    }
+
+}
+
+
+
+template<size_t Dir, class Beg, class Mid, class End>
+struct TileOp{
+
+    TileOp(Beg beg, Mid mid, End end) : 
+    m_beg(beg),
+    m_mid(mid),
+    m_end(end)
+    {
+
+    }    
+
+
+    constexpr size_t begin_padding(){
+        auto [min, max] = min_max_offset(m_mid);
+        return size_t(std::abs(min));
+    }
+    
+    constexpr size_t end_padding(){
+        auto [min, max] = min_max_offset(m_mid);
+        return size_t(max);
+    }
+
+
+    static constexpr size_t direction(){return Dir;}
+
+    Beg m_beg;
+    Mid m_mid;
+    End m_end;
+
+};
+
+void do_apply(auto i_span, auto o_span, auto tile_op){
+
+    auto [i_beg, i_mid, i_end] = split_to_subspans<tile_op.direction()>(
+        i_span, tile_op.begin_padding(), tile_op.end_padding());
+    auto [o_beg, o_mid, o_end] = split_to_subspans<tile_op.direction()>(
+        o_span, tile_op.begin_padding(), tile_op.end_padding());
+
+    tile_transform<tile_op.direction()>
+    (
+        i_beg,
+        o_beg,
+        tile_op.m_beg
+    );
+    
+    tile_transform<tile_op.direction()>
+    (
+        i_mid,
+        o_mid,
+        tile_op.m_mid
+    );
+    
+    tile_transform<tile_op.direction()>
+    (
+        i_end,
+        o_end,
+        tile_op.m_end
+    );
+
+}
+
+
+
+
+TEST_CASE("TEMP"){
+
+    auto beg = simpleDiff{};
+    auto mid = simpleDiff{};
+    auto end = simpleDiff{};
+
+    TileOp<0, decltype(beg), decltype(mid), decltype(end)> op(beg, mid, end);
+
+
+
+    size_t nj = 6;
+    size_t ni = 5;
+    size_t padding = 1;
+
+    std::vector<int> in(nj * ni, 0);
+    std::vector<int> out(nj * ni, 0);
+
+    
+    auto temp1 = make_span(in, extents<2>{nj, ni});
+    auto temp2 = make_span(out, extents<2>{nj, ni});
+    set_linear<0>(temp1);
+
+    auto i_in =
+        make_subspan(temp1,
+                     std::array<index_type, 2>{1, 1},
+                     std::array<index_type, 2>{nj - padding, ni - padding});
+    auto i_out =
+        make_subspan(temp2,
+                     std::array<index_type, 2>{1, 1},
+                     std::array<index_type, 2>{nj - padding, ni - padding});
+
+
+    do_apply(i_in, i_out, op);
+
+
+    std::vector<int> correct = 
+    {
+        0,0,0,0,0,
+        0,2,2,2,0,
+        0,2,2,2,0,
+        0,2,2,2,0,
+        0,2,2,2,0,
+        0,0,0,0,0
+    };
+
+    CHECK(out == correct);
+
+
+
+}
 
 
 TEST_CASE("Block neighbours"){

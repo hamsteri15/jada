@@ -10,19 +10,19 @@ namespace jada {
 
 
 template <size_t Dir, class Span> void set_linear(Span s) {
-    
-    auto op = [=](auto idx){
+
+    auto op = [=](auto idx, auto& e){
         using T = typename Span::value_type;
         auto ii                = std::get<Dir>(idx);
-        s(tuple_to_array(idx)) = T(ii);
+        e  = T(ii);
     };
-    
-    for_each_index(all_indices(s), op);
+    for_each_indexed(s, op);
         
 }
 struct simpleDiff{
-    static constexpr size_t padding = 1;
-    template <class F> auto operator()(F f) const { return (f(1) - f(-1)); }
+    static constexpr size_t begin_padding = 1;
+    static constexpr size_t end_padding = 1;
+    template <class F> constexpr auto operator()(F f) const { return (f(1) - f(-1)); }
 };
 
 
