@@ -1,12 +1,11 @@
 #include "grid.hpp"
 #include "common.hpp"
+#include <span>
+#include "experimental/nvexec/stream_context.cuh"
 #include <experimental/stdexec/execution.hpp>
 #include <experimental/exec/static_thread_pool.hpp>
-#include <span>
-//#include "experimental/nvexec/stream_context.cuh"
 
-
-template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid) {
+template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid grid, double dt) {
 
 
     // boundary ops
@@ -26,7 +25,7 @@ template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid gri
 
     auto call_inner = [=](auto i){
         const auto stencil = idxhandle_md_to_oned<size_t(dir)>(i_span, indices[i]);
-        o_span(tuple_to_array(indices[i])) = cd_op(stencil);
+        o_span(tuple_to_array(indices[i])) = (dt/grid.kappa()) * cd_op(stencil);
     };
 
 
@@ -40,42 +39,103 @@ template <Dir dir> stdexec::sender auto D2_di(auto i_span, auto o_span, Grid gri
 
 }
 
-stdexec::sender auto compute_increment(std::vector<double>& f,
-            std::vector<double>& ddx,
-            std::vector<double>& ddy,
-            std::vector<double>& df,
-            Grid                 grid,
-            double               dt) {
+template<Dir dir>
+auto Ri(std::vector<double> f, Grid grid, double dt){
 
 
-    stdexec::sender auto d2_dx = D2_di<Dir::x>(internal_span(f, grid), internal_span(ddx, grid), grid); 
-    stdexec::sender auto d2_dy = D2_di<Dir::y>(internal_span(f, grid), internal_span(ddy, grid), grid); 
+    std::vector<double> df(f.size(), 0);
+
+    auto i_span = internal_span(f, grid);
+    auto o_span = internal_span(df, grid);
     
-
-    auto lhs = std::span{ddx.begin(), ddx.size()};
-    auto rhs = std::span{ddy.begin(), ddy.size()};
-    auto ret = std::span{df.begin(), df.size()};
-    auto increment2 = [=](auto i){
-        ret[i] = (dt/grid.kappa()) * (lhs[i] + rhs[i]);
-    };
+    // boundary ops
+    auto [neg, pos]   = get_direction(dir);
+    auto [bc_0, bc_1] = get_boundary_conditions<dir>(grid);
 
 
-    stdexec::sender auto last =  stdexec::just() | stdexec::bulk(df.size(), increment2);
+    evaluate_spatial_boundary_condition(i_span, bc_0, neg);
+    evaluate_spatial_boundary_condition(i_span, bc_1, pos);
 
-    return stdexec::when_all(d2_dx, d2_dy) | stdexec::let_value([=](){return last;});
+    evaluate<size_t(dir)>(i_span, o_span, CD2(grid.delta(dir)), all_indices(i_span));
+
+    std::transform
+    (
+        std::execution::par_unseq,
+        std::begin(df), std::end(df),
+        std::begin(df),
+        [=](auto e) {return e * (dt/grid.kappa());}
+    );
+
+    return df;
+
 }
 
 
+auto residual(std::vector<double> f, Grid grid, double dt){
+
+    auto op = [](std::vector<double> lhs, std::vector<double> rhs){
+
+        std::vector<double> ret(lhs.size(), 0);
+
+        std::transform
+        (
+            std::execution::par_unseq,
+            std::begin(lhs), std::end(lhs),
+            std::begin(rhs),
+            std::begin(ret),
+            std::plus<double>{}
+        );
+        
+        return ret;
+    };
+
+    auto dx = stdexec::just(f, grid, dt) | stdexec::then(Ri<Dir::x>);
+    auto dy = stdexec::just(f, grid, dt) | stdexec::then(Ri<Dir::y>);
+
+
+    return stdexec::when_all(dx, dy) | stdexec::then(op);
+
+
+    //return op(Ri<Dir::x>(f, grid, dt), Ri<Dir::y>(f, grid, dt));
+}
+
+auto add(std::vector<double> lhs, std::vector<double> rhs){
+
+
+    auto op = [=](auto l, auto r){
+        std::vector<double> ret(lhs.size(), 0);
+        std::transform
+        (
+            std::execution::par_unseq,
+            std::begin(l),
+            std::end(l),
+            std::begin(r),
+            std::begin(ret),
+            std::plus{}
+        );
+        return ret;
+    };
+
+    return
+    stdexec::just(lhs, rhs) | stdexec::then(op);
+
+
+}
+
+
+
+
+
+
+
 int main() {
-    // Declare a pool of 8 worker threads:
-    //exec::static_thread_pool pool(8);
-    //exec::static_thread_pool pool{std::thread::hardware_concurrency()};
-    // Get a handle to the thread pool:
-    exec::static_thread_pool pool;
+
+    
+    
+    exec::static_thread_pool pool(3);
     auto sched = pool.get_scheduler();
 
     //nvexec::stream_context stream_context{};
-    //nvexec::stream_scheduler sched = stream_context.get_scheduler(nvexec::stream_priority::low);
     //nvexec::stream_scheduler sched = stream_context.get_scheduler();
 
     size_t nx      = 128;
@@ -88,41 +148,28 @@ int main() {
     double dt = compute_time_step(grid);
 
     std::vector<double> U(grid.padded_size(), double(0));
-    std::vector<double> dU(U.size(), double(0));
-    std::vector<double> newU(U.size(), double(0));
-    std::vector<double> ddx(U.size(), double(0));
-    std::vector<double> ddy(U.size(), double(0));
 
     assign_for_each_index(internal_span(U, grid), initial_condition(grid));
 
 
+    while(1) {
 
-    while(1){
 
-        stdexec::sender auto compute = compute_increment(U, ddx, ddy, dU, grid, dt);
-        auto work = stdexec::on(sched, compute);
-        stdexec::sync_wait(std::move(work));
+        stdexec::sender auto dU = residual(U, grid, dt);
+        auto& ref = dU;
 
-        std::transform
-        (
-            std::execution::par_unseq,
-            std::begin(U), std::end(U),
-            std::begin(dU),
-            std::begin(newU),
-            std::plus{}
+        stdexec::sender auto compute = stdexec::when_all(
+            ref | stdexec::let_value(
+                      [=](std::vector<double> v) { return add(v, U); }),
+            ref | stdexec::then(mag)
         );
-        
-        std::swap(newU, U);
 
-        auto norm = mag(dU);
+        auto work = stdexec::on(sched, compute);
+        auto [newU, norm] = stdexec::sync_wait(std::move(work)).value();
+        std::swap(newU, U);
         std::cout << norm << " " << dt << std::endl;
         if (norm < 1E-5) { break; }
-
-        dU = std::vector<double>(U.size(), double(0));
-
-
     }
-
 
     /*
     print(internal_span(U, grid));
@@ -130,8 +177,8 @@ int main() {
     auto correct = analytic(grid);
     print(internal_span(correct, grid));
     */
-    std::cout << l2_error(U, grid) << std::endl;
-    std::cout << "done" << std::endl;
+    //std::cout << l2_error(U, grid) << std::endl;
+    //std::cout << "done" << std::endl;
 
 
     return 0;

@@ -7,17 +7,20 @@ project(jada LANGUAGES CXX)
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
 
+target_compile_features(project_options INTERFACE cxx_std_20) #use c++20
+
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "PGI")
-  set(flags -std=c++20 --gcc-toolchain=g++ -stdpar=gpu)
+  #set(flags -stdpar)
+  set(flags --gcc-toolchain=g++ -stdpar=gpu)
   target_compile_options(project_options INTERFACE ${flags})
   #This is annoying, cmake wants the flags defined above to be also specified to
   #link flags when nvc++ is used... probably some bug in cmake
   target_link_options(project_options INTERFACE ${flags})
+
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES ".*Clang")
   
   find_package(TBB REQUIRED)
   target_link_libraries(project_options INTERFACE TBB::tbb)
-  target_compile_options(project_options INTERFACE -std=c++20)
 endif()
 
 

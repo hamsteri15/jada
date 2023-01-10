@@ -11,3 +11,4 @@
 #include "bits/evaluate_boundary.hpp"
 #include "bits/rank.hpp"
 #include "bits/index_conversions.hpp"
+#include "bits/algorithms.hpp"
