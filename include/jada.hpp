@@ -12,3 +12,4 @@
 #include "bits/rank.hpp"
 #include "bits/index_conversions.hpp"
 #include "bits/algorithms.hpp"
+#include "bits/divide_equally.hpp"

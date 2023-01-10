@@ -6,6 +6,7 @@ target_link_libraries(SerialTest.bin PRIVATE catch_main project_options project_
 
 target_include_directories(SerialTest.bin PUBLIC
                             ${CMAKE_SOURCE_DIR}
+                            ${CMAKE_SOURCE_DIR}/catch
 #                            #${MPI_CXX_INCLUDE_PATH}
                           )
 

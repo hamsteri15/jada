@@ -1589,5 +1589,19 @@ TEST_CASE("Test decomposition"){
     }
 }
 
+TEST_CASE("divide_equally"){
+
+    CHECK(divide_equally<2>(100)  == std::array<size_t, 2>{10, 10});
+    CHECK(divide_equally<2>(101)  == std::array<size_t, 2>{1, 101});
+    CHECK(divide_equally<2>(10)  == std::array<size_t, 2>{2, 5});
+    CHECK(divide_equally<2>(1)  == std::array<size_t, 2>{1,1});
+    
+    
+    #ifdef DEBUG
+    CHECK(divide_equally<2>(0)  == std::array<size_t, 2>{0,0});
+    #endif
+
+}
+
 
 

@@ -70,7 +70,7 @@ endif()
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 
 if(BUILD_BENCHMARKS)
-  add_subdirectory(catch)
+  #add_subdirectory(catch)
   enable_testing()
   message(
     "Building benchmarks."
