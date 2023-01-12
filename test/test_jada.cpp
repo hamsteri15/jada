@@ -1514,12 +1514,12 @@ TEST_CASE("TEMP"){
 
     auto i_in =
         make_subspan(temp1,
-                     std::array<index_type, 2>{1, 1},
-                     std::array<index_type, 2>{nj - padding, ni - padding});
+                     std::array<size_t, 2>{1, 1},
+                     std::array<size_t, 2>{nj - padding, ni - padding});
     auto i_out =
         make_subspan(temp2,
-                     std::array<index_type, 2>{1, 1},
-                     std::array<index_type, 2>{nj - padding, ni - padding});
+                     std::array<size_t, 2>{1, 1},
+                     std::array<size_t, 2>{nj - padding, ni - padding});
 
 
     do_apply(i_in, i_out, op);

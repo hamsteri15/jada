@@ -19,7 +19,7 @@ static inline std::vector<integer_t> all_factors_of(integer_t n) {
 
 template <size_t N, class T> static constexpr auto make_tuple(T t) {
 
-    std::array<T, N> arr;
+    std::array<T, N> arr{};
     for (auto& a : arr) { a = t; }
 
     auto tuple_maker = [&]<auto... Is>(std::index_sequence<Is...>) {
