@@ -1458,11 +1458,6 @@ struct TileOp{
 };
 
 
-auto do_apply2(auto container, auto dims, auto tile_op){
-
-    runtime_assert(flat_size(dims) == std::size(container));
-
-}
 
 void do_apply(auto i_span, auto o_span, auto tile_op){
 
@@ -1493,9 +1488,26 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
     );
 
 }
+/*
+auto do_apply2(auto in, auto dims, auto tile_op){
+
+    runtime_assert(flat_size(dims) == std::size(container));
+
+    decltype(in) out(std::size(in));
+    
+    auto temp1 = make_span(in, dims);
+    auto temp2 = make_span(out, dims);
+
+    auto padding1 = tile_op.begin_padding();
+    auto padding2 = tile_op.end_padding();
 
 
 
+
+
+}
+
+*/
 
 TEST_CASE("TEMP"){
 
@@ -1509,7 +1521,6 @@ TEST_CASE("TEMP"){
 
     size_t nj = 6;
     size_t ni = 5;
-    size_t padding = 1;
 
     std::vector<int> in(nj * ni, 0);
     std::vector<int> out(nj * ni, 0);
@@ -1521,12 +1532,12 @@ TEST_CASE("TEMP"){
 
     auto i_in =
         make_subspan(temp1,
-                     std::array<size_t, 2>{1, 1},
-                     std::array<size_t, 2>{nj - padding, ni - padding});
+                     std::array<size_t, 2>{op.begin_padding(), op.begin_padding()},
+                     std::array<size_t, 2>{nj - op.end_padding(), ni - op.end_padding()});
     auto i_out =
         make_subspan(temp2,
-                     std::array<size_t, 2>{1, 1},
-                     std::array<size_t, 2>{nj - padding, ni - padding});
+                     std::array<size_t, 2>{op.begin_padding(), op.begin_padding()},
+                     std::array<size_t, 2>{nj - op.end_padding(), ni - op.end_padding()});
 
 
     do_apply(i_in, i_out, op);
