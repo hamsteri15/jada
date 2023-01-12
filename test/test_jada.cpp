@@ -1457,6 +1457,13 @@ struct TileOp{
 
 };
 
+
+auto do_apply2(auto container, auto dims, auto tile_op){
+
+    runtime_assert(flat_size(dims) == std::size(container));
+
+}
+
 void do_apply(auto i_span, auto o_span, auto tile_op){
 
     auto [i_beg, i_mid, i_end] = split_to_subspans<tile_op.direction()>(
