@@ -31,11 +31,22 @@ struct MakeArray {
 } // namespace detail
 
 /// @brief Converts extents to std::array
-/// @param ext extensions to convert
-/// @return std::array<size_t, Rank> array with the extents
-template <class T> static constexpr auto extent_to_array(T ext) {
+/// @param ext extents to convert
+/// @return std::array<A, rank(extents)> of extents
+static constexpr auto extent_to_array(auto ext) {
     return detail::MakeArray::make(ext, std::make_index_sequence<rank(ext)>{});
 }
+
+/// @brief Overload for std::arrays which simply returns the input
+/// @param ext extents to return 
+/// @return the input extents
+template<size_t N>
+static constexpr auto extent_to_array(std::array<size_t, N> ext){
+    return ext;
+}
+
+
+
 
 /// @brief Computes the total element count spanned by the extents
 /// @param ext (array-like) extensions to compute the flat size of
