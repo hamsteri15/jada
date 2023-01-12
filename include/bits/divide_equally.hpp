@@ -1,9 +1,9 @@
 #pragma once
 
-#include <array>
-#include <algorithm>
 #include "loop.hpp"
 #include "utils.hpp"
+#include <algorithm>
+#include <array>
 
 namespace jada {
 
@@ -19,37 +19,34 @@ static inline std::vector<integer_t> all_factors_of(integer_t n) {
     return ret;
 }
 
-
-
 template <size_t N> auto get_candidates(size_t n) {
 
     auto factors = all_factors_of(n);
 
-    std::array<size_t, N> dims{};
-    for (size_t i = 0; i < N; ++i){
-        dims[i] = factors.size();
-    }
-    
+    auto dims = [](size_t size) {
+        std::array<size_t, N> ret{};
+        for (size_t i = 0; i < N; ++i) { ret[i] = size; }
+        return ret;
+    }(factors.size());
+
     auto correct = [=](auto v) {
         return n == std::accumulate(
                         v.begin(), v.end(), size_t(1), std::multiplies{});
     };
 
     std::vector<std::array<size_t, N>> candidates;
-    for (auto idx : md_indices(std::array<size_t, N>{}, dims)){
+    for (auto idx : md_indices(std::array<size_t, N>{}, dims)) {
 
-        auto idx_arr = tuple_to_array(idx);
+        auto                  idx_arr = tuple_to_array(idx);
         std::array<size_t, N> candidate{};
-        for (size_t i = 0; i < N; ++i){
+        for (size_t i = 0; i < N; ++i) {
             candidate[i] = factors[size_t(idx_arr[i])];
         }
 
         if (correct(candidate)) { candidates.push_back(candidate); }
-
     }
 
     return candidates;
-    
 }
 
 template <size_t N> auto divide_equally(size_t n) {

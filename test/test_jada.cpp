@@ -1488,12 +1488,11 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
     );
 
 }
-/*
 auto do_apply2(auto in, auto dims, auto tile_op){
 
-    runtime_assert(flat_size(dims) == std::size(container));
+    runtime_assert(flat_size(dims) == std::size(in), "dimensions mismatch in do apply2");
 
-    decltype(in) out(std::size(in));
+    decltype(in) out(std::size(in), 0); //!
     
     auto temp1 = make_span(in, dims);
     auto temp2 = make_span(out, dims);
@@ -1502,12 +1501,37 @@ auto do_apply2(auto in, auto dims, auto tile_op){
     auto padding2 = tile_op.end_padding();
 
 
+    auto begin = [=](){
+        std::array<size_t, rank(dims)> ret{};
+        for (size_t i = 0; i < rank(dims); ++i){
+            ret[i] = padding1;
+        }
+        return ret;
+    }();
+    auto end = [=](){
+        std::array<size_t, rank(dims)> ret{};
+        for (size_t i = 0; i < rank(dims); ++i){
+            ret[i] = dims[i] - padding2;
+        }
+        return ret;
+    }();
+
+
+    auto i_in = make_subspan(temp1, begin, end);
+    auto i_out = make_subspan(temp2, begin, end);
+
+    do_apply(i_in, i_out, tile_op);
+
+
+
+    return out;
 
 
 
 }
 
-*/
+
+
 
 TEST_CASE("TEMP"){
 
@@ -1517,30 +1541,16 @@ TEST_CASE("TEMP"){
 
     TileOp<0, decltype(beg), decltype(mid), decltype(end)> op(beg, mid, end);
 
-
-
     size_t nj = 6;
     size_t ni = 5;
 
-    std::vector<int> in(nj * ni, 0);
-    std::vector<int> out(nj * ni, 0);
+    std::array<size_t, 2> dims = {nj, ni};
 
-    
-    auto temp1 = make_span(in, extents<2>{nj, ni});
-    auto temp2 = make_span(out, extents<2>{nj, ni});
-    set_linear<0>(temp1);
+    std::vector<int> in(flat_size(dims), 0);
 
-    auto i_in =
-        make_subspan(temp1,
-                     std::array<size_t, 2>{op.begin_padding(), op.begin_padding()},
-                     std::array<size_t, 2>{nj - op.end_padding(), ni - op.end_padding()});
-    auto i_out =
-        make_subspan(temp2,
-                     std::array<size_t, 2>{op.begin_padding(), op.begin_padding()},
-                     std::array<size_t, 2>{nj - op.end_padding(), ni - op.end_padding()});
+    set_linear<0>(make_span(in, dims));
 
-
-    do_apply(i_in, i_out, op);
+    auto out = do_apply2(in, dims, op);
 
 
     std::vector<int> correct = 
