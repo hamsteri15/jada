@@ -1458,7 +1458,6 @@ struct TileOp{
 };
 
 
-
 void do_apply(auto i_span, auto o_span, auto tile_op){
 
     auto [i_beg, i_mid, i_end] = split_to_subspans<tile_op.direction()>(
@@ -1488,6 +1487,9 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
     );
 
 }
+
+
+
 auto do_apply2(auto in, auto dims, auto tile_op){
 
     runtime_assert(flat_size(dims) == std::size(in), "dimensions mismatch in do apply2");
@@ -1535,7 +1537,17 @@ auto do_apply2(auto in, auto dims, auto tile_op){
 
 TEST_CASE("TEMP"){
 
+    
+    auto boundary_op = [](auto idx, auto f, auto g){
+        f(0) = g(0);  
+    };
+    
+
+
+
     auto beg = simpleDiff{};
+    //auto beg = boundary_op;
+
     auto mid = simpleDiff{};
     auto end = simpleDiff{};
 
