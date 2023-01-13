@@ -1458,6 +1458,32 @@ struct TileOp{
 };
 
 
+
+template<int Dir>
+static constexpr void
+for_each_boundary_tile(
+    auto policy, auto span, auto f
+)
+{
+    auto indices = all_indices(span);
+
+    
+    auto tile = [](auto idx, auto span2){
+        return idxhandle_boundary_md_to_oned2<Dir>(span2, idx);
+    };
+
+    std::for_each_n(policy,
+                    counting_iterator(index_type(0)),
+                    indices.size(),
+                    [=](index_type i) {
+                        const auto idx = tuple_to_array(indices[i]);
+                        f(idx, tile(idx, span));
+                        //f(idx, span(idx));
+                    });
+
+}
+
+
 void do_apply(auto i_span, auto o_span, auto tile_op){
 
     auto [i_beg, i_mid, i_end] = split_to_subspans<tile_op.direction()>(
@@ -1465,13 +1491,14 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
     auto [o_beg, o_mid, o_end] = split_to_subspans<tile_op.direction()>(
         o_span, tile_op.begin_padding(), tile_op.end_padding());
 
-    tile_transform<tile_op.direction()>
+
+    for_each_boundary_tile<-int(tile_op.direction())>
     (
-        i_beg,
-        o_beg,
+        std::execution::seq,
+        o_span,
         tile_op.m_beg
     );
-    
+
     tile_transform<tile_op.direction()>
     (
         i_mid,
@@ -1479,12 +1506,13 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
         tile_op.m_mid
     );
     
-    tile_transform<tile_op.direction()>
+    for_each_boundary_tile<int(tile_op.direction())>
     (
-        i_end,
-        o_end,
+        std::execution::seq,
+        o_span,
         tile_op.m_end
     );
+    
 
 }
 
@@ -1496,39 +1524,13 @@ auto do_apply2(auto in, auto dims, auto tile_op){
 
     decltype(in) out(std::size(in), 0); //!
     
-    auto temp1 = make_span(in, dims);
-    auto temp2 = make_span(out, dims);
+    auto i_in = make_span(in, dims);
+    auto i_out = make_span(out, dims);
 
-    auto padding1 = tile_op.begin_padding();
-    auto padding2 = tile_op.end_padding();
-
-
-    auto begin = [=](){
-        std::array<size_t, rank(dims)> ret{};
-        for (size_t i = 0; i < rank(dims); ++i){
-            ret[i] = padding1;
-        }
-        return ret;
-    }();
-    auto end = [=](){
-        std::array<size_t, rank(dims)> ret{};
-        for (size_t i = 0; i < rank(dims); ++i){
-            ret[i] = dims[i] - padding2;
-        }
-        return ret;
-    }();
-
-
-    auto i_in = make_subspan(temp1, begin, end);
-    auto i_out = make_subspan(temp2, begin, end);
 
     do_apply(i_in, i_out, tile_op);
 
-
-
     return out;
-
-
 
 }
 
@@ -1537,24 +1539,24 @@ auto do_apply2(auto in, auto dims, auto tile_op){
 
 TEST_CASE("TEMP"){
 
-    
-    auto boundary_op = [](auto idx, auto f, auto g){
-        f(0) = g(0);  
+    auto boundary_op = [](auto idx, auto f){
+        (void) idx;
+        f(0) = 2;
     };
-    
 
 
+    auto middle_op = [](auto f){
+        return f(1) - f(-1);
+    };
 
-    auto beg = simpleDiff{};
-    //auto beg = boundary_op;
-
-    auto mid = simpleDiff{};
-    auto end = simpleDiff{};
+    auto beg = boundary_op;
+    auto mid = middle_op;
+    auto end = boundary_op;
 
     TileOp<0, decltype(beg), decltype(mid), decltype(end)> op(beg, mid, end);
 
-    size_t nj = 6;
-    size_t ni = 5;
+    size_t nj = 3;
+    size_t ni = 4;
 
     std::array<size_t, 2> dims = {nj, ni};
 
@@ -1564,18 +1566,7 @@ TEST_CASE("TEMP"){
 
     auto out = do_apply2(in, dims, op);
 
-
-    std::vector<int> correct = 
-    {
-        0,0,0,0,0,
-        0,2,2,2,0,
-        0,2,2,2,0,
-        0,2,2,2,0,
-        0,2,2,2,0,
-        0,0,0,0,0
-    };
-
-    CHECK(out == correct);
+    CHECK(out == std::vector<int>(flat_size(dims), 2));
 
 
 
