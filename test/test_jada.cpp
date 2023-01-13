@@ -1422,9 +1422,76 @@ TEST_CASE("min_max_offset"){
 
     }
 
+    SECTION("Test 4"){
+
+        auto middle_op = [](auto f){
+            return
+            -f(2) + 8*f(1) - 8*f(-1) + f(-2);
+        };
+
+        auto [min, max] = min_max_offset(middle_op);
+
+        CHECK(min == -2);
+        CHECK(max == 2);
+
+
+    }
+
 }
 
+static constexpr void
+for_each_boundary_tile(
+    auto policy, auto span, auto f, auto dir
+)
+{
 
+
+
+
+    //auto indices = all_indices(span);
+    auto indices = boundary_indices(dimensions(span), dir);
+
+    
+    auto tile = [=](auto idx, auto span2){
+        return idxhandle_boundary_md_to_oned(span2, idx, dir);
+    };
+
+    std::for_each_n(policy,
+                    counting_iterator(index_type(0)),
+                    indices.size(),
+                    [=](index_type i) {
+                        const auto idx = tuple_to_array(indices[i]);
+                        f(idx, tile(idx, span));
+                        //f(idx, span(idx));
+                    });
+
+}
+
+TEST_CASE("for_each_boundary_tile"){
+
+    auto dims = std::array<size_t, 2>{3, 4};
+    std::vector<int> data(flat_size(dims), 0);
+    auto span = make_span(data, dims);
+
+    auto op = [](auto idx, auto f){
+        f(0) = 1;
+    };
+
+    std::array<index_type, 2> dir = {-1, 0};
+
+
+    for_each_boundary_tile(std::execution::seq, span, op, dir);
+
+    std::vector<int> correct
+    {
+        1,1,1,1,
+        0,0,0,0,
+        0,0,0,0
+    };
+
+    CHECK(data == correct);
+
+}
 
 template<size_t Dir, class Beg, class Mid, class End>
 struct TileOp{
@@ -1458,30 +1525,34 @@ struct TileOp{
 };
 
 
+template <int Dir, class Span, class Idx>
+static constexpr auto
+idxhandle_boundary_md_to_oned2(Span in, Idx center) {
 
-template<int Dir>
-static constexpr void
-for_each_boundary_tile(
-    auto policy, auto span, auto f
-)
-{
-    auto indices = all_indices(span);
+    static_assert(rank(in) == rank(center),
+                  "Rank mismatch in idxhandle_boundary_md_to_oned2.");
 
     
-    auto tile = [](auto idx, auto span2){
-        return idxhandle_boundary_md_to_oned2<Dir>(span2, idx);
+    static_assert(std::abs(Dir) < rank(in), 
+                "Direction mismatch in in idxhandle_boundary_md_to_oned2.");
+    
+
+
+    constexpr size_t N = rank(in);
+
+    // NOTE! Important to return by reference here so that assignment can be
+    // used in boundary conditions
+    using RT = decltype(in(tuple_to_array(center)));
+
+    const auto new_span = make_subspan(in, center);
+    
+    return [=](index_type oned_idx) -> RT {
+        std::array<index_type, N> mod_idx{};
+        for (size_t i = 0; i < N; ++i) { mod_idx[size_t(Dir)] = oned_idx * signum(Dir); }
+        return new_span(mod_idx);
     };
-
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) {
-                        const auto idx = tuple_to_array(indices[i]);
-                        f(idx, tile(idx, span));
-                        //f(idx, span(idx));
-                    });
-
 }
+
 
 
 void do_apply(auto i_span, auto o_span, auto tile_op){
@@ -1492,13 +1563,19 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
         o_span, tile_op.begin_padding(), tile_op.end_padding());
 
 
-    for_each_boundary_tile<-int(tile_op.direction())>
+    std::array<index_type, rank(i_span)> dir{};
+    dir[tile_op.direction()] = -1;
+    
+    for_each_boundary_tile
     (
         std::execution::seq,
         o_span,
-        tile_op.m_beg
+        tile_op.m_beg,
+        dir
     );
+    
 
+    
     tile_transform<tile_op.direction()>
     (
         i_mid,
@@ -1506,12 +1583,16 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
         tile_op.m_mid
     );
     
-    for_each_boundary_tile<int(tile_op.direction())>
+    
+    dir[tile_op.direction()] = 1;
+    for_each_boundary_tile
     (
         std::execution::seq,
         o_span,
-        tile_op.m_end
+        tile_op.m_end,
+        dir
     );
+    
     
 
 }
@@ -1546,7 +1627,13 @@ TEST_CASE("TEMP"){
 
 
     auto middle_op = [](auto f){
-        return f(1) - f(-1);
+        
+        return
+        -f(2) + 8*f(1) - 8*f(-1) + f(-2);
+        
+        //return 
+        //f(1) - f(-1);
+
     };
 
     auto beg = boundary_op;
@@ -1555,7 +1642,7 @@ TEST_CASE("TEMP"){
 
     TileOp<0, decltype(beg), decltype(mid), decltype(end)> op(beg, mid, end);
 
-    size_t nj = 3;
+    size_t nj = 6;
     size_t ni = 4;
 
     std::array<size_t, 2> dims = {nj, ni};

@@ -79,32 +79,5 @@ idxhandle_boundary_md_to_oned(Span in, Idx center, Dir dir) {
 }
 
 
-template <int Dir, class Span, class Idx>
-static constexpr auto
-idxhandle_boundary_md_to_oned2(Span in, Idx center) {
-
-    static_assert(rank(in) == rank(center),
-                  "Rank mismatch in idxhandle_boundary_md_to_oned2.");
-
-    
-    static_assert(std::abs(Dir) < rank(in), 
-                "Direction mismatch in in idxhandle_boundary_md_to_oned2.");
-    
-
-
-    constexpr size_t N = rank(in);
-
-    // NOTE! Important to return by reference here so that assignment can be
-    // used in boundary conditions
-    using RT = decltype(in(tuple_to_array(center)));
-
-    const auto new_span = make_subspan(in, center);
-    
-    return [=](index_type oned_idx) -> RT {
-        std::array<index_type, N> mod_idx{};
-        for (size_t i = 0; i < N; ++i) { mod_idx[size_t(Dir)] = oned_idx * Dir; }
-        return new_span(mod_idx);
-    };
-}
 
 } // namespace jada

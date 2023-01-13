@@ -2,6 +2,7 @@
 
 #include <array>
 
+
 #include "cartesian_product.hpp"
 #include "indices.hpp"
 #include "mdspan.hpp"
@@ -52,5 +53,27 @@ static constexpr auto boundary_indices(std::array<size_type, N>  dims,
 
     return md_indices(begin, end);
 }
+
+
+//TODO: This doesnt belong here
+template <typename T> 
+static constexpr int signum(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+
+
+template <int Dir, size_t N>
+static constexpr auto boundary_indices(std::array<size_type, N>  dims) {
+    
+
+    std::array<index_type, N> dir{};
+    dir[size_t(Dir)] = signum(Dir);
+    return boundary_indices(dims, dir);
+
+    
+}
+
+
 
 } // namespace jada
