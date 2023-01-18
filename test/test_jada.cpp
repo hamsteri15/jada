@@ -1445,9 +1445,6 @@ for_each_boundary_tile(
 )
 {
 
-
-
-
     //auto indices = all_indices(span);
     auto indices = boundary_indices(dimensions(span), dir);
 
@@ -1584,6 +1581,8 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
     );
     
     
+
+
     dir[tile_op.direction()] = 1;
     for_each_boundary_tile
     (
@@ -1620,19 +1619,21 @@ auto do_apply2(auto in, auto dims, auto tile_op){
 
 TEST_CASE("TEMP"){
 
+    
     auto boundary_op = [](auto idx, auto f){
         (void) idx;
+        //f(0) = f(0) - f(-1);
         f(0) = 2;
+        f(-1) = 2;
     };
+    
 
+    
 
     auto middle_op = [](auto f){
         
         return
-        -f(2) + 8*f(1) - 8*f(-1) + f(-2);
-        
-        //return 
-        //f(1) - f(-1);
+        (f(2) - f(-2)) / 2;
 
     };
 
@@ -1643,7 +1644,7 @@ TEST_CASE("TEMP"){
     TileOp<0, decltype(beg), decltype(mid), decltype(end)> op(beg, mid, end);
 
     size_t nj = 6;
-    size_t ni = 4;
+    size_t ni = 5;
 
     std::array<size_t, 2> dims = {nj, ni};
 
@@ -1652,6 +1653,11 @@ TEST_CASE("TEMP"){
     set_linear<0>(make_span(in, dims));
 
     auto out = do_apply2(in, dims, op);
+
+    print(
+        make_span(out, dims)
+    );
+
 
     CHECK(out == std::vector<int>(flat_size(dims), 2));
 
