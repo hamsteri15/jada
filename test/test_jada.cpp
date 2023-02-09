@@ -52,14 +52,14 @@ TEST_CASE("Test index_conversions"){
             CHECK(get_shift<1, StorageOrder::ColMajor>(dims) == n0);
             CHECK(get_shift<2, StorageOrder::ColMajor>(dims) == n0 * n1);
         }
-    
+
     }
 
 
     SECTION("flatten"){
 
         SECTION("1D"){
-            
+
             using dimension = std::array<size_type, 1>;
             using position = std::array<index_type, 1>;
             dimension dim{12};
@@ -72,11 +72,11 @@ TEST_CASE("Test index_conversions"){
             pos = {0};
             CHECK(flatten<StorageOrder::RowMajor>(pos, dim) == 0);
             CHECK(flatten<StorageOrder::ColMajor>(pos, dim) == 0);
-            
+
             pos = {11};
             CHECK(flatten<StorageOrder::RowMajor>(pos, dim) == 11);
             CHECK(flatten<StorageOrder::ColMajor>(pos, dim) == 11);
-           
+
             #ifdef DEBUG
             pos = {12};
             REQUIRE_THROWS(flatten<StorageOrder::RowMajor>(pos, dim));
@@ -84,13 +84,13 @@ TEST_CASE("Test index_conversions"){
             #endif
 
         }
-        
+
         SECTION("2D"){
 
             using dimension = std::array<size_type, 2>;
             using position = std::array<index_type, 2>;
             dimension dim{4,5};
-            
+
             position pos;
 
 
@@ -108,8 +108,8 @@ TEST_CASE("Test index_conversions"){
             REQUIRE_THROWS(flatten<StorageOrder::ColMajor>(pos, dim));
             #endif
         }
-        
-        
+
+
         SECTION("3D"){
 
             using dimension = std::array<size_type, 3>;
@@ -134,9 +134,9 @@ TEST_CASE("Test index_conversions"){
 
         }
 
-        
+
         SECTION("4D"){
-            
+
             using dimension = std::array<size_type, 4>;
             using position = std::array<index_type, 4>;
 
@@ -158,7 +158,7 @@ TEST_CASE("Test index_conversions"){
             #endif
 
         }
-        
+
 
     }
 
@@ -195,7 +195,7 @@ TEST_CASE("Test index_conversions"){
             using position = std::array<index_type, 2>;
             dimension dim{3, 6};
             index_type pos;
-            
+
             pos = 0;
             CHECK(unflatten<StorageOrder::RowMajor>(pos, dim) == position{0,0});
             CHECK(unflatten<StorageOrder::ColMajor>(pos, dim) == position{0,0});
@@ -219,14 +219,14 @@ TEST_CASE("Test index_conversions"){
             #endif
 
         }
-        
+
         SECTION("3D"){
             using dimension = std::array<size_type, 3>;
             using position = std::array<index_type, 3>;
             dimension dim{3, 1, 8};
             index_type pos;
 
-            pos = 0;    
+            pos = 0;
             CHECK(unflatten<StorageOrder::RowMajor>(pos, dim) == position{0,0,0});
             CHECK(unflatten<StorageOrder::ColMajor>(pos, dim) == position{0,0,0});
 
@@ -282,7 +282,7 @@ TEST_CASE("Test index_conversions"){
         }
 
     }
-    
+
 }
 
 TEST_CASE("rank"){
@@ -303,10 +303,10 @@ TEST_CASE("extents"){
         REQUIRE_NOTHROW(extents<2>{});
         REQUIRE_NOTHROW(extents<2>{4,4});
         REQUIRE_NOTHROW(extents<3>{4,4,0});
-        
+
 
     }
-    
+
 
     SECTION("flat_size"){
 
@@ -329,7 +329,7 @@ TEST_CASE("extents"){
         CHECK(indices_in_bounds(arr, ext1) == true);
 
     }
-    
+
 }
 
 
@@ -348,35 +348,35 @@ TEST_CASE("Test indices"){
 
 TEST_CASE("md_indices"){
 
-    
+
     SECTION("Test 1"){
-        
+
         auto t = md_indices(std::array{0,0}, std::array{2,2});
 
-        
+
         std::vector<index_type> is;
         std::vector<index_type> js;
 
-        
+
         for (auto tpl : t){
 
             is.push_back(std::get<0>(tpl));
-            js.push_back(std::get<1>(tpl));            
+            js.push_back(std::get<1>(tpl));
         }
-              
+
         CHECK(is == std::vector<index_type>{0,0,1,1});
         CHECK(js == std::vector<index_type>{0,1,0,1});
-        
+
     }
-    
-    
-    
-    
+
+
+
+
     SECTION("Parallel"){
 
         const auto t = md_indices(std::array{0,0}, std::array{2,2});
 
-        
+
         std::vector<index_type> v(4);
 
         auto s = make_span(v, std::array<size_t,1>{4});
@@ -396,16 +396,16 @@ TEST_CASE("md_indices"){
         CHECK(v == std::vector<index_type>{0,0,0,1});
 
     }
-    
-    
+
+
 
 }
 
 
 TEST_CASE("mdspan tests"){
 
-    
-  
+
+
     SECTION("extents"){
 
         REQUIRE_NOTHROW(extents<3>{3,3,3});
@@ -424,7 +424,7 @@ TEST_CASE("mdspan tests"){
 
     }
 
-    
+
     SECTION("make_span"){
 
         SECTION("vector tests"){
@@ -443,7 +443,7 @@ TEST_CASE("mdspan tests"){
             //CHECK(s3(1,1) == 1);
         }
 
-        
+
 
         SECTION("equal size span"){
             std::vector<double> f(10, 1.0);
@@ -463,7 +463,7 @@ TEST_CASE("mdspan tests"){
         }
 
         SECTION("non-equal size span"){
-            
+
             #ifdef DEBUG
             std::vector<double> f(10, 1.0);
 
@@ -472,12 +472,12 @@ TEST_CASE("mdspan tests"){
         }
 
     }
-    
+
 
 
     SECTION("all_indices"){
 
-        
+
         std::vector<index_type> f(10);
 
         auto span = make_span(f, extents<2>{2,5});
@@ -521,7 +521,7 @@ TEST_CASE("mdspan tests"){
 TEST_CASE("algorithms"){
 
     SECTION("for_each"){
-        
+
         SECTION("serial"){
             size_type ni = 3;
             size_type nj = 2;
@@ -559,7 +559,7 @@ TEST_CASE("algorithms"){
     }
 
     SECTION("for_each_indexed"){
-        
+
         SECTION("serial"){
             size_type ni = 3;
             size_type nj = 2;
@@ -575,7 +575,7 @@ TEST_CASE("algorithms"){
 
             for_each_indexed(aa, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 0,1,2,
                 1,2,3
@@ -584,7 +584,7 @@ TEST_CASE("algorithms"){
             CHECK(a == correct);
 
         }
-        
+
         SECTION("parallel"){
             size_type ni = 3;
             size_type nj = 2;
@@ -600,7 +600,7 @@ TEST_CASE("algorithms"){
 
             for_each_indexed(std::execution::par_unseq, aa, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 0,1,2,
                 1,2,3
@@ -632,7 +632,7 @@ TEST_CASE("algorithms"){
             CHECK(b == std::vector<int>(ni*nj, 3));
 
         }
-        
+
         SECTION("parallel"){
             size_type ni = 3;
             size_type nj = 2;
@@ -654,9 +654,9 @@ TEST_CASE("algorithms"){
         }
 
     }
-    
+
     SECTION("transform_indexed"){
-        
+
         SECTION("serial"){
             size_type ni = 3;
             size_type nj = 2;
@@ -675,7 +675,7 @@ TEST_CASE("algorithms"){
 
             transform_indexed(aa, bb, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 1,2,3,
                 2,3,4
@@ -703,7 +703,7 @@ TEST_CASE("algorithms"){
 
             transform_indexed(std::execution::par_unseq, aa, bb, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 1,2,3,
                 2,3,4
@@ -716,7 +716,7 @@ TEST_CASE("algorithms"){
     }
 
     SECTION("window_transform"){
-        
+
         SECTION("serial"){
             size_type ni = 4;
             size_type nj = 3;
@@ -739,7 +739,7 @@ TEST_CASE("algorithms"){
 
             window_transform(aa, bb, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 -1,-1,-1,-1,
                 -1,+2,+2,-1,
@@ -772,7 +772,7 @@ TEST_CASE("algorithms"){
 
             window_transform(std::execution::par_unseq, aa, bb, op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 -1,-1,-1,-1,
                 -1,+2,+2,-1,
@@ -788,7 +788,7 @@ TEST_CASE("algorithms"){
 
     SECTION("tile_transform"){
 
-        
+
         SECTION("serial"){
             size_type ni = 4;
             size_type nj = 3;
@@ -811,7 +811,7 @@ TEST_CASE("algorithms"){
 
             tile_transform<0>(aa, bb, op);
 
-            std::vector<int> correct1 = 
+            std::vector<int> correct1 =
             {
                 -1,-1,-1,-1,
                 -1,+2,+2,-1,
@@ -822,8 +822,8 @@ TEST_CASE("algorithms"){
 
             b.assign(b.size(), -3);
             tile_transform<1>(aa, bb, op);
-            
-            std::vector<int> correct2 = 
+
+            std::vector<int> correct2 =
             {
                 -3,-3,-3,-3,
                 -3,+2,+2,-3,
@@ -837,7 +837,7 @@ TEST_CASE("algorithms"){
 
 
         }
-        
+
         SECTION("parallel"){
             size_type ni = 4;
             size_type nj = 3;
@@ -860,7 +860,7 @@ TEST_CASE("algorithms"){
 
             tile_transform<0>(std::execution::par, aa, bb, op);
 
-            std::vector<int> correct1 = 
+            std::vector<int> correct1 =
             {
                 -1,-1,-1,-1,
                 -1,+2,+2,-1,
@@ -871,8 +871,8 @@ TEST_CASE("algorithms"){
 
             b.assign(b.size(), -3);
             tile_transform<1>(std::execution::par, aa, bb, op);
-            
-            std::vector<int> correct2 = 
+
+            std::vector<int> correct2 =
             {
                 -3,-3,-3,-3,
                 -3,+2,+2,-3,
@@ -884,9 +884,9 @@ TEST_CASE("algorithms"){
         }
 
     }
-    
 
-    
+
+
 
 
 }
@@ -901,7 +901,7 @@ TEST_CASE("for_each_index"){
         auto aa = make_span(a, extents<2>{nj, ni});
         auto bb = make_span(b, extents<2>{nj, ni});
 
-        
+
 
         auto op = [=](auto idx){
                 auto [i, j] = idx;
@@ -913,7 +913,7 @@ TEST_CASE("for_each_index"){
 
         for_each_index(begin, end, op);
 
-        std::vector<int> correct = 
+        std::vector<int> correct =
         {
             0,0,0,
             0,1,1,
@@ -926,7 +926,7 @@ TEST_CASE("for_each_index"){
 }
 
 TEST_CASE("boundary_indices"){
-        
+
         size_type ni = 3;
         size_type nj = 4;
 
@@ -944,7 +944,7 @@ TEST_CASE("boundary_indices"){
 
             for_each_index(boundary_indices(dimensions(aa), dir), op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 0,0,0,
                 0,0,0,
@@ -968,7 +968,7 @@ TEST_CASE("boundary_indices"){
 
             for_each_index(boundary_indices(dimensions(aa), dir), op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 1,1,1,
                 0,0,0,
@@ -992,7 +992,7 @@ TEST_CASE("boundary_indices"){
 
             for_each_index(boundary_indices(dimensions(aa), dir), op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 0,0,0,
                 0,0,0,
@@ -1017,7 +1017,7 @@ TEST_CASE("boundary_indices"){
 
             for_each_index(boundary_indices(dimensions(aa), dir), op);
 
-            std::vector<int> correct = 
+            std::vector<int> correct =
             {
                 0,0,0,
                 1,0,0,
@@ -1038,7 +1038,7 @@ TEST_CASE("subspan tests"){
 
     SECTION("make_subspan"){
 
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             0,0,0,0,
             0,1,1,0,
@@ -1056,7 +1056,7 @@ TEST_CASE("subspan tests"){
         ss(2,2) = 7;
         ss(2,1) = 5;
 
-        std::vector<int> correct = 
+        std::vector<int> correct =
         {
             4,0,0,0,
             0,1,1,0,
@@ -1067,14 +1067,14 @@ TEST_CASE("subspan tests"){
 
 
     }
-    
+
 
 }
 
 TEST_CASE("Test index_handle"){
 
     SECTION("idxhandle_md_to_md"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1092,11 +1092,11 @@ TEST_CASE("Test index_handle"){
         CHECK(ss(std::make_tuple(-1,-1)) == 1);
         CHECK(ss(std::make_tuple(1,0)) == 10);
         CHECK(ss(std::array<index_type, 2>{1,0}) == 10);
-        
+
     }
 
     SECTION("idxhandle_md_to_oned"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1113,18 +1113,18 @@ TEST_CASE("Test index_handle"){
         CHECK(ss(-1) == 10);
         CHECK(ss(0) == 11);
         CHECK(ss(1) == 12);
-        
-        
+
+
         auto ss2 = idxhandle_md_to_oned<0>(s, center);
 
         CHECK(ss2(-1) == 7);
         CHECK(ss2(0) == 11);
         CHECK(ss2(1) == 15);
-        
+
     }
-        
+
     SECTION("idxhandle_boundary_md_to_oned"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1141,16 +1141,16 @@ TEST_CASE("Test index_handle"){
         CHECK(ss(-1) == 10);
         CHECK(ss(0) == 11);
         CHECK(ss(1) == 12);
-        
+
         auto ss2 = idxhandle_boundary_md_to_oned(s, center, std::array<index_type, 2>{0,-1});
-        
+
 
         CHECK(ss2(-1) == 12);
         CHECK(ss2(0) == 11);
         CHECK(ss2(1) == 10);
         ss2(0) = 43;
         CHECK(ss2(0) == 43);
-        
+
     }
 
 
@@ -1160,7 +1160,7 @@ TEST_CASE("Test index_handle"){
 TEST_CASE("evaluate_boundary"){
 
     SECTION("Assign to ghost"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1179,7 +1179,7 @@ TEST_CASE("evaluate_boundary"){
 
         evaluate_boundary_condition(internal, boundary_op, dir);
 
-        std::vector<int> correct = 
+        std::vector<int> correct =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1190,9 +1190,9 @@ TEST_CASE("evaluate_boundary"){
         CHECK(a == correct);
 
     }
-    
+
     SECTION("Assign to internal"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1211,7 +1211,7 @@ TEST_CASE("evaluate_boundary"){
 
         evaluate_boundary_condition(internal, boundary_op, dir);
 
-        std::vector<int> correct = 
+        std::vector<int> correct =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1224,7 +1224,7 @@ TEST_CASE("evaluate_boundary"){
     }
 
     SECTION("evaluate_spatial_boundary_condition"){
-        std::vector<int> a = 
+        std::vector<int> a =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1246,7 +1246,7 @@ TEST_CASE("evaluate_boundary"){
 
         evaluate_spatial_boundary_condition(internal, boundary_op, dir);
 
-        std::vector<int> correct = 
+        std::vector<int> correct =
         {
             1,  2,  3,  4,
             5,  6,  7,  8,
@@ -1257,7 +1257,7 @@ TEST_CASE("evaluate_boundary"){
         CHECK(a == correct);
 
     }
-    
+
 }
 
 TEST_CASE("Stencil operations"){
@@ -1267,15 +1267,15 @@ TEST_CASE("Stencil operations"){
 
         std::vector<int> in(flat_size(dims), 0);
         std::vector<int> out(flat_size(dims), 0);
-    
+
         auto temp1 = make_span(in, dims);
         auto temp2 = make_span(out, dims);
         set_linear<0>(temp1);
 
         auto s_in = make_subspan(temp1, std::array<index_type, 1>{1}, std::array<index_type, 1>{6});
         auto s_out = make_subspan(temp2, std::array<index_type, 1>{1}, std::array<index_type, 1>{6});
-        
-        tile_transform<0>(s_in, s_out, simpleDiff());         
+
+        tile_transform<0>(s_in, s_out, simpleDiff());
 
 
         CHECK(out == std::vector<int>{0, 2, 2, 2, 2, 2, 0});
@@ -1302,7 +1302,7 @@ TEST_CASE("Stencil operations"){
                                     std::array<index_type, 2>{1, 0},
                                     std::array<index_type, 2>{3, 3});
 
-            tile_transform<0>(std::execution::par, s_in, s_out, op);         
+            tile_transform<0>(std::execution::par, s_in, s_out, op);
 
             CHECK(
                 out == std::vector<int>
@@ -1321,7 +1321,7 @@ TEST_CASE("Stencil operations"){
 
             std::vector<int> in(flat_size(dims), 0);
             std::vector<int> out(flat_size(dims), 0);
-            
+
             auto temp1 = make_span(in, dims);
             auto temp2 = make_span(out, dims);
             set_linear<1>(temp1);
@@ -1333,7 +1333,7 @@ TEST_CASE("Stencil operations"){
                                     std::array<index_type, 2>{0, 1},
                                     std::array<index_type, 2>{2, 4});
 
-            tile_transform<1>(std::execution::par, s_in, s_out, op);         
+            tile_transform<1>(std::execution::par, s_in, s_out, op);
 
 
 
@@ -1372,7 +1372,7 @@ TEST_CASE("split_to_subspans"){
     for_each(mid, [](auto& e){e = 2;});
     for_each(end, [](auto& e){e = 3;});
 
-    std::vector<int> correct = 
+    std::vector<int> correct =
     {
         1,1,1,1,1,
         2,2,2,2,2,
@@ -1396,16 +1396,16 @@ TEST_CASE("min_max_offset"){
         auto [min, max] = min_max_offset([](auto f){
             return f(-3) + f(324) + f(-65);
         });
-        
+
         CHECK(min == -65);
         CHECK(max == 324);
 
     }
-    
+
     SECTION("Test 2"){
 
         auto [min, max] = min_max_offset(simpleDiff{});
-        
+
         CHECK(min == -1);
         CHECK(max == 1);
 
@@ -1451,7 +1451,7 @@ for_each_boundary_tile(
     //auto indices = all_indices(span);
     auto indices = boundary_indices(dimensions(span), dir);
 
-    
+
     auto tile = [=](auto idx, auto span2){
         return idxhandle_boundary_md_to_oned(span2, idx, dir);
     };
@@ -1496,20 +1496,20 @@ TEST_CASE("for_each_boundary_tile"){
 template<size_t Dir, class Beg, class Mid, class End>
 struct TileOp{
 
-    TileOp(Beg beg, Mid mid, End end) : 
+    TileOp(Beg beg, Mid mid, End end) :
     m_beg(beg),
     m_mid(mid),
     m_end(end)
     {
 
-    }    
+    }
 
 
     constexpr size_t begin_padding(){
         auto [min, max] = min_max_offset(m_mid);
         return size_t(std::abs(min));
     }
-    
+
     constexpr size_t end_padding(){
         auto [min, max] = min_max_offset(m_mid);
         return size_t(max);
@@ -1532,10 +1532,10 @@ idxhandle_boundary_md_to_oned2(Span in, Idx center) {
     static_assert(rank(in) == rank(center),
                   "Rank mismatch in idxhandle_boundary_md_to_oned2.");
 
-    
-    static_assert(std::abs(Dir) < rank(in), 
+
+    static_assert(std::abs(Dir) < rank(in),
                 "Direction mismatch in in idxhandle_boundary_md_to_oned2.");
-    
+
 
 
     constexpr size_t N = rank(in);
@@ -1545,7 +1545,7 @@ idxhandle_boundary_md_to_oned2(Span in, Idx center) {
     using RT = decltype(in(tuple_to_array(center)));
 
     const auto new_span = make_subspan(in, center);
-    
+
     return [=](index_type oned_idx) -> RT {
         std::array<index_type, N> mod_idx{};
         for (size_t i = 0; i < N; ++i) { mod_idx[size_t(Dir)] = oned_idx * signum(Dir); }
@@ -1565,7 +1565,7 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
 
     std::array<index_type, rank(i_span)> dir{};
     dir[tile_op.direction()] = -1;
-    
+
     for_each_boundary_tile
     (
         std::execution::seq,
@@ -1573,17 +1573,17 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
         tile_op.m_beg,
         dir
     );
-    
 
-    
+
+
     tile_transform<tile_op.direction()>
     (
         i_mid,
         o_mid,
         tile_op.m_mid
     );
-    
-    
+
+
     dir[tile_op.direction()] = 1;
     for_each_boundary_tile
     (
@@ -1592,8 +1592,8 @@ void do_apply(auto i_span, auto o_span, auto tile_op){
         tile_op.m_end,
         dir
     );
-    
-    
+
+
 
 }
 
@@ -1604,7 +1604,7 @@ auto do_apply2(auto in, auto dims, auto tile_op){
     runtime_assert(flat_size(dims) == std::size(in), "dimensions mismatch in do apply2");
 
     decltype(in) out(std::size(in), 0); //!
-    
+
     auto i_in = make_span(in, dims);
     auto i_out = make_span(out, dims);
 
@@ -1622,16 +1622,37 @@ TEST_CASE("TEMP"){
 
     auto boundary_op = [](auto idx, auto f){
         (void) idx;
+
+        /*
+        std::array<double, 5> coeffs =
+        {
+            -25./12, 4.0, -3.0, 4.0/3.0, -1./4.
+        };
+
+        double r1{};
+        double r2{};
+        for (int i = 0; i < 5; ++i){
+
+            r1 += coeffs[i] * f(-i);
+            r2 += coeffs[i] * f(-i-1);
+
+        }
+
+        f(0) = r1;
+        f(-1) = r2;
+        */
+        f(-1) = 5;
         f(0) = 2;
+        //f(-1) = 2;
     };
 
 
     auto middle_op = [](auto f){
-        
+
         return
-        -f(2) + 8*f(1) - 8*f(-1) + f(-2);
-        
-        //return 
+        (-f(2) + 8*f(1) - 8*f(-1) + f(-2))/12.0;
+
+        //return
         //f(1) - f(-1);
 
     };
@@ -1647,13 +1668,13 @@ TEST_CASE("TEMP"){
 
     std::array<size_t, 2> dims = {nj, ni};
 
-    std::vector<int> in(flat_size(dims), 0);
+    std::vector<double> in(flat_size(dims), 0);
 
     set_linear<0>(make_span(in, dims));
 
     auto out = do_apply2(in, dims, op);
 
-    CHECK(out == std::vector<int>(flat_size(dims), 2));
+    CHECK(out == std::vector<double>(flat_size(dims), 2));
 
 
 
@@ -1704,7 +1725,7 @@ TEST_CASE("Block neighbours"){
     }
 
 
-    
+
 
     SECTION("Star connectivity"){
 
@@ -1823,7 +1844,7 @@ TEST_CASE("Block neighbours"){
         }
 
     }
-    
+
 
 }
 
@@ -1854,11 +1875,11 @@ TEST_CASE("Test decomposition"){
             REQUIRE_THROWS(offset(std::array<size_t, 1>{4}, coord_dims, global_grid_dims));
             #endif
         }
-        
+
     }
 
 
-    
+
     SECTION("local_extent()") {
 
 
@@ -1888,7 +1909,7 @@ TEST_CASE("Test decomposition"){
 
 
         }
-        
+
     }
 }
 
@@ -1898,8 +1919,8 @@ TEST_CASE("divide_equally"){
     CHECK(divide_equally<2>(101)  == std::array<size_t, 2>{1, 101});
     CHECK(divide_equally<2>(10)  == std::array<size_t, 2>{2, 5});
     CHECK(divide_equally<2>(1)  == std::array<size_t, 2>{1,1});
-    
-    
+
+
     #ifdef DEBUG
     CHECK(divide_equally<2>(0)  == std::array<size_t, 2>{0,0});
     #endif
