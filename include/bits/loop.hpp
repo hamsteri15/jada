@@ -32,47 +32,12 @@ template <class B, class E> static constexpr auto md_indices(B begin, E end) {
 template <class Span> static constexpr auto all_indices(Span span) {
     auto end = dimensions(span);
     decltype(end) begin{};
-    
-    return md_indices(begin, end);
-}
-
-template <size_t N>
-static constexpr auto boundary_indices(std::array<size_type, N>  dims,
-                                       std::array<index_type, N> direction) {
-    // runtime_assert(valid_direction(direction), "Invalid boundary direction in
-    // for_each_boundary_index");
-    std::array<index_type, N> begin{};
-    std::array<index_type, N> end{};
-
-    for (size_t i = 0; i < N; ++i) { end[i] = index_type(dims[i]); }
-
-    for (size_t i = 0; i < N; ++i) {
-        if (direction[i] == 1) { begin[i] = index_type(dims[i]) - 1; }
-        if (direction[i] == -1) { end[i] = 1; }
-    }
 
     return md_indices(begin, end);
 }
 
 
-//TODO: This doesnt belong here
-template <typename T> 
-static constexpr int signum(T val) {
-    return (T(0) < val) - (val < T(0));
-}
 
-
-
-template <int Dir, size_t N>
-static constexpr auto boundary_indices(std::array<size_type, N>  dims) {
-    
-
-    std::array<index_type, N> dir{};
-    dir[size_t(Dir)] = signum(Dir);
-    return boundary_indices(dims, dir);
-
-    
-}
 
 
 

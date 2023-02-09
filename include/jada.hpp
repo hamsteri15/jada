@@ -2,6 +2,7 @@
 
 #include "bits/mdspan.hpp"
 #include "bits/subspan.hpp"
+#include "bits/boundary_subspan.hpp"
 #include "bits/extents.hpp"
 #include "bits/decomposition.hpp"
 #include "bits/loop.hpp"
