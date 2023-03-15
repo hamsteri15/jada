@@ -3,10 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/counting_iterator.hpp"
-#include "include/bits/loop.hpp"
-#include "include/bits/mdspan.hpp"
-#include "include/bits/utils.hpp"
+#include "include/bits/algorithms/generic_foreach.hpp"
 
 namespace jada {
 
@@ -31,15 +28,10 @@ static constexpr void transform(ExecutionPolicy&& policy,
     runtime_assert(dimensions(i_span) == dimensions(o_span),
                    "Dimension mismatch in transform()");
 
-    const auto indices = all_indices(i_span);
 
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) {
-                        const auto idx = tuple_to_array(indices[i]);
-                        o_span(idx)    = f(i_span(idx));
-                    });
+    auto F = [=](auto md_idx) { o_span(md_idx) = f(i_span(md_idx)); };
+
+    detail::generic_foreach(policy, all_indices(i_span), F);
 }
 
 /// @brief applies the given function to a range spanned by multiple dimensions
@@ -80,15 +72,9 @@ static constexpr void transform_indexed(ExecutionPolicy&&   policy,
     runtime_assert(dimensions(i_span) == dimensions(o_span),
                    "Dimension mismatch in transform_indexed()");
 
-    const auto indices = all_indices(i_span);
+    auto F = [=](auto md_idx) { o_span(md_idx) = f(md_idx, i_span(md_idx)); };
 
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) {
-                        const auto idx = tuple_to_array(indices[i]);
-                        o_span(idx)    = f(idx, i_span(idx));
-                    });
+    detail::generic_foreach(policy, all_indices(i_span), F);
 }
 
 /// @brief applies the given function f(md_idx, value) to a range spanned by

@@ -7,8 +7,6 @@
 
 namespace jada {
 
-
-
 /// @brief Creates an index handle that maps multidimensional indices to
 /// one-dimensional offsets wrt. to the input index 'center' and the direction
 /// Dir. For example, if center = {1,2,3}, Dir = 1, the returned index handle
@@ -26,7 +24,7 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
                   "Rank mismatch in idxhandle_md_to_oned.");
     constexpr size_t N = rank(in);
 
-    //A subspan centered at 'center'
+    // A subspan centered at 'center'
     const auto h = make_subspan(in, center);
 
     return [=](index_type oned_idx) {
@@ -35,7 +33,6 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
         return h(mod_idx);
     };
 }
-
 
 /// @brief applies the input unary tile function to all elements of the input
 /// span and stores the result into the output span. A tile accessor is one
@@ -81,5 +78,4 @@ tile_transform(InputSpan i_span, OutputSpan o_span, UnaryTileFunction f) {
     tile_transform<Dir>(std::execution::seq, i_span, o_span, f);
 }
 
-
-}
+} // namespace jada

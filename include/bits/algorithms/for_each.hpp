@@ -3,10 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/counting_iterator.hpp"
-#include "include/bits/loop.hpp"
-#include "include/bits/mdspan.hpp"
-#include "include/bits/utils.hpp"
+#include "include/bits/algorithms/generic_foreach.hpp"
 
 namespace jada {
 
@@ -20,12 +17,8 @@ template <class ExecutionPolicy, class InputSpan, class UnaryFunction>
 static constexpr void
 for_each(ExecutionPolicy&& policy, InputSpan span, UnaryFunction f) {
 
-    const auto indices = all_indices(span);
-
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) { f(span(tuple_to_array(indices[i]))); });
+    auto F = [=](auto md_idx) { f(span(md_idx)); };
+    detail::generic_foreach(policy, all_indices(span), F);
 }
 
 /// @brief Applies the given function object f to the result of indexing every
@@ -48,15 +41,8 @@ static constexpr void for_each_indexed(ExecutionPolicy&&   policy,
                                        InputSpan           span,
                                        BinaryIndexFunction f) {
 
-    const auto indices = all_indices(span);
-
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) {
-                        const auto idx = tuple_to_array(indices[i]);
-                        f(idx, span(idx));
-                    });
+    auto F = [=](auto md_idx) { f(md_idx, span(md_idx)); };
+    detail::generic_foreach(policy, all_indices(span), F);
 }
 
 /// @brief Applies the given function object f(md_idx, value) to the result of

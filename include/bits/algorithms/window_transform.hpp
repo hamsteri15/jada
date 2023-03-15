@@ -3,13 +3,9 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/counting_iterator.hpp"
-#include "include/bits/loop.hpp"
-#include "include/bits/mdspan.hpp"
-#include "include/bits/utils.hpp"
+#include "include/bits/algorithms/generic_foreach.hpp"
 
 namespace jada {
-
 
 namespace detail {
 
@@ -27,15 +23,9 @@ static constexpr void window_transform(ExecutionPolicy&&  policy,
     runtime_assert(dimensions(i_span) == dimensions(o_span),
                    "Dimension mismatch in shifted_transform()");
 
-    const auto indices = all_indices(i_span);
+    auto func = [=](auto md_idx) { o_span(md_idx) = f(f2(md_idx, i_span)); };
 
-    std::for_each_n(policy,
-                    counting_iterator(index_type(0)),
-                    indices.size(),
-                    [=](index_type i) {
-                        const auto idx = tuple_to_array(indices[i]);
-                        o_span(idx)    = f(f2(idx, i_span));
-                    });
+    generic_foreach(policy, all_indices(i_span), func);
 }
 
 } // namespace detail
@@ -79,4 +69,4 @@ window_transform(InputSpan i_span, OutputSpan o_span, UnaryWindowFunction f) {
     window_transform(std::execution::seq, i_span, o_span, f);
 }
 
-}
+} // namespace jada
