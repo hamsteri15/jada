@@ -830,11 +830,6 @@ TEST_CASE("algorithms"){
             };
 
             CHECK(b == correct2);
-
-
-
-
-
         }
 
         SECTION("parallel"){
