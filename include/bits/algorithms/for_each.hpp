@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/algorithms/generic_foreach.hpp"
+#include "include/bits/algorithms/md_for_each.hpp"
 
 namespace jada {
 
@@ -18,7 +18,7 @@ static constexpr void
 for_each(ExecutionPolicy&& policy, InputSpan span, UnaryFunction f) {
 
     auto F = [=](auto md_idx) { f(span(md_idx)); };
-    detail::generic_foreach(policy, all_indices(span), F);
+    detail::md_for_each(policy, all_indices(span), F);
 }
 
 /// @brief Applies the given function object f to the result of indexing every
@@ -42,7 +42,7 @@ static constexpr void for_each_indexed(ExecutionPolicy&&   policy,
                                        BinaryIndexFunction f) {
 
     auto F = [=](auto md_idx) { f(md_idx, span(md_idx)); };
-    detail::generic_foreach(policy, all_indices(span), F);
+    detail::md_for_each(policy, all_indices(span), F);
 }
 
 /// @brief Applies the given function object f(md_idx, value) to the result of

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/algorithms/generic_foreach.hpp"
+#include "include/bits/algorithms/md_for_each.hpp"
 
 namespace jada {
 
@@ -31,7 +31,7 @@ static constexpr void transform(ExecutionPolicy&& policy,
 
     auto F = [=](auto md_idx) { o_span(md_idx) = f(i_span(md_idx)); };
 
-    detail::generic_foreach(policy, all_indices(i_span), F);
+    detail::md_for_each(policy, all_indices(i_span), F);
 }
 
 /// @brief applies the given function to a range spanned by multiple dimensions
@@ -74,7 +74,7 @@ static constexpr void transform_indexed(ExecutionPolicy&&   policy,
 
     auto F = [=](auto md_idx) { o_span(md_idx) = f(md_idx, i_span(md_idx)); };
 
-    detail::generic_foreach(policy, all_indices(i_span), F);
+    detail::md_for_each(policy, all_indices(i_span), F);
 }
 
 /// @brief applies the given function f(md_idx, value) to a range spanned by

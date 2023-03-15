@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/algorithms/generic_foreach.hpp"
+#include "include/bits/algorithms/md_for_each.hpp"
 
 namespace jada {
 
@@ -25,7 +25,7 @@ static constexpr void window_transform(ExecutionPolicy&&  policy,
 
     auto func = [=](auto md_idx) { o_span(md_idx) = f(f2(md_idx, i_span)); };
 
-    generic_foreach(policy, all_indices(i_span), func);
+    md_for_each(policy, all_indices(i_span), func);
 }
 
 } // namespace detail

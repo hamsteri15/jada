@@ -12,7 +12,10 @@ namespace jada {
 
 namespace detail {
 
-static constexpr void generic_foreach(auto&& policy, auto indices, auto F) {
+template <class ExecutionPolicy, class Indices, class UnaryMdIndexFunction>
+static constexpr void md_for_each(ExecutionPolicy&&     policy,
+                                      Indices               indices,
+                                      UnaryMdIndexFunction F) {
 
     std::for_each_n(policy,
                     counting_iterator(index_type(0)),
@@ -20,4 +23,5 @@ static constexpr void generic_foreach(auto&& policy, auto indices, auto F) {
                     [=](index_type i) { F(tuple_to_array(indices[i])); });
 }
 
-}}
+} // namespace detail
+} // namespace jada
