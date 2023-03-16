@@ -12,3 +12,18 @@ target_include_directories(SerialTest.bin PUBLIC
 
 add_test( NAME SerialTest COMMAND SerialTest.bin)
 
+
+#Mpi unit tests#
+
+
+add_executable(MpiTest.bin test_communication.cpp)
+
+target_link_libraries(MpiTest.bin PRIVATE catch_main project_options project_warnings)
+
+target_include_directories(MpiTest.bin PUBLIC
+                            ${CMAKE_SOURCE_DIR}
+                            ${CMAKE_SOURCE_DIR}/catch
+#                            #${MPI_CXX_INCLUDE_PATH}
+                          )
+
+add_test( NAME MpiTest COMMAND MpiTest.bin)
