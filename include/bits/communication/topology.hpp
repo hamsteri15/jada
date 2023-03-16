@@ -8,7 +8,20 @@ namespace jada {
 template <size_t N> struct BoxRankPair {
     Box<N> box;
     int    rank;
+
+    bool operator==(const BoxRankPair<N>& lhs) const = default;
+    bool operator!=(const BoxRankPair<N>& lhs) const = default;
+    
+    template <size_t L>
+    friend std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& box);
 };
+
+template <size_t L>
+std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
+
+    os << "Rank: " << v.rank << " " << v.box;
+    return os;
+}
 
 template <size_t N> struct Topology {
 
@@ -16,7 +29,7 @@ private:
     Box<N>                      m_domain;
     std::vector<BoxRankPair<N>> m_boxes;
     std::array<bool, N>         m_periodic;
-    
+
     ///
     ///@brief Checks that none of the m_boxes have overlap
     ///
@@ -47,12 +60,12 @@ private:
     bool fully_covered() const {
 
         size_type area(0);
-        for (const auto& e : m_boxes){
-            area += e.box.size();
-        }
+        for (const auto& e : m_boxes) { area += e.box.size(); }
 
         return area == m_domain.size();
     }
+
+
 
 public:
     Topology(Box<N>                      domain,
@@ -76,6 +89,16 @@ public:
         return is_unique() && fully_covered();
     }
 
+    bool found(const BoxRankPair<N>& b) const{
+        return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
+    }
+    
+    std::vector<BoxRankPair<N>> get_neighbours(const BoxRankPair<N>& b) const {
+
+        runtime_assert(found(b), "Box not in topology.");
+        return {};
+    }
+    
 };
 
 } // namespace jada

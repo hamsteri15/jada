@@ -184,12 +184,70 @@ TEST_CASE("Test topology"){
             );
 
         }
-        
-
-
 
 
     }
+
+
+    SECTION("found"){
+
+        
+        Box<3> domain({0,0,0}, {3,3,3});
+        Box<3> b1({0,0,0}, {1,3,3});
+        Box<3> b2({1,0,0}, {2,3,3});
+        Box<3> b3({2,0,0}, {3,3,3});
+
+        std::vector<BoxRankPair<3>> boxes1{
+            BoxRankPair{.box=b1, .rank=0},
+            BoxRankPair{.box=b2, .rank=1},
+            BoxRankPair{.box=b3, .rank=1}
+        };
+        
+        Topology topo(domain, boxes1, {false, false, false});
+
+        CHECK(topo.found(boxes1[1]));
+
+        CHECK(!topo.found
+        (
+            BoxRankPair{.box=b1, .rank=433}
+        ));
+
+    }
+
+    SECTION("get_neighbours"){
+        Box<3> domain({0,0,0}, {3,3,3});
+        Box<3> b1({0,0,0}, {1,3,3});
+        Box<3> b2({1,0,0}, {2,3,3});
+        Box<3> b3({2,0,0}, {3,3,3});
+
+
+        std::vector<BoxRankPair<3>> boxes{
+            BoxRankPair{.box=b1, .rank=0},
+            BoxRankPair{.box=b2, .rank=1},
+            BoxRankPair{.box=b3, .rank=1}
+        };
+        
+        Topology topo(domain, boxes, {false, false, false});
+
+        /*
+        SECTION("Test1"){
+
+            std::vector<BoxRankPair<3>> correct{
+                boxes[0], boxes[2]
+            };
+
+
+            auto result = topo.get_neighbours(boxes[1]);
+
+            CHECK(result == correct);
+
+
+        }
+        */
+
+
+    }
+
 
 
 }
