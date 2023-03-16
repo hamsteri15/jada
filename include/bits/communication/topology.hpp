@@ -11,9 +11,10 @@ template <size_t N> struct BoxRankPair {
 
     bool operator==(const BoxRankPair<N>& lhs) const = default;
     bool operator!=(const BoxRankPair<N>& lhs) const = default;
-    
+
     template <size_t L>
-    friend std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& box);
+    friend std::ostream& operator<<(std::ostream&         os,
+                                    const BoxRankPair<L>& box);
 };
 
 template <size_t L>
@@ -26,6 +27,8 @@ std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
 template <size_t N> struct Topology {
 
 private:
+    static constexpr int NULL_NEIGHBOUR = -435;
+
     Box<N>                      m_domain;
     std::vector<BoxRankPair<N>> m_boxes;
     std::array<bool, N>         m_periodic;
@@ -65,8 +68,6 @@ private:
         return area == m_domain.size();
     }
 
-
-
 public:
     Topology(Box<N>                      domain,
              std::vector<BoxRankPair<N>> boxes,
@@ -89,16 +90,28 @@ public:
         return is_unique() && fully_covered();
     }
 
-    bool found(const BoxRankPair<N>& b) const{
+    bool found(const BoxRankPair<N>& b) const {
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
-    
+
     std::vector<BoxRankPair<N>> get_neighbours(const BoxRankPair<N>& b) const {
 
         runtime_assert(found(b), "Box not in topology.");
+
+        // 1) Expand b with some amount
+        // 2) Loop over all boxes and find an intersection with b
+        // 3) From the intersection and dimensions of b, determine the direction
+        // of the neighbour. 4) Store the direction, neihbour box and neighbour
+        // rank into some type and return a vector of those 5) Handle
+        // periodicity
+
+        // Pitfalls, ensure that after expansion only the nearest neighbour is
+        // found. Possibly always only expand with single unit first, find a
+        // neighbour and when actual data is transferred use the actual size of
+        // the halo which depends on the stencil shape.
+        std::vector<BoxRankPair<N>> ret;
         return {};
     }
-    
 };
 
 } // namespace jada

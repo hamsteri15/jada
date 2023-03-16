@@ -105,7 +105,6 @@ TEST_CASE("Test box"){
             Box<3> b2({5,5,5}, {8,8,8});
 
             CHECK(intersection(b1, b2) == Box<3>({0,0,0}, {0,0,0}));
-
         }
 
 
