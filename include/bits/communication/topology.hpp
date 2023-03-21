@@ -131,8 +131,8 @@ public:
     bool are_neighbours(const BoxRankPair<N>& owner,
                         const BoxRankPair<N>& neighbour) const {
 
-        if (owner == neighbour) { return false; }
 
+        if (owner == neighbour) { return false; }
         if (are_periodic_neighbours(owner, neighbour)) { return true; }
         return are_physical_neighbours(owner, neighbour);
     }

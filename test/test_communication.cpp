@@ -236,21 +236,22 @@ TEST_CASE("Test topology"){
     }
 
     SECTION("get_neighbours"){
-        Box<3> domain({0,0,0}, {3,3,3});
-        Box<3> b1({0,0,0}, {1,3,3});
-        Box<3> b2({1,0,0}, {2,3,3});
-        Box<3> b3({2,0,0}, {3,3,3});
-
-
-        std::vector<BoxRankPair<3>> boxes{
-            BoxRankPair{.box=b1, .rank=0},
-            BoxRankPair{.box=b2, .rank=1},
-            BoxRankPair{.box=b3, .rank=1}
-        };
         
 
-        /*
+        
         SECTION("Test non-periodic"){
+
+            Box<3> domain({0,0,0}, {3,3,3});
+            Box<3> b1({0,0,0}, {1,3,3});
+            Box<3> b2({1,0,0}, {2,3,3});
+            Box<3> b3({2,0,0}, {3,3,3});
+
+
+            std::vector<BoxRankPair<3>> boxes{
+                BoxRankPair{.box=b1, .rank=0},
+                BoxRankPair{.box=b2, .rank=1},
+                BoxRankPair{.box=b3, .rank=1}
+            };
 
             Topology topo(domain, boxes, {false, false, false});
             
@@ -262,18 +263,57 @@ TEST_CASE("Test topology"){
             CHECK(result == correct);
 
         }
-        */
+        
         
         SECTION("Test periodic"){
-
-            Topology topo(domain, boxes, {true, false, false});
             
-            std::vector<BoxRankPair<3>> correct{
-                boxes[1], boxes[2]
-            };
+            SECTION("Multiple x-dir blocks"){
+                Box<3> domain({0,0,0}, {3,3,3});
+                Box<3> b1({0,0,0}, {1,3,3});
+                Box<3> b2({1,0,0}, {2,3,3});
+                Box<3> b3({2,0,0}, {3,3,3});
 
-            auto result = topo.get_neighbours(boxes[0]);
-            CHECK(result == correct);
+
+                std::vector<BoxRankPair<3>> boxes{
+                    BoxRankPair{.box=b1, .rank=0},
+                    BoxRankPair{.box=b2, .rank=1},
+                    BoxRankPair{.box=b3, .rank=1}
+                };
+
+                Topology topo(domain, boxes, {true, false, false});
+                
+                std::vector<BoxRankPair<3>> correct{
+                    boxes[1], boxes[2]
+                };
+
+                auto result = topo.get_neighbours(boxes[0]);
+                CHECK(result == correct);
+
+            }
+
+            SECTION("Single block"){
+
+                Box<3> domain({0,0,0}, {1,1,1});
+                Box<3> b1({0,0,0}, {1,1,1});
+                
+                std::vector<BoxRankPair<3>> boxes{
+                    BoxRankPair{.box=b1, .rank=0}
+                };
+
+                Topology topo(domain, boxes, {true, true, true});
+                
+                std::vector<BoxRankPair<3>> correct{
+                    boxes[0]
+                };
+
+                auto result = topo.get_neighbours(boxes[0]);
+                CHECK(result == correct);
+
+
+
+            }
+
+
 
         }
         
