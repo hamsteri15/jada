@@ -124,6 +124,18 @@ TEST_CASE("Test box"){
 
 
     }
+    
+
+    SECTION("distance"){
+        Box<3> b1({0,0,0}, {3,3,3});
+        Box<3> b2({2,2,2}, {3,3,3});
+        Box<3> b3({1,2,3}, {3,3,3});
+
+        CHECK(distance(b1, b2) == std::array<index_type, 3>{2, 2, 2});
+        CHECK(distance(b1, b3) == std::array<index_type, 3>{1, 2, 3});
+
+    }
+
 
     
 
