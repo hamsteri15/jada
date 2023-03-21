@@ -102,6 +102,13 @@ public:
         auto o_copy = owner.box.clone();
         o_copy.expand(1);
 
+        auto nonzero = [](auto v) {
+            for (auto e : v) {
+                if (e) return true;
+            }
+            return false;
+        };
+
         for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
 
             auto transformed = [&]() {
@@ -111,9 +118,13 @@ public:
                     t[i] = index_type(m_periodic[i]) * index_type(dims[i]) *
                            dir[i];
                 }
-                auto n_copy = neighbour.box.clone();
-                n_copy.translate(t);
-                return n_copy;
+
+                if (nonzero(t)) {
+                    auto n_copy = neighbour.box.clone();
+                    n_copy.translate(t);
+                    return n_copy;
+                }
+                return Box<N>{};
             }();
 
             if (have_overlap(o_copy, transformed)) { return true; }
@@ -123,6 +134,7 @@ public:
 
     bool are_physical_neighbours(const BoxRankPair<N>& owner,
                                  const BoxRankPair<N>& neighbour) const {
+        if (owner == neighbour) { return false; }
         auto o_copy = owner.box.clone();
         o_copy.expand(1);
         return have_overlap(o_copy, neighbour.box);
@@ -131,8 +143,6 @@ public:
     bool are_neighbours(const BoxRankPair<N>& owner,
                         const BoxRankPair<N>& neighbour) const {
 
-
-        if (owner == neighbour) { return false; }
         if (are_periodic_neighbours(owner, neighbour)) { return true; }
         return are_physical_neighbours(owner, neighbour);
     }
