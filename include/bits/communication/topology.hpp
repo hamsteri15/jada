@@ -94,10 +94,8 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-    bool are_neighbours(const BoxRankPair<N>& owner,
-                        const BoxRankPair<N>& neighbour) const {
-
-        if (owner == neighbour) { return false; }
+    bool are_periodic_neighbours(const BoxRankPair<N>& owner,
+                                 const BoxRankPair<N>& neighbour) const {
 
         auto dims = extent_to_array(m_domain.get_extent());
 
@@ -120,8 +118,23 @@ public:
 
             if (have_overlap(o_copy, transformed)) { return true; }
         }
+        return false;
+    }
 
+    bool are_physical_neighbours(const BoxRankPair<N>& owner,
+                                 const BoxRankPair<N>& neighbour) const {
+        auto o_copy = owner.box.clone();
+        o_copy.expand(1);
         return have_overlap(o_copy, neighbour.box);
+    }
+
+    bool are_neighbours(const BoxRankPair<N>& owner,
+                        const BoxRankPair<N>& neighbour) const {
+
+        if (owner == neighbour) { return false; }
+
+        if (are_periodic_neighbours(owner, neighbour)) { return true; }
+        return are_physical_neighbours(owner, neighbour);
     }
 
     std::vector<BoxRankPair<N>>
