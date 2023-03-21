@@ -94,23 +94,49 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-    std::vector<BoxRankPair<N>> get_neighbours(const BoxRankPair<N>& b) const {
+    bool are_neighbours(const BoxRankPair<N>& owner,
+                        const BoxRankPair<N>& neighbour) const {
 
-        runtime_assert(found(b), "Box not in topology.");
+        if (owner == neighbour) { return false; }
 
-        // 1) Expand b with some amount
-        // 2) Loop over all boxes and find an intersection with b
-        // 3) From the intersection and dimensions of b, determine the direction
-        // of the neighbour. 4) Store the direction, neihbour box and neighbour
-        // rank into some type and return a vector of those 5) Handle
-        // periodicity
+        auto dims = extent_to_array(m_domain.get_extent());
 
-        // Pitfalls, ensure that after expansion only the nearest neighbour is
-        // found. Possibly always only expand with single unit first, find a
-        // neighbour and when actual data is transferred use the actual size of
-        // the halo which depends on the stencil shape.
+        auto o_copy = owner.box.clone();
+        o_copy.expand(1);
+
+        for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
+
+            auto transformed = [&]() {
+                std::array<index_type, N> t{};
+
+                for (size_t i = 0; i < N; ++i) {
+                    t[i] = index_type(m_periodic[i]) * index_type(dims[i]) *
+                           dir[i];
+                }
+                auto n_copy = neighbour.box.clone();
+                n_copy.translate(t);
+                return n_copy;
+            }();
+
+            if (have_overlap(o_copy, transformed)) { return true; }
+        }
+
+        return have_overlap(o_copy, neighbour.box);
+    }
+
+    std::vector<BoxRankPair<N>>
+    get_neighbours(const BoxRankPair<N>& owner) const {
+
+        runtime_assert(found(owner), "Box not in topology.");
+
         std::vector<BoxRankPair<N>> ret;
-        return {};
+
+        for (const auto& neighbour : m_boxes) {
+
+            if (are_neighbours(owner, neighbour)) { ret.push_back(neighbour); }
+        }
+
+        return ret;
     }
 };
 

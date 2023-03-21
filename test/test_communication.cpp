@@ -39,6 +39,7 @@ TEST_CASE("Test box"){
 
         CHECK( b1 == b2 );
         CHECK( b1 != b3 );
+        CHECK( b1 == b1 );
 
     }
 
@@ -113,6 +114,8 @@ TEST_CASE("Test box"){
     SECTION("Contains"){
         Box<3> b1({0,0,0}, {3,3,3});
 
+        CHECK(b1.contains({0,0,0}));
+        CHECK(!b1.contains({3,3,3})); //End is not contained
 
         CHECK(b1.contains({1,1,1}));
         CHECK(b1.contains({1,0,1}));
@@ -121,6 +124,13 @@ TEST_CASE("Test box"){
 
         CHECK(b1.contains(b2));
         CHECK(!b2.contains(b1));
+
+        Box<3> b3({-1,1,1}, {0,0,0});
+        CHECK(!b1.contains(b3));
+
+
+        Box<3> b4({3,3,3}, {4,4,4});
+        CHECK(!b1.contains(b4));
 
 
     }
@@ -238,23 +248,35 @@ TEST_CASE("Test topology"){
             BoxRankPair{.box=b3, .rank=1}
         };
         
-        Topology topo(domain, boxes, {false, false, false});
 
         /*
-        SECTION("Test1"){
+        SECTION("Test non-periodic"){
 
+            Topology topo(domain, boxes, {false, false, false});
+            
             std::vector<BoxRankPair<3>> correct{
                 boxes[0], boxes[2]
             };
 
-
             auto result = topo.get_neighbours(boxes[1]);
-
             CHECK(result == correct);
-
 
         }
         */
+        
+        SECTION("Test periodic"){
+
+            Topology topo(domain, boxes, {true, false, false});
+            
+            std::vector<BoxRankPair<3>> correct{
+                boxes[1], boxes[2]
+            };
+
+            auto result = topo.get_neighbours(boxes[0]);
+            CHECK(result == correct);
+
+        }
+        
 
 
     }

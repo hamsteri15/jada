@@ -128,21 +128,17 @@ std::ostream& operator<<(std::ostream& os, const Box<L>& v) {
     return os;
 }
 
-///
-///@brief Returns true if lhs and rhs have common area.
-///
-///@param lhs left hand side input box
-///@param rhs right hand side input box
-///@return true if the two input boxes share area
-///@return false otherwise
-///
-template <size_t N> bool have_overlap(const Box<N>& lhs, const Box<N>& rhs) {
 
-    bool first  = lhs.contains(rhs.m_begin) || lhs.contains(rhs.m_end);
-    bool second = rhs.contains(lhs.m_begin) || rhs.contains(lhs.m_end);
+/// @brief Computes the input box b
+/// @param b the box to compute the volume for 
+/// @return the volume of the box
+template <size_t N> index_type volume(const Box<N>& b) {
 
-    return first || second;
+    index_type vol = 1;
+    for (size_t i = 0; i < N; ++i) { vol *= (b.m_end[i] - b.m_begin[i]); }
+    return vol;
 }
+
 
 ///
 ///@brief Merges boxes lhs and rhs forming a new box. Assumes that the merger is
@@ -163,14 +159,13 @@ template <size_t N> Box<N> merge(const Box<N>& lhs, const Box<N>& rhs) {
 }
 
 /// @brief Returns the intersection of boxes lhs and rhs. Assumes that the
-/// intersection is also a Cartesian box, i.e. no rotations are allowed.
+/// intersection is also a Cartesian box, i.e. no rotations are allowed. If the
+/// input boxes do not intersect, a box with zero area is returned.
 /// @param lhs left hand side input box
 /// @param rhs right hand side input box
 /// @return the intersection of lhs and rhs
 template <size_t N> Box<N> intersection(const Box<N>& lhs, const Box<N>& rhs) {
 
-    // Box from 0 to 0 if no overlap found
-    if (!have_overlap(lhs, rhs)) { return Box<N>{}; }
 
     std::array<index_type, N> begin{};
     std::array<index_type, N> end{};
@@ -180,7 +175,12 @@ template <size_t N> Box<N> intersection(const Box<N>& lhs, const Box<N>& rhs) {
         end[i]   = std::min(lhs.m_end[i], rhs.m_end[i]);
     }
 
-    return Box<N>(begin, end);
+    Box<N> ret(begin, end);
+    if (!ret.is_valid()){
+        return Box<N>{};
+    }
+    return ret;
+
 }
 
 /// @brief Returns a vector from the beginning of box 'lhs' to beginning of box
@@ -194,6 +194,18 @@ std::array<index_type, N> distance(const Box<N>& lhs, const Box<N>& rhs) {
     std::array<index_type, N> ret{};
     for (size_t i = 0; i < N; ++i) { ret[i] = rhs.m_begin[i] - lhs.m_begin[i]; }
     return ret;
+}
+
+///
+///@brief Returns true if lhs and rhs have common volme.
+///
+///@param lhs left hand side input box
+///@param rhs right hand side input box
+///@return true if the two input boxes share volume
+///@return false otherwise
+///
+template <size_t N> bool have_overlap(const Box<N>& lhs, const Box<N>& rhs) {
+    return volume(intersection(lhs, rhs)) > 0;
 }
 
 } // namespace jada
