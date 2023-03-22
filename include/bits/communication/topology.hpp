@@ -68,7 +68,7 @@ private:
         return area == m_domain.size();
     }
 
-    bool are_periodic_neighbours(const BoxRankPair<N>& owner,
+    bool are_neighbours(const BoxRankPair<N>& owner,
                                  const BoxRankPair<N>& neighbour) const {
 
 
@@ -100,14 +100,13 @@ private:
             return ret;
         };
 
-        auto o_copy = expand(owner.box, 1);
         
         for (auto dir : get_directions()) {
             
             auto t = get_transform_vector(dir);
             auto n = translate(neighbour.box, t);
 
-            if (have_overlap(o_copy, n)){
+            if (have_overlap(expand(owner.box, 1), n)){
 
                 if ( owner == neighbour && nonzero(t)){
                     return true;
@@ -150,21 +149,7 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-    bool are_neighbours(const BoxRankPair<N>& owner,
-                        const BoxRankPair<N>& neighbour) const {
 
-        //if (are_periodic_neighbours(owner, neighbour)) { return true; }
-        //return are_physical_neighbours(owner, neighbour);
-        return are_periodic_neighbours(owner, neighbour);
-    }
-
-    Box<N> get_physical_overlap(const BoxRankPair<N>& owner,
-                                const BoxRankPair<N>& neighbour) const {
-
-        auto o_copy = owner.box.clone();
-        o_copy.expand(1);
-        return intersection(o_copy, neighbour.box);
-    }
 
     std::vector<BoxRankPair<N>>
     get_neighbours(const BoxRankPair<N>& owner) const {
