@@ -24,6 +24,21 @@ std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
     return os;
 }
 
+
+template<size_t L, class T>
+std::ostream& operator<<(std::ostream& os, const std::array<T, L>& v) {
+
+    os << "{ ";
+    for (auto e : v){
+        os << e << " ";
+    }
+    os << " }";
+    return os;
+
+}
+
+
+
 template <size_t N> struct Topology {
 
 private:
@@ -73,9 +88,24 @@ private:
         std::array<index_type, N> t{};
 
         for (size_t i = 0; i < N; ++i) {
-            t[i] = index_type(m_periodic[i]) * index_type(dims[i]) * dir[i];
+            t[i] = index_type(dims[i]) * dir[i];
         }
         return t;
+    }
+
+
+    bool is_periodic_dir(auto dir) const {
+
+        for (size_t i = 0; i < N; ++i){
+
+            if (dir[i] && !m_periodic[i]){
+                return false;
+            }
+
+        }
+
+        return true;
+
     }
 
     auto get_directions() const {
@@ -140,13 +170,6 @@ public:
     auto get_intersections(const BoxRankPair<N>& owner,
                            const BoxRankPair<N>& neighbour) const {
 
-        auto nonzero = [](auto v) {
-            for (auto e : v) {
-                if (e) return true;
-            }
-            return false;
-        };
-
         
         // Check self intersections due to periodicity
         if (owner == neighbour) {
@@ -154,18 +177,20 @@ public:
 
             for (auto dir : get_directions()) {
 
-                auto t     = get_transform_vector(dir);
-                auto n     = translate(neighbour.box, t);
-                auto inter = intersection(expand(owner.box, 1), n);
+                if (is_periodic_dir(dir)){
 
-                if ((volume(inter) > 0) && nonzero(t)) {
-                    intersections.push_back(inter);
+                    auto t     = get_transform_vector(dir);
+                    auto n     = translate(neighbour.box, t);
+                    auto inter = intersection(expand(owner.box, 1), n);
+
+                    if ((volume(inter) > 0)) {
+                        intersections.push_back(inter);
+                    }
                 }
 
             }
             return intersections;
         }
-        
 
         // Check physical intersection
         std::vector<Box<N>> intersections;
@@ -178,11 +203,16 @@ public:
         // Check intersections due to periodicity
         for (auto dir : get_directions()) {
 
-            auto t     = get_transform_vector(dir);
-            auto n     = translate(neighbour.box, t);
-            auto inter = intersection(expand(owner.box, 1), n);
+            if (is_periodic_dir(dir)){
 
-            if ((volume(inter) > 0) && nonzero(t)) { intersections.push_back(inter); }
+                auto t     = get_transform_vector(dir);
+                auto n     = translate(neighbour.box, t);
+                auto inter = intersection(expand(owner.box, 1), n);
+
+                if ((volume(inter) > 0)) {
+                    intersections.push_back(inter);
+                }
+            }
         }
 
         return intersections;

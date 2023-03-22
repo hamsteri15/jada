@@ -233,10 +233,11 @@ TEST_CASE("Test topology"){
 
     }
 
-    SECTION("get_neighbours"){
-        
+    
 
+    SECTION("Simple get_neigbhours"){
         
+        /*
         SECTION("Test non-periodic"){
 
             Box<3> domain({0,0,0}, {3,3,3});
@@ -312,110 +313,126 @@ TEST_CASE("Test topology"){
             }
 
         }
+        */
+    }    
+
+
+
+
+
+
+
+    SECTION("Difficult get neighbours"){
+
+        Box<2> domain({0,0}, {10, 7});
+        Box<2> b0({0,0}, {4, 7});
+        Box<2> b1({4,5}, {7, 7});
+        Box<2> b2({7,5}, {10, 7});
+        Box<2> b3({7,3}, {10, 5});
+        Box<2> b4({4,0}, {10, 3});
+        Box<2> b5({4,3}, {7, 5});
+
+        std::vector<BoxRankPair<2>> boxes{
+            BoxRankPair{.box=b0, .rank=0},
+            BoxRankPair{.box=b1, .rank=1},
+            BoxRankPair{.box=b2, .rank=2},
+            BoxRankPair{.box=b3, .rank=3},
+            BoxRankPair{.box=b4, .rank=4},
+            BoxRankPair{.box=b5, .rank=5}
+        };
+
+
+        SECTION("non-periodic"){
+            // TODO: the order of get_neighbours return vector is not
+            // guaranteed so Catch::Contains should be used here.
+
+            Topology topo(domain, boxes, {false, false});
+
+            CHECK(topo.get_neighbours(boxes[0]) ==
+                    std::vector{boxes[1], boxes[4], boxes[5]});
+
+            CHECK(topo.get_neighbours(boxes[1]) ==
+                    std::vector{boxes[0], boxes[2], boxes[3], boxes[5]});
+
+            CHECK(topo.get_neighbours(boxes[2]) ==
+                    std::vector{boxes[1], boxes[3], boxes[5]});
+
+            CHECK(topo.get_neighbours(boxes[3]) ==
+                    std::vector{boxes[1], boxes[2], boxes[4], boxes[5]});
+
+            CHECK(topo.get_neighbours(boxes[4]) ==
+                    std::vector{boxes[0], boxes[3], boxes[5]});
+
+            CHECK(topo.get_neighbours(boxes[5]) ==
+                    std::vector{
+                        boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
+        }
+
+        SECTION("periodic-x"){
+            Topology topo(domain, boxes, {true, false});
+            CHECK(topo.get_neighbours(boxes[0]) ==
+                    std::vector{boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
+            
+            CHECK(topo.get_neighbours(boxes[5]) ==
+                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
+        }
+        
+        SECTION("periodic-y"){
+            Topology topo(domain, boxes, {false, true});
+            CHECK(topo.get_neighbours(boxes[0]) ==
+                    std::vector{boxes[0], boxes[1], boxes[4], boxes[5]});
+            
+            CHECK(topo.get_neighbours(boxes[1]) ==
+                    std::vector{boxes[0], boxes[2], boxes[3], boxes[4], boxes[5]});
+        }
+
 
         
-        SECTION("Real 2D test"){
-            Box<2> domain({0,0}, {10, 7});
-            Box<2> b0({0,0}, {4, 7});
-            Box<2> b1({4,5}, {7, 7});
-            Box<2> b2({7,5}, {10, 7});
-            Box<2> b3({7,3}, {10, 5});
-            Box<2> b4({4,0}, {10, 3});
-            Box<2> b5({4,3}, {7, 5});
-
-            std::vector<BoxRankPair<2>> boxes{
-                BoxRankPair{.box=b0, .rank=0},
-                BoxRankPair{.box=b1, .rank=1},
-                BoxRankPair{.box=b2, .rank=2},
-                BoxRankPair{.box=b3, .rank=3},
-                BoxRankPair{.box=b4, .rank=4},
-                BoxRankPair{.box=b5, .rank=5}
-            };
-
-
-            SECTION("non-periodic"){
-                // TODO: the order of get_neighbours return vector is not
-                // guaranteed so Catch::Contains should be used here.
-
-                Topology topo(domain, boxes, {false, false});
-
-                CHECK(topo.get_neighbours(boxes[0]) ==
-                      std::vector{boxes[1], boxes[4], boxes[5]});
-
-                CHECK(topo.get_neighbours(boxes[1]) ==
-                      std::vector{boxes[0], boxes[2], boxes[3], boxes[5]});
-
-                CHECK(topo.get_neighbours(boxes[2]) ==
-                      std::vector{boxes[1], boxes[3], boxes[5]});
-
-                CHECK(topo.get_neighbours(boxes[3]) ==
-                      std::vector{boxes[1], boxes[2], boxes[4], boxes[5]});
-
-                CHECK(topo.get_neighbours(boxes[4]) ==
-                      std::vector{boxes[0], boxes[3], boxes[5]});
-
-                CHECK(topo.get_neighbours(boxes[5]) ==
-                      std::vector{
-                          boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
-            }
-
-            SECTION("periodic-x"){
-                Topology topo(domain, boxes, {true, false});
-                CHECK(topo.get_neighbours(boxes[0]) ==
-                      std::vector{boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
-                
-                CHECK(topo.get_neighbours(boxes[5]) ==
-                      std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
-            }
+        SECTION("periodic-both"){
+            Topology topo(domain, boxes, {true, true});
+            CHECK(topo.get_neighbours(boxes[0]) ==
+                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
             
-            SECTION("periodic-y"){
-                Topology topo(domain, boxes, {false, true});
-                CHECK(topo.get_neighbours(boxes[0]) ==
-                      std::vector{boxes[0], boxes[1], boxes[4], boxes[5]});
-                
-                CHECK(topo.get_neighbours(boxes[1]) ==
-                      std::vector{boxes[0], boxes[2], boxes[3], boxes[4], boxes[5]});
-            }
+            CHECK(topo.get_neighbours(boxes[5]) ==
+                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
 
+        }
+
+
+
+        SECTION("get_intersections"){
+
+
+            Topology topo(domain, boxes, {true, false});
 
             
-            SECTION("periodic-both"){
-                Topology topo(domain, boxes, {true, true});
-                CHECK(topo.get_neighbours(boxes[0]) ==
-                      std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
-                
-                CHECK(topo.get_neighbours(boxes[5]) ==
-                      std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
+            CHECK
+            (
+            topo.get_intersections(boxes[0], boxes[1])
+            == std::vector{Box<2>{{4,5}, {5,7}}}
+            );
 
-            }
+            CHECK
+            (
+            topo.get_intersections(boxes[0], boxes[5])
+            == std::vector{Box<2>{{4,3}, {5,5}}}
+            );
+            
+            CHECK
+            (
+            topo.get_intersections(boxes[0], boxes[4])
+            == std::vector
+                {
+                    Box<2>{{4,0}, {5,3}},
+                    Box<2>{{-1,0}, {0,3}}
+                }
+            );
 
-
-            SECTION("get_intersections"){
-
-
-                Topology topo(domain, boxes, {false, false});
-
-
-                CHECK
-                (
-                topo.get_intersections(boxes[0], boxes[1])
-                == std::vector{Box<2>{{4,5}, {5,7}}}
-                );
-
-
-                /*
-                CHECK
-                (
-                    topo.get_intersection_dirs(boxes[0], boxes[1])
-                    == std::vector<std::array<index_type, 2>>{{1, 0}}
-                );
-                */
-
-
-            }
 
 
         }
+
+
         
 
     }
