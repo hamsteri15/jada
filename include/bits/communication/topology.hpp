@@ -24,20 +24,14 @@ std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
     return os;
 }
 
-
-template<size_t L, class T>
+template <size_t L, class T>
 std::ostream& operator<<(std::ostream& os, const std::array<T, L>& v) {
 
     os << "{ ";
-    for (auto e : v){
-        os << e << " ";
-    }
+    for (auto e : v) { os << e << " "; }
     os << " }";
     return os;
-
 }
-
-
 
 template <size_t N> struct Topology {
 
@@ -83,41 +77,25 @@ private:
         return area == m_domain.size();
     }
 
-    auto get_transform_vector(auto dir) const {
+    auto get_translation(auto dir) const {
         auto                      dims = extent_to_array(m_domain.get_extent());
         std::array<index_type, N> t{};
 
-        for (size_t i = 0; i < N; ++i) {
-            t[i] = index_type(dims[i]) * dir[i];
-        }
+        for (size_t i = 0; i < N; ++i) { t[i] = index_type(dims[i]) * dir[i]; }
         return t;
     }
 
-
     bool is_periodic_dir(auto dir) const {
 
-        for (size_t i = 0; i < N; ++i){
+        for (size_t i = 0; i < N; ++i) {
 
-            if (dir[i] && !m_periodic[i]){
-                return false;
-            }
-
+            if (dir[i] && !m_periodic[i]) { return false; }
         }
 
         return true;
-
     }
 
     auto get_directions() const {
-
-        /*
-        std::vector<std::array<index_type, N>> dirs;
-        dirs.push_back(std::array<index_type, N>{});
-        for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
-            dirs.push_back(dir);
-        }
-        return dirs;
-        */
         return Neighbours<N, ConnectivityType::Box>::create();
     }
 
@@ -170,74 +148,34 @@ public:
     auto get_intersections(const BoxRankPair<N>& owner,
                            const BoxRankPair<N>& neighbour) const {
 
-        
-        // Check self intersections due to periodicity
-        if (owner == neighbour) {
-            std::vector<Box<N>> intersections;
-
-            for (auto dir : get_directions()) {
-
-                if (is_periodic_dir(dir)){
-
-                    auto t     = get_transform_vector(dir);
-                    auto n     = translate(neighbour.box, t);
-                    auto inter = intersection(expand(owner.box, 1), n);
-
-                    if ((volume(inter) > 0)) {
-                        intersections.push_back(inter);
-                    }
-                }
-
-            }
-            return intersections;
-        }
+        std::vector<Box<N>> intersections;
 
         // Check physical intersection
-        std::vector<Box<N>> intersections;
-        const auto          physical_inter =
-            intersection(expand(owner.box, 1), neighbour.box);
-        if (volume(physical_inter) > 0) {
-            intersections.push_back(physical_inter);
+        if (owner != neighbour) {
+            const auto physical_inter =
+                intersection(expand(owner.box, 1), neighbour.box);
+            if (volume(physical_inter) > 0) {
+                intersections.push_back(physical_inter);
+            }
         }
 
-        // Check intersections due to periodicity
+        // Check intersections due to periodicity, also handles owner ==
+        // neighbour
         for (auto dir : get_directions()) {
 
-            if (is_periodic_dir(dir)){
+            if (is_periodic_dir(dir)) {
 
-                auto t     = get_transform_vector(dir);
+                auto t     = get_translation(dir);
                 auto n     = translate(neighbour.box, t);
                 auto inter = intersection(expand(owner.box, 1), n);
 
-                if ((volume(inter) > 0)) {
-                    intersections.push_back(inter);
-                }
+                if ((volume(inter) > 0)) { intersections.push_back(inter); }
             }
         }
 
         return intersections;
     }
 
-    
-    auto get_intersection_dirs(const BoxRankPair<N>& owner,
-                               const BoxRankPair<N>& neighbour) const {
-
-        auto inters = get_intersections(owner, neighbour);
-
-        std::vector<std::array<index_type, N>> dirs;
-        for (auto inter : inters) {
-
-            auto d = distance(owner.box, inter);
-
-            for (auto& e : d) {
-                if (e < 0) { e = -1; }
-                if (e > 0) { e = 1; }
-            }
-            dirs.push_back(d);
-        }
-
-        return dirs;
-    }
 };
 
 } // namespace jada

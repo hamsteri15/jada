@@ -7,148 +7,125 @@
 
 using namespace jada;
 
+TEST_CASE("Test box") {
 
-TEST_CASE("Test box"){
+    SECTION("Constructors") {
+        Box<3> b({1, 1, 1}, {2, 2, 2});
 
-    SECTION("Constructors"){
-        Box<3> b({1,1,1}, {2,2,2});
+        CHECK(b.get_extent() == extents<3>{1, 1, 1});
 
-        CHECK(b.get_extent() == extents<3>{1,1,1});
+        CHECK(b.size() == 1 * 1 * 1); // NOTE!
 
-        CHECK(b.size() == 1 * 1 * 1); //NOTE!
-
-        #ifdef DEBUG
-            REQUIRE_THROWS(Box<3>({2,0,0}, {1, 1, 1}));
-        #endif
-
+#ifdef DEBUG
+        REQUIRE_THROWS(Box<3>({2, 0, 0}, {1, 1, 1}));
+#endif
     }
-    SECTION("is_valid"){
-        Box<3> b1({0,0,0}, {2,2,2});
-        Box<3> b2({4,0,0}, {3,3,3});
+    SECTION("is_valid") {
+        Box<3> b1({0, 0, 0}, {2, 2, 2});
+        Box<3> b2({4, 0, 0}, {3, 3, 3});
 
         CHECK(b1.is_valid());
         CHECK(!b2.is_valid());
-
     }
 
-    SECTION("Comparison"){
+    SECTION("Comparison") {
 
-        Box<3> b1({1,1,1}, {2,2,2});
-        Box<3> b2({1,1,1}, {2,2,2});
-        Box<3> b3({1,1,1}, {5,2,2});
+        Box<3> b1({1, 1, 1}, {2, 2, 2});
+        Box<3> b2({1, 1, 1}, {2, 2, 2});
+        Box<3> b3({1, 1, 1}, {5, 2, 2});
 
-        CHECK( b1 == b2 );
-        CHECK( b1 != b3 );
-        CHECK( b1 == b1 );
-
+        CHECK(b1 == b2);
+        CHECK(b1 != b3);
+        CHECK(b1 == b1);
     }
 
-    SECTION("translate"){
-        
-        Box<3> b1({1,1,1}, {2,2,2});
-        CHECK(translate(b1, {1,2,0}) == Box<3>({2, 3, 1}, {3, 4, 2}));
+    SECTION("translate") {
 
+        Box<3> b1({1, 1, 1}, {2, 2, 2});
+        CHECK(translate(b1, {1, 2, 0}) == Box<3>({2, 3, 1}, {3, 4, 2}));
     }
 
-    SECTION("expand"){
-        
-        Box<3> b1({1,1,1}, {2,2,2});
-        //b1.expand({0,0,2}, {0,1,0});
+    SECTION("expand") {
 
+        Box<3> b1({1, 1, 1}, {2, 2, 2});
+        // b1.expand({0,0,2}, {0,1,0});
 
-        CHECK(expand(b1, {0,0,2}, {0,1,0}) == Box<3>({1,1,-1}, {2,3,2}));
+        CHECK(expand(b1, {0, 0, 2}, {0, 1, 0}) ==
+              Box<3>({1, 1, -1}, {2, 3, 2}));
 
-        Box<3> b2({1,1,1}, {2,2,2});
-        CHECK(expand(b2, 1) == Box<3>({0,0,0}, {3,3,3}));
+        Box<3> b2({1, 1, 1}, {2, 2, 2});
+        CHECK(expand(b2, 1) == Box<3>({0, 0, 0}, {3, 3, 3}));
     }
 
-    
+    SECTION("merge") {
 
-    SECTION("merge"){
+        SECTION("Test 1") {
+            Box<3> b1({0, 0, 0}, {2, 2, 2});
+            Box<3> b2({2, 2, 2}, {3, 3, 3});
 
-        SECTION("Test 1"){
-            Box<3> b1({0,0,0}, {2,2,2});
-            Box<3> b2({2,2,2}, {3,3,3});
+            CHECK(merge(b1, b2) == Box<3>({0, 0, 0}, {3, 3, 3}));
+        }
+        SECTION("Test 2") {
+            Box<3> b1({0, 0, 0}, {2, 2, 2});
+            Box<3> b2({0, 0, 0}, {2, 2, 2});
 
-            CHECK(merge(b1, b2) == Box<3>({0,0,0}, {3,3,3}));
-
-        }        
-        SECTION("Test 2"){
-            Box<3> b1({0,0,0}, {2,2,2});
-            Box<3> b2({0,0,0}, {2,2,2});
-
-            CHECK(merge(b1, b2) == Box<3>({0,0,0}, {2,2,2}));
-
-        }        
-
+            CHECK(merge(b1, b2) == Box<3>({0, 0, 0}, {2, 2, 2}));
+        }
     }
-    
-    SECTION("intersection"){
-        
-        SECTION("Test 1"){
-            Box<3> b1({0,0,0}, {2,2,2});
-            Box<3> b2({0,0,0}, {3,3,3});
 
-            CHECK(intersection(b1, b2) == Box<3>({0,0,0}, {2,2,2}));
+    SECTION("intersection") {
 
-        }        
-        SECTION("Test 2"){
-            Box<3> b1({0,0,0}, {3,3,3});
-            Box<3> b2({1,1,1}, {1,1,5});
+        SECTION("Test 1") {
+            Box<3> b1({0, 0, 0}, {2, 2, 2});
+            Box<3> b2({0, 0, 0}, {3, 3, 3});
 
-            CHECK(intersection(b1, b2) == Box<3>({1,1,1}, {1,1,3}));
-        }        
+            CHECK(intersection(b1, b2) == Box<3>({0, 0, 0}, {2, 2, 2}));
+        }
+        SECTION("Test 2") {
+            Box<3> b1({0, 0, 0}, {3, 3, 3});
+            Box<3> b2({1, 1, 1}, {1, 1, 5});
 
-        SECTION("Test 3"){
-            Box<3> b1({0,0,0}, {2,2,2});
-            Box<3> b2({5,5,5}, {8,8,8});
-
-            CHECK(intersection(b1, b2) == Box<3>({0,0,0}, {0,0,0}));
+            CHECK(intersection(b1, b2) == Box<3>({1, 1, 1}, {1, 1, 3}));
         }
 
+        SECTION("Test 3") {
+            Box<3> b1({0, 0, 0}, {2, 2, 2});
+            Box<3> b2({5, 5, 5}, {8, 8, 8});
 
+            CHECK(intersection(b1, b2) == Box<3>({0, 0, 0}, {0, 0, 0}));
+        }
     }
 
-    SECTION("Contains"){
-        Box<3> b1({0,0,0}, {3,3,3});
+    SECTION("Contains") {
+        Box<3> b1({0, 0, 0}, {3, 3, 3});
 
-        CHECK(b1.contains({0,0,0}));
-        CHECK(!b1.contains({3,3,3})); //End is not contained
+        CHECK(b1.contains({0, 0, 0}));
+        CHECK(!b1.contains({3, 3, 3})); // End is not contained
 
-        CHECK(b1.contains({1,1,1}));
-        CHECK(b1.contains({1,0,1}));
+        CHECK(b1.contains({1, 1, 1}));
+        CHECK(b1.contains({1, 0, 1}));
 
-        Box<3> b2({0,0,0}, {1,1,1});
+        Box<3> b2({0, 0, 0}, {1, 1, 1});
 
         CHECK(b1.contains(b2));
         CHECK(!b2.contains(b1));
 
-        Box<3> b3({-1,1,1}, {0,0,0});
+        Box<3> b3({-1, 1, 1}, {0, 0, 0});
         CHECK(!b1.contains(b3));
 
-
-        Box<3> b4({3,3,3}, {4,4,4});
+        Box<3> b4({3, 3, 3}, {4, 4, 4});
         CHECK(!b1.contains(b4));
-
-
     }
-    
 
-    SECTION("distance"){
-        Box<3> b1({0,0,0}, {3,3,3});
-        Box<3> b2({2,2,2}, {3,3,3});
-        Box<3> b3({1,2,3}, {3,3,3});
+    SECTION("distance") {
+        Box<3> b1({0, 0, 0}, {3, 3, 3});
+        Box<3> b2({2, 2, 2}, {3, 3, 3});
+        Box<3> b3({1, 2, 3}, {3, 3, 3});
 
         CHECK(distance(b1, b2) == std::array<index_type, 3>{2, 2, 2});
         CHECK(distance(b1, b3) == std::array<index_type, 3>{1, 2, 3});
-
     }
-
-
-    
-
 }
-
 
 TEST_CASE("Test block"){
 
@@ -159,288 +136,237 @@ TEST_CASE("Test block"){
     }
 }
 
+TEST_CASE("Test topology") {
 
+    auto test_dec2d = []() {
+        Box<2> domain({0, 0}, {10, 7});
+        Box<2> b0({0, 0}, {4, 7});
+        Box<2> b1({4, 5}, {7, 7});
+        Box<2> b2({7, 5}, {10, 7});
+        Box<2> b3({7, 3}, {10, 5});
+        Box<2> b4({4, 0}, {10, 3});
+        Box<2> b5({4, 3}, {7, 5});
 
-TEST_CASE("Test topology"){
+        std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                          BoxRankPair{.box = b1, .rank = 1},
+                                          BoxRankPair{.box = b2, .rank = 2},
+                                          BoxRankPair{.box = b3, .rank = 3},
+                                          BoxRankPair{.box = b4, .rank = 4},
+                                          BoxRankPair{.box = b5, .rank = 5}};
 
-    SECTION("Constructors"){
+        return std::make_pair(domain, boxes);
+    };
 
+    SECTION("Constructors") {
 
-        SECTION("Test 1"){
-            Box<3> domain({0,0,0}, {3,3,3});
-            Box<3> b1({0,0,0}, {1,3,3});
-            Box<3> b2({1,0,0}, {2,3,3});
-            Box<3> b3({2,0,0}, {3,3,3});
-
-            std::vector<BoxRankPair<3>> boxes1{
-                BoxRankPair{.box=b1, .rank=0},
-                BoxRankPair{.box=b2, .rank=1},
-                BoxRankPair{.box=b3, .rank=1}
-            };
-
-            CHECK
-            (
-                Topology(domain, boxes1, {false, false, false}).is_valid()
-            );
-
-        }
-        
-        SECTION("Test 2"){
-            Box<3> domain({0,0,0}, {3,3,3});
-            Box<3> b1({0,0,0}, {2,3,3});
-            Box<3> b2({1,0,0}, {2,3,3});
-            Box<3> b3({2,0,0}, {3,3,3});
+        SECTION("Test 1") {
+            Box<3> domain({0, 0, 0}, {3, 3, 3});
+            Box<3> b1({0, 0, 0}, {1, 3, 3});
+            Box<3> b2({1, 0, 0}, {2, 3, 3});
+            Box<3> b3({2, 0, 0}, {3, 3, 3});
 
             std::vector<BoxRankPair<3>> boxes1{
-                BoxRankPair{.box=b1, .rank=0},
-                BoxRankPair{.box=b2, .rank=1},
-                BoxRankPair{.box=b3, .rank=1}
-            };
+                BoxRankPair{.box = b1, .rank = 0},
+                BoxRankPair{.box = b2, .rank = 1},
+                BoxRankPair{.box = b3, .rank = 1}};
 
-            CHECK
-            (
-                !Topology(domain, boxes1, {false, false, false}).is_valid()
-            );
-
+            CHECK(Topology(domain, boxes1, {false, false, false}).is_valid());
         }
 
+        SECTION("Test 2") {
+            Box<3> domain({0, 0, 0}, {3, 3, 3});
+            Box<3> b1({0, 0, 0}, {2, 3, 3});
+            Box<3> b2({1, 0, 0}, {2, 3, 3});
+            Box<3> b3({2, 0, 0}, {3, 3, 3});
 
+            std::vector<BoxRankPair<3>> boxes1{
+                BoxRankPair{.box = b1, .rank = 0},
+                BoxRankPair{.box = b2, .rank = 1},
+                BoxRankPair{.box = b3, .rank = 1}};
+
+            CHECK(!Topology(domain, boxes1, {false, false, false}).is_valid());
+        }
     }
 
+    SECTION("found") {
 
-    SECTION("found"){
+        Box<3> domain({0, 0, 0}, {3, 3, 3});
+        Box<3> b1({0, 0, 0}, {1, 3, 3});
+        Box<3> b2({1, 0, 0}, {2, 3, 3});
+        Box<3> b3({2, 0, 0}, {3, 3, 3});
 
-        
-        Box<3> domain({0,0,0}, {3,3,3});
-        Box<3> b1({0,0,0}, {1,3,3});
-        Box<3> b2({1,0,0}, {2,3,3});
-        Box<3> b3({2,0,0}, {3,3,3});
+        std::vector<BoxRankPair<3>> boxes1{BoxRankPair{.box = b1, .rank = 0},
+                                           BoxRankPair{.box = b2, .rank = 1},
+                                           BoxRankPair{.box = b3, .rank = 1}};
 
-        std::vector<BoxRankPair<3>> boxes1{
-            BoxRankPair{.box=b1, .rank=0},
-            BoxRankPair{.box=b2, .rank=1},
-            BoxRankPair{.box=b3, .rank=1}
-        };
-        
         Topology topo(domain, boxes1, {false, false, false});
 
         CHECK(topo.found(boxes1[1]));
 
-        CHECK(!topo.found
-        (
-            BoxRankPair{.box=b1, .rank=433}
-        ));
-
+        CHECK(!topo.found(BoxRankPair{.box = b1, .rank = 433}));
     }
 
-    
+    SECTION("get_neighbours()") {
 
-    SECTION("Simple get_neigbhours"){
-        
-        /*
-        SECTION("Test non-periodic"){
+        using namespace Catch::Matchers;
 
-            Box<3> domain({0,0,0}, {3,3,3});
-            Box<3> b1({0,0,0}, {1,3,3});
-            Box<3> b2({1,0,0}, {2,3,3});
-            Box<3> b3({2,0,0}, {3,3,3});
+        SECTION("non-periodic") {
 
-
-            std::vector<BoxRankPair<3>> boxes{
-                BoxRankPair{.box=b1, .rank=0},
-                BoxRankPair{.box=b2, .rank=1},
-                BoxRankPair{.box=b3, .rank=2}
-            };
-
-            Topology topo(domain, boxes, {false, false, false});
-            
-            std::vector<BoxRankPair<3>> correct{
-                boxes[0], boxes[2]
-            };
-
-            auto result = topo.get_neighbours(boxes[1]);
-            CHECK(result == correct);
-
-        }
-        
-        
-        SECTION("Test periodic"){
-            
-            SECTION("Multiple x-dir blocks"){
-                Box<3> domain({0,0,0}, {3,3,3});
-                Box<3> b1({0,0,0}, {1,3,3});
-                Box<3> b2({1,0,0}, {2,3,3});
-                Box<3> b3({2,0,0}, {3,3,3});
-
-
-                std::vector<BoxRankPair<3>> boxes{
-                    BoxRankPair{.box=b1, .rank=0},
-                    BoxRankPair{.box=b2, .rank=1},
-                    BoxRankPair{.box=b3, .rank=2}
-                };
-
-                Topology topo(domain, boxes, {true, false, false});
-                
-                std::vector<BoxRankPair<3>> correct{
-                    boxes[1], boxes[2]
-                };
-
-                auto result = topo.get_neighbours(boxes[0]);
-                CHECK(result == correct);
-
-            }
-
-            SECTION("Single block"){
-
-                Box<3> domain({0,0,0}, {1,1,1});
-                Box<3> b1({0,0,0}, {1,1,1});
-                
-                std::vector<BoxRankPair<3>> boxes{
-                    BoxRankPair{.box=b1, .rank=0}
-                };
-
-                Topology topo(domain, boxes, {true, true, true});
-                
-                std::vector<BoxRankPair<3>> correct{
-                    boxes[0]
-                };
-
-                auto result = topo.get_neighbours(boxes[0]);
-                CHECK(result == correct);
-
-                CHECK(topo.get_intersections(boxes[0], boxes[0]).size() ==
-                      Neighbours<3, ConnectivityType::Box>::count());
-            }
-
-        }
-        */
-    }    
-
-
-
-
-
-
-
-    SECTION("Difficult get neighbours"){
-
-        Box<2> domain({0,0}, {10, 7});
-        Box<2> b0({0,0}, {4, 7});
-        Box<2> b1({4,5}, {7, 7});
-        Box<2> b2({7,5}, {10, 7});
-        Box<2> b3({7,3}, {10, 5});
-        Box<2> b4({4,0}, {10, 3});
-        Box<2> b5({4,3}, {7, 5});
-
-        std::vector<BoxRankPair<2>> boxes{
-            BoxRankPair{.box=b0, .rank=0},
-            BoxRankPair{.box=b1, .rank=1},
-            BoxRankPair{.box=b2, .rank=2},
-            BoxRankPair{.box=b3, .rank=3},
-            BoxRankPair{.box=b4, .rank=4},
-            BoxRankPair{.box=b5, .rank=5}
-        };
-
-
-        SECTION("non-periodic"){
-            // TODO: the order of get_neighbours return vector is not
-            // guaranteed so Catch::Contains should be used here.
+            auto [domain, boxes] = test_dec2d();
 
             Topology topo(domain, boxes, {false, false});
 
-            CHECK(topo.get_neighbours(boxes[0]) ==
-                    std::vector{boxes[1], boxes[4], boxes[5]});
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[0]),
+                UnorderedEquals(std::vector{boxes[1], boxes[4], boxes[5]}));
 
-            CHECK(topo.get_neighbours(boxes[1]) ==
-                    std::vector{boxes[0], boxes[2], boxes[3], boxes[5]});
+            REQUIRE_THAT(topo.get_neighbours(boxes[1]),
+                         UnorderedEquals(std::vector{
+                             boxes[0], boxes[2], boxes[3], boxes[5]}));
 
-            CHECK(topo.get_neighbours(boxes[2]) ==
-                    std::vector{boxes[1], boxes[3], boxes[5]});
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[2]),
+                UnorderedEquals(std::vector{boxes[1], boxes[3], boxes[5]}));
 
-            CHECK(topo.get_neighbours(boxes[3]) ==
-                    std::vector{boxes[1], boxes[2], boxes[4], boxes[5]});
+            REQUIRE_THAT(topo.get_neighbours(boxes[3]),
+                         UnorderedEquals(std::vector{
+                             boxes[1], boxes[2], boxes[4], boxes[5]}));
 
-            CHECK(topo.get_neighbours(boxes[4]) ==
-                    std::vector{boxes[0], boxes[3], boxes[5]});
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[4]),
+                UnorderedEquals(std::vector{boxes[0], boxes[3], boxes[5]}));
 
-            CHECK(topo.get_neighbours(boxes[5]) ==
-                    std::vector{
-                        boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[5]),
+                UnorderedEquals(std::vector{
+                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
         }
 
-        SECTION("periodic-x"){
+        SECTION("periodic-x") {
+
+            auto [domain, boxes] = test_dec2d();
             Topology topo(domain, boxes, {true, false});
-            CHECK(topo.get_neighbours(boxes[0]) ==
-                    std::vector{boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
-            
-            CHECK(topo.get_neighbours(boxes[5]) ==
-                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
+
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[0]),
+                UnorderedEquals(std::vector{
+                    boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]}));
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[5]),
+                UnorderedEquals(std::vector{
+                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
         }
-        
-        SECTION("periodic-y"){
+
+        SECTION("periodic-y") {
+
+            auto [domain, boxes] = test_dec2d();
             Topology topo(domain, boxes, {false, true});
-            CHECK(topo.get_neighbours(boxes[0]) ==
-                    std::vector{boxes[0], boxes[1], boxes[4], boxes[5]});
-            
-            CHECK(topo.get_neighbours(boxes[1]) ==
-                    std::vector{boxes[0], boxes[2], boxes[3], boxes[4], boxes[5]});
+
+            REQUIRE_THAT(topo.get_neighbours(boxes[0]),
+                         UnorderedEquals(std::vector{
+                             boxes[0], boxes[1], boxes[4], boxes[5]}));
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[1]),
+                UnorderedEquals(std::vector{
+                    boxes[0], boxes[2], boxes[3], boxes[4], boxes[5]}));
         }
 
+        SECTION("periodic-both") {
 
-        
-        SECTION("periodic-both"){
+            auto [domain, boxes] = test_dec2d();
+
             Topology topo(domain, boxes, {true, true});
-            CHECK(topo.get_neighbours(boxes[0]) ==
-                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]});
-            
-            CHECK(topo.get_neighbours(boxes[5]) ==
-                    std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
 
+            REQUIRE_THAT(topo.get_neighbours(boxes[0]),
+                         UnorderedEquals(std::vector{boxes[0],
+                                                     boxes[1],
+                                                     boxes[2],
+                                                     boxes[3],
+                                                     boxes[4],
+                                                     boxes[5]}));
+            REQUIRE_THAT(
+                topo.get_neighbours(boxes[5]),
+                UnorderedEquals(std::vector{
+                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
         }
 
+        SECTION("Single periodic box") {
 
+            auto domain = Box<3>{{0, 0, 0}, {1, 1, 1}};
 
-        SECTION("get_intersections"){
+            std::vector<BoxRankPair<3>> boxes{
+                BoxRankPair{.box = Box<3>{{0, 0, 0}, {1, 1, 1}}, .rank = 0}};
 
+            Topology topo(domain, boxes, {true, true, true});
 
-            Topology topo(domain, boxes, {true, false});
+            auto result = topo.get_neighbours(boxes[0]);
+            CHECK(result == std::vector{boxes[0]});
 
-            
-            CHECK
-            (
-            topo.get_intersections(boxes[0], boxes[1])
-            == std::vector{Box<2>{{4,5}, {5,7}}}
-            );
-
-            CHECK
-            (
-            topo.get_intersections(boxes[0], boxes[5])
-            == std::vector{Box<2>{{4,3}, {5,5}}}
-            );
-            
-            CHECK
-            (
-            topo.get_intersections(boxes[0], boxes[4])
-            == std::vector
-                {
-                    Box<2>{{4,0}, {5,3}},
-                    Box<2>{{-1,0}, {0,3}}
-                }
-            );
-
-
-
+            CHECK(topo.get_intersections(boxes[0], boxes[0]).size() ==
+                  Neighbours<3, ConnectivityType::Box>::count());
         }
-
-
-        
-
     }
 
-    
+    SECTION("get_intersections") {
 
+        SECTION("one dimensional domain"){
+
+            auto domain = Box<1>{{0}, {10}};
+
+            
+            auto boxes = std::vector<BoxRankPair<1>>{
+                BoxRankPair<1>{.box = Box<1>{{0}, {2}}, .rank = 0},
+                BoxRankPair<1>{.box = Box<1>{{2}, {5}}, .rank = 1},
+                BoxRankPair<1>{.box = Box<1>{{5}, {7}}, .rank = 2},
+                BoxRankPair<1>{.box = Box<1>{{7}, {10}}, .rank = 3}
+            };
+            
+            Topology topo(domain, boxes, {true});
+            
+            CHECK
+            (
+                topo.get_intersections(boxes[0], boxes[1])
+                == std::vector{Box<1>{{2}, {3}}}
+            );
+            CHECK
+            (
+                topo.get_intersections(boxes[1], boxes[0])
+                == std::vector{Box<1>{{1}, {2}}}
+            );
+            CHECK
+            (
+                topo.get_intersections(boxes[3], boxes[0])
+                == std::vector{Box<1>{{10}, {11}}}
+            );
+            CHECK
+            (
+                topo.get_intersections(boxes[0], boxes[3])
+                == std::vector{Box<1>{{-1}, {0}}}
+            );
+
+        }
+
+
+        SECTION("two dimensional domain") {
+
+            using namespace Catch::Matchers;
+
+            auto [domain, boxes] = test_dec2d();
+
+            Topology topo(domain, boxes, {true, false});
+
+            CHECK(topo.get_intersections(boxes[0], boxes[1]) ==
+                  std::vector{Box<2>{{4, 5}, {5, 7}}});
+
+            CHECK(topo.get_intersections(boxes[0], boxes[5]) ==
+                  std::vector{Box<2>{{4, 3}, {5, 5}}});
+
+            REQUIRE_THAT(topo.get_intersections(boxes[0], boxes[4]),
+                         UnorderedEquals(std::vector{Box<2>{{4, 0}, {5, 3}},
+                                                     Box<2>{{-1, 0}, {0, 3}}}));
+        }
+    }
 }
-
 
 TEST_CASE("Test Neighbours"){
 
