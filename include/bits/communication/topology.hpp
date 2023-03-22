@@ -68,6 +68,64 @@ private:
         return area == m_domain.size();
     }
 
+    bool are_periodic_neighbours(const BoxRankPair<N>& owner,
+                                 const BoxRankPair<N>& neighbour) const {
+
+
+
+        auto nonzero = [](auto v) {
+            for (auto e : v) {
+                if (e) return true;
+            }
+            return false;
+        };
+
+        auto get_transform_vector = [&](auto dir){
+            auto dims = extent_to_array(m_domain.get_extent());
+            std::array<index_type, N> t{};
+            
+            for (size_t i = 0; i < N; ++i) {
+                t[i] = index_type(m_periodic[i]) * index_type(dims[i]) *
+                    dir[i];
+            }
+            return t;
+        };
+
+        auto get_directions = [](){
+            std::vector<std::array<index_type, N>> ret;
+            ret.push_back(std::array<index_type, N>{});
+            for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
+                ret.push_back(dir);
+            }
+            return ret;
+        };
+
+        for (auto dir : get_directions()) {
+            
+            auto t = get_transform_vector(dir);
+
+            if (nonzero(t)){
+
+                auto n = translate(neighbour.box, t);
+                auto o_copy = owner.box.clone();
+                o_copy.expand(1);
+                if( have_overlap(o_copy, n)){
+                    return true;
+                };
+            }
+
+        }
+        return false;
+    }
+
+    bool are_physical_neighbours(const BoxRankPair<N>& owner,
+                                 const BoxRankPair<N>& neighbour) const {
+        if (owner == neighbour) { return false; }
+        auto o_copy = owner.box.clone();
+        o_copy.expand(1);
+        return have_overlap(o_copy, neighbour.box);
+    }
+
 public:
     Topology(Box<N>                      domain,
              std::vector<BoxRankPair<N>> boxes,
@@ -94,57 +152,20 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-    bool are_periodic_neighbours(const BoxRankPair<N>& owner,
-                                 const BoxRankPair<N>& neighbour) const {
-
-        auto dims = extent_to_array(m_domain.get_extent());
-
-        auto o_copy = owner.box.clone();
-        o_copy.expand(1);
-
-        auto nonzero = [](auto v) {
-            for (auto e : v) {
-                if (e) return true;
-            }
-            return false;
-        };
-
-        for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
-
-            auto transformed = [&]() {
-                std::array<index_type, N> t{};
-
-                for (size_t i = 0; i < N; ++i) {
-                    t[i] = index_type(m_periodic[i]) * index_type(dims[i]) *
-                           dir[i];
-                }
-
-                if (nonzero(t)) {
-                    auto n_copy = neighbour.box.clone();
-                    n_copy.translate(t);
-                    return n_copy;
-                }
-                return Box<N>{};
-            }();
-
-            if (have_overlap(o_copy, transformed)) { return true; }
-        }
-        return false;
-    }
-
-    bool are_physical_neighbours(const BoxRankPair<N>& owner,
-                                 const BoxRankPair<N>& neighbour) const {
-        if (owner == neighbour) { return false; }
-        auto o_copy = owner.box.clone();
-        o_copy.expand(1);
-        return have_overlap(o_copy, neighbour.box);
-    }
-
     bool are_neighbours(const BoxRankPair<N>& owner,
                         const BoxRankPair<N>& neighbour) const {
 
         if (are_periodic_neighbours(owner, neighbour)) { return true; }
         return are_physical_neighbours(owner, neighbour);
+        //return are_periodic_neighbours(owner, neighbour);
+    }
+
+    Box<N> get_physical_overlap(const BoxRankPair<N>& owner,
+                                const BoxRankPair<N>& neighbour) const {
+
+        auto o_copy = owner.box.clone();
+        o_copy.expand(1);
+        return intersection(o_copy, neighbour.box);
     }
 
     std::vector<BoxRankPair<N>>

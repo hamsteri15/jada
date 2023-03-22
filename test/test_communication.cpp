@@ -46,8 +46,7 @@ TEST_CASE("Test box"){
     SECTION("translate"){
         
         Box<3> b1({1,1,1}, {2,2,2});
-        b1.translate({1,2,0});
-        CHECK(b1 == Box<3>({2, 3, 1}, {3, 4, 2}));
+        CHECK(translate(b1, {1,2,0}) == Box<3>({2, 3, 1}, {3, 4, 2}));
 
     }
 

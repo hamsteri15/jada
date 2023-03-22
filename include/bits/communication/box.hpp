@@ -39,15 +39,6 @@ public:
 
     size_t size() const { return flat_size(this->get_extent()); }
 
-    void translate(std::array<index_type, N> shift) {
-
-        for (size_t i = 0; i < N; ++i) {
-            m_begin[i] += shift[i];
-            m_end[i] += shift[i];
-        }
-
-        runtime_assert(this->is_valid(), "Invalid box");
-    }
 
     ///
     ///@brief Expand the box width the input thicknesses
@@ -206,6 +197,28 @@ std::array<index_type, N> distance(const Box<N>& lhs, const Box<N>& rhs) {
 ///
 template <size_t N> bool have_overlap(const Box<N>& lhs, const Box<N>& rhs) {
     return volume(intersection(lhs, rhs)) > 0;
+}
+
+///
+///@brief Translates the input box by the input amount wrt. current position of the box.
+///
+///@param box the box to tranlate
+///@param shift the amount to translate
+///
+template<size_t N>
+Box<N> translate(const Box<N>& box, std::array<index_type, N> amount) {
+
+    auto ret(box);
+
+    for (size_t i = 0; i < N; ++i) {
+        ret.m_begin[i] += amount[i];
+        ret.m_end[i] += amount[i];
+    }
+
+    runtime_assert(ret.is_valid(), "Invalid box");
+
+    return ret;
+
 }
 
 } // namespace jada
