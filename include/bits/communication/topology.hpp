@@ -100,31 +100,29 @@ private:
             return ret;
         };
 
+        auto o_copy = expand(owner.box, 1);
+        
         for (auto dir : get_directions()) {
             
             auto t = get_transform_vector(dir);
+            auto n = translate(neighbour.box, t);
 
-            if (nonzero(t)){
+            if (have_overlap(o_copy, n)){
 
-                auto n = translate(neighbour.box, t);
-                auto o_copy = owner.box.clone();
-                o_copy.expand(1);
-                if( have_overlap(o_copy, n)){
+                if ( owner == neighbour && nonzero(t)){
                     return true;
-                };
+                }
+
+                if (owner != neighbour){
+                    return true;
+                }
+
             }
 
         }
         return false;
     }
 
-    bool are_physical_neighbours(const BoxRankPair<N>& owner,
-                                 const BoxRankPair<N>& neighbour) const {
-        if (owner == neighbour) { return false; }
-        auto o_copy = owner.box.clone();
-        o_copy.expand(1);
-        return have_overlap(o_copy, neighbour.box);
-    }
 
 public:
     Topology(Box<N>                      domain,
@@ -155,9 +153,9 @@ public:
     bool are_neighbours(const BoxRankPair<N>& owner,
                         const BoxRankPair<N>& neighbour) const {
 
-        if (are_periodic_neighbours(owner, neighbour)) { return true; }
-        return are_physical_neighbours(owner, neighbour);
-        //return are_periodic_neighbours(owner, neighbour);
+        //if (are_periodic_neighbours(owner, neighbour)) { return true; }
+        //return are_physical_neighbours(owner, neighbour);
+        return are_periodic_neighbours(owner, neighbour);
     }
 
     Box<N> get_physical_overlap(const BoxRankPair<N>& owner,

@@ -53,14 +53,13 @@ TEST_CASE("Test box"){
     SECTION("expand"){
         
         Box<3> b1({1,1,1}, {2,2,2});
-        b1.expand({0,0,2}, {0,1,0});
+        //b1.expand({0,0,2}, {0,1,0});
 
 
-        CHECK(b1 == Box<3>({1,1,-1}, {2,3,2}));
+        CHECK(expand(b1, {0,0,2}, {0,1,0}) == Box<3>({1,1,-1}, {2,3,2}));
 
         Box<3> b2({1,1,1}, {2,2,2});
-        b2.expand(1);
-        CHECK(b2 == Box<3>({0,0,0}, {3,3,3}));
+        CHECK(expand(b2, 1) == Box<3>({0,0,0}, {3,3,3}));
     }
 
     
@@ -249,7 +248,7 @@ TEST_CASE("Test topology"){
             std::vector<BoxRankPair<3>> boxes{
                 BoxRankPair{.box=b1, .rank=0},
                 BoxRankPair{.box=b2, .rank=1},
-                BoxRankPair{.box=b3, .rank=1}
+                BoxRankPair{.box=b3, .rank=2}
             };
 
             Topology topo(domain, boxes, {false, false, false});
@@ -276,7 +275,7 @@ TEST_CASE("Test topology"){
                 std::vector<BoxRankPair<3>> boxes{
                     BoxRankPair{.box=b1, .rank=0},
                     BoxRankPair{.box=b2, .rank=1},
-                    BoxRankPair{.box=b3, .rank=1}
+                    BoxRankPair{.box=b3, .rank=2}
                 };
 
                 Topology topo(domain, boxes, {true, false, false});
@@ -314,6 +313,7 @@ TEST_CASE("Test topology"){
 
         }
 
+        
         SECTION("Real 2D test"){
             Box<2> domain({0,0}, {10, 7});
             Box<2> b0({0,0}, {4, 7});
@@ -389,15 +389,12 @@ TEST_CASE("Test topology"){
 
             }
 
-
-
         }
-
-
+        
 
     }
 
-
+    
 
 }
 

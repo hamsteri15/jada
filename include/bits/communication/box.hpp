@@ -40,35 +40,6 @@ public:
     size_t size() const { return flat_size(this->get_extent()); }
 
 
-    ///
-    ///@brief Expand the box width the input thicknesses
-    ///
-    ///@param begin_thickness the thickness to expand the begin coordinates
-    ///@param end_thickness the thickness to expand the end coordinates
-    ///
-    void expand(std::array<index_type, N> begin_thickness,
-                std::array<index_type, N> end_thickness) {
-
-        for (size_t i = 0; i < N; ++i) {
-            m_begin[i] -= begin_thickness[i];
-            m_end[i] += end_thickness[i];
-        }
-        runtime_assert(this->is_valid(), "Invalid box");
-    }
-
-    ///
-    ///@brief Expand the box in all directions
-    ///
-    ///@param thickness the width of the added extent
-    ///
-    void expand(index_type thickness) {
-
-        std::array<index_type, N> t2{};
-        for (auto& e : t2) { e = thickness; }
-        this->expand(t2, t2);
-        runtime_assert(this->is_valid(), "Invalid box");
-    }
-
     bool is_valid() const {
         for (size_t i = 0; i < N; ++i) {
             if (m_begin[i] > m_end[i]) { return false; }
@@ -119,9 +90,8 @@ std::ostream& operator<<(std::ostream& os, const Box<L>& v) {
     return os;
 }
 
-
 /// @brief Computes the input box b
-/// @param b the box to compute the volume for 
+/// @param b the box to compute the volume for
 /// @return the volume of the box
 template <size_t N> index_type volume(const Box<N>& b) {
 
@@ -129,7 +99,6 @@ template <size_t N> index_type volume(const Box<N>& b) {
     for (size_t i = 0; i < N; ++i) { vol *= (b.m_end[i] - b.m_begin[i]); }
     return vol;
 }
-
 
 ///
 ///@brief Merges boxes lhs and rhs forming a new box. Assumes that the merger is
@@ -157,7 +126,6 @@ template <size_t N> Box<N> merge(const Box<N>& lhs, const Box<N>& rhs) {
 /// @return the intersection of lhs and rhs
 template <size_t N> Box<N> intersection(const Box<N>& lhs, const Box<N>& rhs) {
 
-
     std::array<index_type, N> begin{};
     std::array<index_type, N> end{};
 
@@ -167,11 +135,8 @@ template <size_t N> Box<N> intersection(const Box<N>& lhs, const Box<N>& rhs) {
     }
 
     Box<N> ret(begin, end);
-    if (!ret.is_valid()){
-        return Box<N>{};
-    }
+    if (!ret.is_valid()) { return Box<N>{}; }
     return ret;
-
 }
 
 /// @brief Returns a vector from the beginning of box 'lhs' to beginning of box
@@ -200,12 +165,13 @@ template <size_t N> bool have_overlap(const Box<N>& lhs, const Box<N>& rhs) {
 }
 
 ///
-///@brief Translates the input box by the input amount wrt. current position of the box.
+/// @brief Translates the input box by the input amount wrt. current position of
+/// the box.
+/// @param box the box to tranlate
+/// @param amount the amount to translate
+/// @return translated box
 ///
-///@param box the box to tranlate
-///@param shift the amount to translate
-///
-template<size_t N>
+template <size_t N>
 Box<N> translate(const Box<N>& box, std::array<index_type, N> amount) {
 
     auto ret(box);
@@ -218,7 +184,43 @@ Box<N> translate(const Box<N>& box, std::array<index_type, N> amount) {
     runtime_assert(ret.is_valid(), "Invalid box");
 
     return ret;
+}
 
+///
+///@brief Expand the box with the input thicknesses
+///
+///@param box the box to expand
+///@param begin_thickness the thickness to expand the begin coordinates
+///@param end_thickness the thickness to expand the end coordinates
+///@return Box<N> the expanded box
+///
+template <size_t N>
+Box<N> expand(const Box<N>&             box,
+              std::array<index_type, N> begin_thickness,
+              std::array<index_type, N> end_thickness) {
+
+    auto ret(box);
+    for (size_t i = 0; i < N; ++i) {
+        ret.m_begin[i] -= begin_thickness[i];
+        ret.m_end[i] += end_thickness[i];
+    }
+
+    runtime_assert(ret.is_valid(), "Invalid box");
+    return ret;
+}
+
+///
+///@brief Expands the box with the input thickness in all dimensions
+///
+///@param box the box to expand
+///@param thickness the thickness to expand
+///@return Box<N> expanded box
+///
+template <size_t N> Box<N> expand(const Box<N>& box, index_type thickness) {
+
+    std::array<index_type, N> thick{};
+    for (auto& e : thick) { e = thickness; }
+    return expand(box, thick, thick);
 }
 
 } // namespace jada

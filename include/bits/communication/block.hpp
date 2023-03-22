@@ -10,19 +10,6 @@ namespace jada {
 template <size_t N> struct Block {
 
 private:
-    static Box<N> make_outer(const Box<N>&             inner,
-                             std::array<index_type, N> begin_halos,
-                             std::array<index_type, N> end_halos) {
-        Box<N> ret(inner);
-        ret.expand(begin_halos, end_halos);
-        return ret;
-    }
-
-    static Box<N> make_outer(const Box<N>& inner, index_type halos) {
-        Box<N> ret(inner);
-        ret.expand(halos);
-        return ret;
-    }
 
 public:
     Box<N> m_inner;
@@ -32,7 +19,7 @@ public:
 
     Block(Box<N> inner, index_type halos)
         : m_inner(inner)
-        , m_outer(make_outer(inner, halos)) {
+        , m_outer(expand(inner, halos)) {
         runtime_assert(m_inner.is_valid(), "Invalid box");
         runtime_assert(m_outer.is_valid(), "Invalid box");
     }
@@ -41,7 +28,7 @@ public:
           std::array<index_type, N> begin_halos,
           std::array<index_type, N> end_halos)
         : m_inner(inner)
-        , m_outer(make_outer(inner, begin_halos, end_halos)) {
+        , m_outer(expand(inner, begin_halos, end_halos)) {
         runtime_assert(m_inner.is_valid(), "Invalid box");
         runtime_assert(m_outer.is_valid(), "Invalid box");
     }
