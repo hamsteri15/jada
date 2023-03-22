@@ -307,8 +307,8 @@ TEST_CASE("Test topology"){
                 auto result = topo.get_neighbours(boxes[0]);
                 CHECK(result == correct);
 
-
-
+                CHECK(topo.get_intersections(boxes[0], boxes[0]).size() ==
+                      Neighbours<3, ConnectivityType::Box>::count());
             }
 
         }
@@ -388,6 +388,32 @@ TEST_CASE("Test topology"){
                       std::vector{boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]});
 
             }
+
+
+            SECTION("get_intersections"){
+
+
+                Topology topo(domain, boxes, {false, false});
+
+
+                CHECK
+                (
+                topo.get_intersections(boxes[0], boxes[1])
+                == std::vector{Box<2>{{4,5}, {5,7}}}
+                );
+
+
+                /*
+                CHECK
+                (
+                    topo.get_intersection_dirs(boxes[0], boxes[1])
+                    == std::vector<std::array<index_type, 2>>{{1, 0}}
+                );
+                */
+
+
+            }
+
 
         }
         

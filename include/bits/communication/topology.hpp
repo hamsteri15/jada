@@ -68,60 +68,33 @@ private:
         return area == m_domain.size();
     }
 
-    bool are_neighbours(const BoxRankPair<N>& owner,
-                                 const BoxRankPair<N>& neighbour) const {
+    auto get_transform_vector(auto dir) const {
+        auto                      dims = extent_to_array(m_domain.get_extent());
+        std::array<index_type, N> t{};
 
-
-
-        auto nonzero = [](auto v) {
-            for (auto e : v) {
-                if (e) return true;
-            }
-            return false;
-        };
-
-        auto get_transform_vector = [&](auto dir){
-            auto dims = extent_to_array(m_domain.get_extent());
-            std::array<index_type, N> t{};
-            
-            for (size_t i = 0; i < N; ++i) {
-                t[i] = index_type(m_periodic[i]) * index_type(dims[i]) *
-                    dir[i];
-            }
-            return t;
-        };
-
-        auto get_directions = [](){
-            std::vector<std::array<index_type, N>> ret;
-            ret.push_back(std::array<index_type, N>{});
-            for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
-                ret.push_back(dir);
-            }
-            return ret;
-        };
-
-        
-        for (auto dir : get_directions()) {
-            
-            auto t = get_transform_vector(dir);
-            auto n = translate(neighbour.box, t);
-
-            if (have_overlap(expand(owner.box, 1), n)){
-
-                if ( owner == neighbour && nonzero(t)){
-                    return true;
-                }
-
-                if (owner != neighbour){
-                    return true;
-                }
-
-            }
-
+        for (size_t i = 0; i < N; ++i) {
+            t[i] = index_type(m_periodic[i]) * index_type(dims[i]) * dir[i];
         }
-        return false;
+        return t;
     }
 
+    auto get_directions() const {
+
+        /*
+        std::vector<std::array<index_type, N>> dirs;
+        dirs.push_back(std::array<index_type, N>{});
+        for (auto dir : Neighbours<N, ConnectivityType::Box>::create()) {
+            dirs.push_back(dir);
+        }
+        return dirs;
+        */
+        return Neighbours<N, ConnectivityType::Box>::create();
+    }
+
+    bool are_neighbours(const BoxRankPair<N>& owner,
+                        const BoxRankPair<N>& neighbour) const {
+        return get_intersections(owner, neighbour).size() > 0;
+    }
 
 public:
     Topology(Box<N>                      domain,
@@ -149,8 +122,6 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-
-
     std::vector<BoxRankPair<N>>
     get_neighbours(const BoxRankPair<N>& owner) const {
 
@@ -164,6 +135,78 @@ public:
         }
 
         return ret;
+    }
+
+    auto get_intersections(const BoxRankPair<N>& owner,
+                           const BoxRankPair<N>& neighbour) const {
+
+        auto nonzero = [](auto v) {
+            for (auto e : v) {
+                if (e) return true;
+            }
+            return false;
+        };
+
+        
+        // Check self intersections due to periodicity
+        if (owner == neighbour) {
+            std::vector<Box<N>> intersections;
+
+            for (auto dir : get_directions()) {
+
+                auto t     = get_transform_vector(dir);
+                auto n     = translate(neighbour.box, t);
+                auto inter = intersection(expand(owner.box, 1), n);
+
+                if ((volume(inter) > 0) && nonzero(t)) {
+                    intersections.push_back(inter);
+                }
+
+            }
+            return intersections;
+        }
+        
+
+        // Check physical intersection
+        std::vector<Box<N>> intersections;
+        const auto          physical_inter =
+            intersection(expand(owner.box, 1), neighbour.box);
+        if (volume(physical_inter) > 0) {
+            intersections.push_back(physical_inter);
+        }
+
+        // Check intersections due to periodicity
+        for (auto dir : get_directions()) {
+
+            auto t     = get_transform_vector(dir);
+            auto n     = translate(neighbour.box, t);
+            auto inter = intersection(expand(owner.box, 1), n);
+
+            if ((volume(inter) > 0) && nonzero(t)) { intersections.push_back(inter); }
+        }
+
+        return intersections;
+    }
+
+    
+    auto get_intersection_dirs(const BoxRankPair<N>& owner,
+                               const BoxRankPair<N>& neighbour) const {
+
+        auto inters = get_intersections(owner, neighbour);
+
+        std::vector<std::array<index_type, N>> dirs;
+        for (auto inter : inters) {
+
+            auto d = distance(owner.box, inter);
+
+            for (auto& e : d) {
+                if (e < 0) { e = -1; }
+                if (e > 0) { e = 1; }
+            }
+            dirs.push_back(d);
+        }
+
+        return dirs;
     }
 };
 
