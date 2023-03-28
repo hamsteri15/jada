@@ -42,6 +42,24 @@ private:
     std::vector<BoxRankPair<N>> m_boxes;
     std::array<bool, N>         m_periodic;
 
+    //TODO: fix
+    const std::array<index_type, N> m_begin_expansion = [](){
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i){
+            ret[i] = 1;
+        }
+        return ret;
+    }();
+    
+    //TODO: fix
+    const std::array<index_type, N> m_end_expansion = [](){
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i){
+            ret[i] = 1;
+        }
+        return ret;
+    }();
+
     ///
     ///@brief Checks that none of the m_boxes have overlap
     ///
@@ -153,7 +171,7 @@ public:
         // Check physical intersection
         if (owner != neighbour) {
             const auto physical_inter =
-                intersection(expand(owner.box, 1), neighbour.box);
+                intersection(expand(owner.box, m_begin_expansion, m_end_expansion), neighbour.box);
             if (volume(physical_inter) > 0) {
                 intersections.push_back(physical_inter);
             }
@@ -167,7 +185,7 @@ public:
 
                 auto t     = get_translation(dir);
                 auto n     = translate(neighbour.box, t);
-                auto inter = intersection(expand(owner.box, 1), n);
+                auto inter = intersection(expand(owner.box, m_begin_expansion, m_end_expansion), n);
 
                 if ((volume(inter) > 0)) { intersections.push_back(inter); }
             }
