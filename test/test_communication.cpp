@@ -138,6 +138,19 @@ TEST_CASE("Test block"){
 
 TEST_CASE("Test topology") {
 
+    auto test_dec1d = [](){
+        Box<1> domain({0}, {10});
+        Box<1> b0({0}, {3});
+        Box<1> b1({3}, {6});
+        Box<1> b2({6}, {10});
+
+        std::vector<BoxRankPair<1>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                          BoxRankPair{.box = b1, .rank = 1},
+                                          BoxRankPair{.box = b2, .rank = 2}};
+
+        return std::make_pair(domain, boxes);
+    };
+
     auto test_dec2d = []() {
         Box<2> domain({0, 0}, {10, 7});
         Box<2> b0({0, 0}, {4, 7});
@@ -156,6 +169,8 @@ TEST_CASE("Test topology") {
 
         return std::make_pair(domain, boxes);
     };
+
+
 
     SECTION("Constructors") {
 
@@ -366,6 +381,89 @@ TEST_CASE("Test topology") {
                                                      Box<2>{{-1, 0}, {0, 3}}}));
         }
     }
+
+
+    SECTION("global_to_local"){
+
+        SECTION("1D tests"){
+            auto [domain, boxes] = test_dec1d();
+
+            Topology topo(domain, boxes, {true});
+            
+            CHECK
+            (
+                topo.global_to_local(boxes[0], {0}) == std::array<index_type, 1>{1}
+            );
+            
+            CHECK
+            (
+                topo.global_to_local(boxes[1], {3}) == std::array<index_type, 1>{1}
+            );
+
+        }
+
+    }
+
+    SECTION("get_locations"){
+            
+        using namespace Catch::Matchers;
+
+        SECTION("1D tests"){
+            auto [domain, boxes] = test_dec1d();
+            Topology topo(domain, boxes, {true});
+
+            SECTION("Test 1"){
+                auto ret = topo.get_locations
+                (
+                    boxes[0],
+                    boxes[1]
+                );
+
+                auto puts = std::get<0>(ret);
+                auto gets = std::get<1>(ret);
+
+                CHECK
+                (
+                    puts == std::vector<std::array<index_type, 1>>{{4}}
+                );
+
+                CHECK
+                (
+                    gets == std::vector<std::array<index_type, 1>>{{1}}
+                );
+
+            }
+
+            SECTION("Test 2"){
+                auto ret = topo.get_locations
+                (
+                    boxes[0],
+                    boxes[2]
+                );
+
+                auto puts = std::get<0>(ret);
+                auto gets = std::get<1>(ret);
+
+                CHECK
+                (
+                    puts == std::vector<std::array<index_type, 1>>{{4}}
+                );
+
+                CHECK
+                (
+                    gets == std::vector<std::array<index_type, 1>>{{1}}
+                );
+
+            }
+
+
+
+        }
+
+    }
+
+
+
 }
 
 TEST_CASE("Test Neighbours"){
