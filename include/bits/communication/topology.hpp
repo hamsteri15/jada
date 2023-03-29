@@ -204,30 +204,70 @@ public:
         return ret;
     }
 
-    auto get_locations(const BoxRankPair<N>& owner,
-                       const BoxRankPair<N>& neighbour) const {
-        // Puts are simply the coordinates of the intersections converted from
-        // global to local _owner_ indices. I.e. the ghost cells of the owner.
-        // Gets are simply the coordinates of hte intersections converted from
-        // global to local _neighbour_ indices. I.e. the ghost cells of the
-        // neighbour
+    auto get_locations(const BoxRankPair<N>& sender,
+                       const BoxRankPair<N>& receiver) const {
 
-        // Periodic intersection: domain.contains(intersection) == false??
+        std::vector<std::array<index_type, N>> sender_begins;
+        std::vector<std::array<index_type, N>> receiver_begins;
+        std::vector<std::array<size_type, N>> extents;
 
-        std::vector<std::array<index_type, N>> puts;
-        std::vector<std::array<index_type, N>> gets;
 
-        auto inters = get_intersections(owner, neighbour);
-        for (auto inter : inters) {
+        // Check physical intersection
+        if (sender != receiver) {
+            const auto physical_inter = intersection(
+                expand(receiver.box, m_begin_expansion, m_end_expansion),
+                sender.box);
+            if (volume(physical_inter) > 0) {
 
-            auto put = global_to_local(owner, inter.m_begin);
-            auto get = global_to_local(neighbour, inter.m_begin);
+                
+                auto sb = global_to_local(sender, physical_inter.m_begin);                
+                auto rb = global_to_local(receiver, physical_inter.m_begin);                
 
-            puts.push_back(put);
-            gets.push_back(get);
+                extents.push_back(extent_to_array(physical_inter.get_extent()));
+                sender_begins.push_back(sb);
+                receiver_begins.push_back(rb);
+            }
         }
 
-        return std::make_pair(puts, gets);
+        
+        // Check intersections due to periodicity, also handles owner ==
+        // neighbour
+        for (auto dir : get_directions()) {
+
+            if (is_periodic_dir(dir)) {
+
+                auto t     = get_translation(dir);
+                auto n     = translate(receiver.box, t);
+                auto inter = intersection(
+                    expand(n, m_begin_expansion, m_end_expansion), sender.box);
+
+                if ((volume(inter) > 0)) {
+                    auto t_neg = [=](){
+                        auto ret = t;
+                        for (auto& elem : ret){
+                            elem *= -1;
+                        }
+                        return ret;
+                    }();
+
+
+                    auto sb = global_to_local(sender, inter.m_begin);
+                    //Translate back here                
+                    auto rb = global_to_local(receiver, translate(inter, t_neg).m_begin);                
+                    
+                    extents.push_back(extent_to_array(inter.get_extent()));
+                    sender_begins.push_back(sb);
+                    receiver_begins.push_back(rb);
+                
+
+                }
+            }
+        }
+        
+        
+        
+        
+        return std::make_tuple(sender_begins, receiver_begins, extents);
     }
 };
 

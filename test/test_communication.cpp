@@ -328,37 +328,22 @@ TEST_CASE("Test topology") {
 
             auto domain = Box<1>{{0}, {10}};
 
-            
             auto boxes = std::vector<BoxRankPair<1>>{
                 BoxRankPair<1>{.box = Box<1>{{0}, {2}}, .rank = 0},
                 BoxRankPair<1>{.box = Box<1>{{2}, {5}}, .rank = 1},
                 BoxRankPair<1>{.box = Box<1>{{5}, {7}}, .rank = 2},
-                BoxRankPair<1>{.box = Box<1>{{7}, {10}}, .rank = 3}
-            };
-            
-            Topology topo(domain, boxes, {true});
-            
-            CHECK
-            (
-                topo.get_intersections(boxes[0], boxes[1])
-                == std::vector{Box<1>{{2}, {3}}}
-            );
-            CHECK
-            (
-                topo.get_intersections(boxes[1], boxes[0])
-                == std::vector{Box<1>{{1}, {2}}}
-            );
-            CHECK
-            (
-                topo.get_intersections(boxes[3], boxes[0])
-                == std::vector{Box<1>{{10}, {11}}}
-            );
-            CHECK
-            (
-                topo.get_intersections(boxes[0], boxes[3])
-                == std::vector{Box<1>{{-1}, {0}}}
-            );
+                BoxRankPair<1>{.box = Box<1>{{7}, {10}}, .rank = 3}};
 
+            Topology topo(domain, boxes, {true});
+
+            CHECK(topo.get_intersections(boxes[0], boxes[1]) ==
+                  std::vector{Box<1>{{2}, {3}}});
+            CHECK(topo.get_intersections(boxes[1], boxes[0]) ==
+                  std::vector{Box<1>{{1}, {2}}});
+            CHECK(topo.get_intersections(boxes[3], boxes[0]) ==
+                  std::vector{Box<1>{{10}, {11}}});
+            CHECK(topo.get_intersections(boxes[0], boxes[3]) ==
+                  std::vector{Box<1>{{-1}, {0}}});
         }
 
 
@@ -382,85 +367,113 @@ TEST_CASE("Test topology") {
         }
     }
 
+    SECTION("global_to_local") {
 
-    SECTION("global_to_local"){
-
-        SECTION("1D tests"){
+        SECTION("1D tests") {
             auto [domain, boxes] = test_dec1d();
 
             Topology topo(domain, boxes, {true});
-            
-            CHECK
-            (
-                topo.global_to_local(boxes[0], {0}) == std::array<index_type, 1>{1}
-            );
-            
-            CHECK
-            (
-                topo.global_to_local(boxes[1], {3}) == std::array<index_type, 1>{1}
-            );
 
+            CHECK(topo.global_to_local(boxes[0], {0}) ==
+                  std::array<index_type, 1>{1});
+
+            CHECK(topo.global_to_local(boxes[1], {3}) ==
+                  std::array<index_type, 1>{1});
         }
-
     }
 
     SECTION("get_locations"){
             
         using namespace Catch::Matchers;
 
+        
         SECTION("1D tests"){
             auto [domain, boxes] = test_dec1d();
             Topology topo(domain, boxes, {true});
 
             SECTION("Test 1"){
-                auto ret = topo.get_locations
-                (
-                    boxes[0],
-                    boxes[1]
-                );
 
-                auto puts = std::get<0>(ret);
-                auto gets = std::get<1>(ret);
+                auto [sender_begins, receiver_begins, extents] =
+                    topo.get_locations(boxes[0], boxes[1]);
 
-                CHECK
-                (
-                    puts == std::vector<std::array<index_type, 1>>{{4}}
-                );
+                CHECK(sender_begins ==
+                      std::vector<std::array<index_type, 1>>{{3}});
 
-                CHECK
-                (
-                    gets == std::vector<std::array<index_type, 1>>{{1}}
-                );
-
+                CHECK(receiver_begins ==
+                      std::vector<std::array<index_type, 1>>{{0}});
+                
+                CHECK(extents ==
+                      std::vector<std::array<size_type, 1>>{{1}});
             }
-
+            
             SECTION("Test 2"){
-                auto ret = topo.get_locations
-                (
-                    boxes[0],
-                    boxes[2]
-                );
 
-                auto puts = std::get<0>(ret);
-                auto gets = std::get<1>(ret);
+                auto [sender_begins, receiver_begins, extents] =
+                    topo.get_locations(boxes[1], boxes[0]);
 
-                CHECK
-                (
-                    puts == std::vector<std::array<index_type, 1>>{{4}}
-                );
+                CHECK(sender_begins ==
+                      std::vector<std::array<index_type, 1>>{{1}});
 
-                CHECK
-                (
-                    gets == std::vector<std::array<index_type, 1>>{{1}}
-                );
+                CHECK(receiver_begins ==
+                      std::vector<std::array<index_type, 1>>{{4}});
+                
+                CHECK(extents ==
+                      std::vector<std::array<size_type, 1>>{{1}});
+            }
+            
+            SECTION("Test 3 periodicity"){
+
+                auto [sender_begins, receiver_begins, extents] =
+                    topo.get_locations(boxes[0], boxes[2]);
+
+                CHECK(sender_begins ==
+                      std::vector<std::array<index_type, 1>>{{1}});
+
+                CHECK(receiver_begins ==
+                      std::vector<std::array<index_type, 1>>{{5}});
+                
+                CHECK(extents ==
+                      std::vector<std::array<size_type, 1>>{{1}});
+            }
+            
+        }
+        
+        
+        SECTION("2D tests"){
+
+            SECTION("Test 1") {
+                auto [domain, boxes] = test_dec2d();
+                Topology topo(domain, boxes, {false, false});
+
+                auto [sender_begins, receiver_begins, extents] =
+                    topo.get_locations(boxes[0], boxes[1]);
+                
+                REQUIRE_THAT(
+                    extents,
+                    UnorderedEquals(std::vector<std::array<size_type, 2>>{
+                        {1, 3}}));
+
+                
+                REQUIRE_THAT(
+                    sender_begins,
+                    UnorderedEquals(std::vector<std::array<index_type, 2>>{
+                        {4, 5}}));
+                
+
+                REQUIRE_THAT(
+                    receiver_begins,
+                    UnorderedEquals(std::vector<std::array<index_type, 2>>{
+                        {0,0}}));
+
 
             }
-
-
-
         }
+        
 
     }
+
+
+
 
 
 

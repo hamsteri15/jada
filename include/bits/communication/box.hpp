@@ -27,8 +27,8 @@ public:
 
     auto get_extent() const {
         auto diff = [this]() {
-            std::array<index_type, N> ret{};
-            for (size_t i = 0; i < N; ++i) { ret[i] = m_end[i] - m_begin[i]; }
+            std::array<size_type, N> ret{};
+            for (size_t i = 0; i < N; ++i) { ret[i] = size_type(m_end[i] - m_begin[i]); }
             return ret;
         }();
 
