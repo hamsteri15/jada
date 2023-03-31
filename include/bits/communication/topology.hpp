@@ -41,20 +41,8 @@ private:
     Box<N>                      m_domain;
     std::vector<BoxRankPair<N>> m_boxes;
     std::array<bool, N>         m_periodic;
-
-    // TODO: fix
-    const std::array<index_type, N> m_begin_expansion = []() {
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = 1; }
-        return ret;
-    }();
-
-    // TODO: fix
-    const std::array<index_type, N> m_end_expansion = []() {
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = 1; }
-        return ret;
-    }();
+    std::array<index_type, N>   m_begin_padding;
+    std::array<index_type, N>   m_end_padding;
 
     ///
     ///@brief Checks that none of the m_boxes have overlap
@@ -121,13 +109,18 @@ private:
 public:
     Topology(Box<N>                      domain,
              std::vector<BoxRankPair<N>> boxes,
-             std::array<bool, N>         periodic)
+             std::array<bool, N>         periodic,
+             std::array<index_type, N>   begin_padding,
+             std::array<index_type, N>   end_padding)
         : m_domain(domain)
         , m_boxes(boxes)
-        , m_periodic(periodic) {
+        , m_periodic(periodic)
+        , m_begin_padding(begin_padding)
+        , m_end_padding(end_padding) {
 
         runtime_assert(this->is_valid(), "Invalid topology");
     }
+
 
     /// @brief Checks that the topology is valid
     /// @return true if valid topology, false otherwise
@@ -167,7 +160,7 @@ public:
         // Check physical intersection
         if (owner != neighbour) {
             const auto physical_inter = intersection(
-                expand(owner.box, m_begin_expansion, m_end_expansion),
+                expand(owner.box, m_begin_padding, m_end_padding),
                 neighbour.box);
             if (volume(physical_inter) > 0) {
                 intersections.push_back(physical_inter);
@@ -183,7 +176,7 @@ public:
                 auto t     = get_translation(dir);
                 auto n     = translate(neighbour.box, t);
                 auto inter = intersection(
-                    expand(owner.box, m_begin_expansion, m_end_expansion), n);
+                    expand(owner.box, m_begin_padding, m_end_padding), n);
 
                 if ((volume(inter) > 0)) { intersections.push_back(inter); }
             }
@@ -193,9 +186,9 @@ public:
     }
 
     auto global_to_local(const BoxRankPair<N>&            owner,
-                         const std::array<index_type, N>& coord) const{
+                         const std::array<index_type, N>& coord) const {
 
-        auto box = expand(owner.box, m_begin_expansion, m_end_expansion);
+        auto box = expand(owner.box, m_begin_padding, m_end_padding);
 
         std::array<index_type, N> ret{};
         for (size_t i = 0; i < N; ++i) { ret[i] = coord[i] - box.m_begin[i]; }
@@ -209,19 +202,17 @@ public:
 
         std::vector<std::array<index_type, N>> sender_begins;
         std::vector<std::array<index_type, N>> receiver_begins;
-        std::vector<std::array<size_type, N>> extents;
-
+        std::vector<std::array<size_type, N>>  extents;
 
         // Check physical intersection
         if (sender != receiver) {
             const auto physical_inter = intersection(
-                expand(receiver.box, m_begin_expansion, m_end_expansion),
+                expand(receiver.box, m_begin_padding, m_end_padding),
                 sender.box);
             if (volume(physical_inter) > 0) {
 
-                
-                auto sb = global_to_local(sender, physical_inter.m_begin);                
-                auto rb = global_to_local(receiver, physical_inter.m_begin);                
+                auto sb = global_to_local(sender, physical_inter.m_begin);
+                auto rb = global_to_local(receiver, physical_inter.m_begin);
 
                 extents.push_back(extent_to_array(physical_inter.get_extent()));
                 sender_begins.push_back(sb);
@@ -229,7 +220,6 @@ public:
             }
         }
 
-        
         // Check intersections due to periodicity, also handles owner ==
         // neighbour
         for (auto dir : get_directions()) {
@@ -239,34 +229,27 @@ public:
                 auto t     = get_translation(dir);
                 auto n     = translate(receiver.box, t);
                 auto inter = intersection(
-                    expand(n, m_begin_expansion, m_end_expansion), sender.box);
+                    expand(n, m_begin_padding, m_end_padding), sender.box);
 
                 if ((volume(inter) > 0)) {
-                    auto t_neg = [=](){
+                    auto t_neg = [=]() {
                         auto ret = t;
-                        for (auto& elem : ret){
-                            elem *= -1;
-                        }
+                        for (auto& elem : ret) { elem *= -1; }
                         return ret;
                     }();
 
-
                     auto sb = global_to_local(sender, inter.m_begin);
-                    //Translate back here                
-                    auto rb = global_to_local(receiver, translate(inter, t_neg).m_begin);                
-                    
+                    // Translate back here
+                    auto rb = global_to_local(receiver,
+                                              translate(inter, t_neg).m_begin);
+
                     extents.push_back(extent_to_array(inter.get_extent()));
                     sender_begins.push_back(sb);
                     receiver_begins.push_back(rb);
-                
-
                 }
             }
         }
-        
-        
-        
-        
+
         return std::make_tuple(sender_begins, receiver_begins, extents);
     }
 };
