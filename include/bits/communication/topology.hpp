@@ -121,6 +121,7 @@ public:
         runtime_assert(this->is_valid(), "Invalid topology");
     }
 
+    const auto& get_boxes() const { return m_boxes; }
 
     /// @brief Checks that the topology is valid
     /// @return true if valid topology, false otherwise
@@ -159,9 +160,9 @@ public:
 
         // Check physical intersection
         if (owner != neighbour) {
-            const auto physical_inter = intersection(
-                expand(owner.box, m_begin_padding, m_end_padding),
-                neighbour.box);
+            const auto physical_inter =
+                intersection(expand(owner.box, m_begin_padding, m_end_padding),
+                             neighbour.box);
             if (volume(physical_inter) > 0) {
                 intersections.push_back(physical_inter);
             }
@@ -188,12 +189,31 @@ public:
     auto global_to_local(const BoxRankPair<N>&            owner,
                          const std::array<index_type, N>& coord) const {
 
+        runtime_assert(m_domain.contains(coord),
+                       "Coordinate not in domain.");
+
         auto box = expand(owner.box, m_begin_padding, m_end_padding);
 
         std::array<index_type, N> ret{};
         for (size_t i = 0; i < N; ++i) { ret[i] = coord[i] - box.m_begin[i]; }
 
-        runtime_assert(box.contains(coord), "Coordinate not in box.");
+        runtime_assert(box.contains(ret), "Coordinate not in box.");
+
+        return ret;
+    }
+
+    auto local_to_global(const BoxRankPair<N>&            owner,
+                         const std::array<index_type, N>& coord) const {
+
+        runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
+
+        auto box = owner.box;
+
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i) { ret[i] = box.m_begin[i] + coord[i]; }
+
+        runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
+
         return ret;
     }
 

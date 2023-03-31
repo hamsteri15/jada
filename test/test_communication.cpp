@@ -407,6 +407,24 @@ TEST_CASE("Test topology") {
         }
     }
 
+
+    SECTION("local_to_global"){
+        SECTION("1D tests") {
+            auto [domain, boxes] = test_dec1d();
+
+            auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
+            auto epad = std::array<index_type ,1>{}; epad.fill(1);
+            Topology topo(domain, boxes, {true}, bpad, epad);
+
+            CHECK(topo.local_to_global(boxes[0], {1}) ==
+                  std::array<index_type, 1>{1});
+
+            CHECK(topo.local_to_global(boxes[1], {1}) ==
+                  std::array<index_type, 1>{4});
+        }
+
+    }
+
     SECTION("get_locations"){
 
         using namespace Catch::Matchers;
@@ -501,23 +519,73 @@ TEST_CASE("Test topology") {
 
     }
 
-    /*
+
     SECTION("Real usage"){
 
         SECTION("2D"){
 
             auto [domain, boxes] = test_dec2d();
 
+            std::array<index_type, 2> padding = {1,1};
 
-            std::vector<std::vector<int>>
-            for ()
+            Topology topo(domain, boxes, {true, true}, padding, padding);
+
+            std::vector<std::vector<int>> data;
+            for (const auto& b : topo.get_boxes()){
+
+                auto b2 = expand(b.box, padding, padding);
+                data.push_back
+                (
+                    std::vector<int>(flat_size(b2.get_extent()), 1)
+                );
+            }
+
+
+            for (size_t i = 0; i < boxes.size(); ++i){
+
+                auto box = topo.get_boxes()[i].box;
+                auto data_i = data[i];
+
+                auto big_span = make_span
+                (
+                    data_i,
+                    expand(box, padding, padding).get_extent()
+                );
+
+                auto span = make_subspan
+                (
+                    big_span,
+                    padding,
+                    extent_to_array(box.get_extent())
+                );
+
+                /*
+                for_each_indexed
+                (
+                    span,
+                    [=](auto idx, int& v){
+
+                        auto g_idx = topo.local_to_global(topo.get_boxes()[i], idx);
+                        v = 0;
+                    }
+                );
+                */
+
+
+
+            }
+
+
+
+
+
 
 
 
         }
 
     }
-    */
+
 }
 
 TEST_CASE("Test Neighbours"){
