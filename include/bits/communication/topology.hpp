@@ -236,9 +236,9 @@ public:
     //TODO: does not belong here
     auto get_padded_extent(const BoxRankPair<N>& b) const{
 
-        auto ret = b.box.get_extent();
+        auto ret = extent_to_array(b.box.get_extent());
         for (size_t i = 0; i < N; ++i){
-            ret.extent(i) += m_begin_padding[i] + m_end_padding[i];
+            ret[i] += size_type(m_begin_padding[i] + m_end_padding[i]);
         }
         return ret;
     }
