@@ -21,6 +21,16 @@ struct Transfer{
 
 
 
+auto get_end(auto begin, auto extent){
+
+    auto ret = begin;
+    for (size_t i = 0; i < begin.size(); ++i){
+        begin[i] += extent[i];
+    }
+    return ret;
+
+}
+
 template<size_t N, class T>
 struct Channel{
 
@@ -46,10 +56,14 @@ struct Channel{
 
                 std::vector<T> buffer(flat_size(extents[i]));
 
+                auto big_span = make_span(data, m_topology.get_padded_extent(sendr_box));
+                auto small_span = make_subspan(big_span, sender_begins[i], get_end(sender_begins[i], extents[i]));
 
-                //auto big_span = make_span(data, m_topology.get_padded_extent(sendr_box));
+                auto buffer_span = make_span(buffer, extents[i]);
 
+                transform(small_span, buffer_span, [](auto val) {return val;});
 
+                m_sends[t] = buffer;
             }
 
 
