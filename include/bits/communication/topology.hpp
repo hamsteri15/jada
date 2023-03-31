@@ -123,6 +123,21 @@ public:
 
     const auto& get_boxes() const { return m_boxes; }
 
+    auto get_boxes(int rank) const {
+
+        std::vector<BoxRankPair<N>> ret;
+
+        for (const auto& b : get_boxes()){
+            if (b.rank == rank){
+                ret.push_back(b);
+            }
+        }
+
+        return ret;
+
+    }
+
+
     /// @brief Checks that the topology is valid
     /// @return true if valid topology, false otherwise
     bool is_valid() const {
@@ -216,6 +231,18 @@ public:
 
         return ret;
     }
+
+    /*
+    //TODO: does not belong here
+    auto get_padded_extent(const BoxRankPair<B>& box) const{
+
+        auto ret = box.box.get_extent();
+        for (size_t i = 0; i < N; ++i){
+            ret.extent(i) += m_begin_padding[i] + m_end_padding[i];
+        }
+        return ret;
+    }
+    */
 
     auto get_locations(const BoxRankPair<N>& sender,
                        const BoxRankPair<N>& receiver) const {

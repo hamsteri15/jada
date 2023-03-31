@@ -6,3 +6,5 @@
 #include "neighbours.hpp"
 #include "decomposition.hpp"
 #include "topology.hpp"
+#include "channel.hpp"
+#include "data_exchange.hpp"

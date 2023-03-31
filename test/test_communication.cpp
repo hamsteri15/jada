@@ -520,6 +520,8 @@ TEST_CASE("Test topology") {
     }
 
 
+    /*
+
     SECTION("Real usage"){
 
         SECTION("2D"){
@@ -531,62 +533,127 @@ TEST_CASE("Test topology") {
             Topology topo(domain, boxes, {true, true}, padding, padding);
 
             std::vector<std::vector<int>> data;
+            std::vector<std::vector<int>> computed;
+
+
             for (const auto& b : topo.get_boxes()){
 
                 auto b2 = expand(b.box, padding, padding);
+
                 data.push_back
+                (
+                    std::vector<int>(flat_size(b2.get_extent()), 1)
+                );
+
+                computed.push_back
                 (
                     std::vector<int>(flat_size(b2.get_extent()), 1)
                 );
             }
 
+            for (size_t i = 0; i < boxes.size(); ++i) {
 
-            for (size_t i = 0; i < boxes.size(); ++i){
-
-                auto box = topo.get_boxes()[i].box;
+                auto box    = topo.get_boxes()[i].box;
                 auto data_i = data[i];
 
-                auto big_span = make_span
-                (
-                    data_i,
-                    expand(box, padding, padding).get_extent()
-                );
+                auto big_span = make_span(
+                    data_i, expand(box, padding, padding).get_extent());
 
-                auto span = make_subspan
-                (
-                    big_span,
+                auto span = make_subspan(
+                    big_span, padding, extent_to_array(box.get_extent()));
+
+                for_each_indexed(span, [=](auto idx, int& v) {
+                    auto g_idx = topo.local_to_global(topo.get_boxes()[i], idx);
+                    auto flat_idx = flatten<StorageOrder::RowMajor>(
+                        g_idx, extent_to_array(domain.get_extent()));
+                    v = flat_idx;
+                    // v =
+                });
+            }
+            
+            auto swap_data = [=](auto& d1, auto& d2, auto& b1, auto& b2){
+
+                auto [s_begins, r_begins, exts] = topo.get_locations(b1, b2);
+
+                auto s1_big = make_span(d1, expand(b1.box, padding, padding).get_extent());
+                auto s2_big = make_span(d2, expand(b2.box, padding, padding).get_extent());
+
+                for (size_t i = 0; i < s_begins.size(); ++i){
+
+                    auto e1 = [=](){
+                        auto ret = s_begins[i];
+                        for (size_t j = 0; j < ret.size(); ++j){
+                            ret[i] += index_type(exts[i][j]);
+                        }
+                        return ret; 
+                    }();
+                    auto e2 = [=](){
+                        auto ret = r_begins[i];
+                        for (size_t j = 0; j < ret.size(); ++j){
+                            ret[i] += index_type(exts[i][j]);
+                        }
+                        return ret; 
+                    }();
+
+                    auto span1 = make_subspan(s1_big, s_begins[i], e1);
+                    auto span2 = make_subspan(s2_big, r_begins[i], e2);
+
+                    transform(span1, span2, [](auto val){return val;});
+
+                }
+
+            };
+            
+            for (size_t i = 0; i < boxes.size(); ++i) {
+            for (size_t j = i; j < boxes.size(); ++j) {
+
+                swap_data(data[i], data[j], boxes[i], boxes[j]);                
+                swap_data(data[j], data[i], boxes[j], boxes[i]);
+                        
+            }}
+            
+
+
+            for (size_t i = 0; i < boxes.size(); ++i) {
+
+                auto box    = topo.get_boxes()[i].box;
+                const auto& data_i = data[i];
+                auto& data_o = computed[i];
+
+
+                auto span_i = make_subspan(
+                    make_span(data_i,
+                              expand(box, padding, padding).get_extent()),
                     padding,
-                    extent_to_array(box.get_extent())
-                );
+                    extent_to_array(box.get_extent()));
+                
+                auto span_o = make_subspan(
+                    make_span(data_o,
+                              expand(box, padding, padding).get_extent()),
+                    padding,
+                    extent_to_array(box.get_extent()));
 
-                /*
-                for_each_indexed
-                (
-                    span,
-                    [=](auto idx, int& v){
-
-                        auto g_idx = topo.local_to_global(topo.get_boxes()[i], idx);
-                        v = 0;
-                    }
-                );
-                */
-
-
+                window_transform(span_i, span_o, [](auto f) {
+                    return f(1,1) + f(1,0) + f(0, 1) + f(-1, -1) + f(-1, 1) + f(1, -1);
+                });
 
             }
-
-
-
-
-
-
-
 
         }
 
     }
 
+    */
+
 }
+
+TEST_CASE("Test data_exchange"){
+
+    
+
+
+}
+
 
 TEST_CASE("Test Neighbours"){
 
