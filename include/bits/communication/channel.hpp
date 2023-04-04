@@ -19,28 +19,6 @@ std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& v) {
     return os;
 }
 
-template<size_t N, class T>
-void put(Channel<N, T>& channel, const TransferInfo<N>& tag, const std::vector<T>& data){
-    channel.tags.push_back(tag);
-    channel.datas.push_back(data);
-}
-
-template<size_t N, class T>
-auto get(const Channel<N, T>& channel, int receiver_rank){
-    
-    std::vector<std::pair<TransferInfo<N>, std::vector<T>>> ret;
-
-    for (size_t i = 0; i < channel.tags.size(); ++i){
-        if (channel.tags[i].receiver_rank == receiver_rank) {
-
-            ret.push_back(make_pair(channel.tags[i], channel.datas[i]));
-        }
-    }
-    return ret;
-
-}
-
-
 static auto get_end(auto begin, auto extent) {
 
     auto ret = begin;
@@ -51,7 +29,7 @@ static auto get_end(auto begin, auto extent) {
 }
 
 template <class Data, size_t N>
-auto slice_send_data(const Data&            data,
+auto make_sendable_slice(const Data&            data,
                      const BoxRankPair<N>&  sender,
                      const Topology<N>&     topo,
                      const TransferInfo<N>& info) {
@@ -70,9 +48,17 @@ auto slice_send_data(const Data&            data,
     return buffer;
 }
 
+template <size_t N, class T>
+void put(Channel<N, T>&         channel,
+         const TransferInfo<N>& tag,
+         const std::vector<T>&  data) {
+    channel.tags.push_back(tag);
+    channel.datas.push_back(data);
+}
+
 template <class Data, class T, size_t N>
-auto put(const Data&           data,
-         Channel<N, T>&        buffer,
+void put(const Data&           data,
+         Channel<N, T>&        channel,
          const Topology<N>&    topo,
          const BoxRankPair<N>& sender) {
 
@@ -88,11 +74,28 @@ auto put(const Data&           data,
                               .receiver_begin = r_begin[i],
                               .extent         = extent[i]};
 
-            put(buffer, t, slice_send_data(data, sender, topo, t));
-
+            put(channel, t, make_sendable_slice(data, sender, topo, t));
         }
     }
 }
+
+
+template <size_t N, class T>
+auto get(const Channel<N, T>& channel, int receiver_rank) {
+
+    std::vector<std::pair<TransferInfo<N>, std::vector<T>>> ret;
+
+    for (size_t i = 0; i < channel.tags.size(); ++i) {
+        if (channel.tags[i].receiver_rank == receiver_rank) {
+
+            ret.push_back(make_pair(channel.tags[i], channel.datas[i]));
+        }
+    }
+    return ret;
+}
+
+
+
 
 void get(auto&       data,
          const auto& topo,
