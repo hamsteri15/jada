@@ -8,40 +8,38 @@ namespace jada {
 
 template <size_t N, class T> struct Channel {
 
-    void append(TransferInfo<N> tag, const std::vector<T>& data) {
-        m_tags.push_back(tag);
-        m_datas.push_back(data);
-    }
-
-    auto get(int receiver_rank) const {
-
-        std::vector<std::pair<TransferInfo<N>, std::vector<T>>> ret;
-
-        for (size_t i = 0; i < m_tags.size(); ++i)
-            if (m_tags[i].receiver_rank == receiver_rank) {
-
-                ret.push_back(make_pair(m_tags[i], m_datas[i]));
-            }
-
-        return ret;
-    }
-
-    auto get_tags() const { return m_tags; }
-
-    template <size_t L, class TT>
-    friend std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& t);
-
-private:
-    std::vector<std::vector<T>>  m_datas;
-    std::vector<TransferInfo<N>> m_tags;
+    std::vector<std::vector<T>>  datas;
+    std::vector<TransferInfo<N>> tags;
 };
 
 template <size_t L, class TT>
 std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& v) {
 
-    for (const auto& tag : v.buffer().get_tags()) { os << tag << std::endl; }
+    for (const auto& tag : v.tags) { os << tag << std::endl; }
     return os;
 }
+
+template<size_t N, class T>
+void put(Channel<N, T>& channel, const TransferInfo<N>& tag, const std::vector<T>& data){
+    channel.tags.push_back(tag);
+    channel.datas.push_back(data);
+}
+
+template<size_t N, class T>
+auto get(const Channel<N, T>& channel, int receiver_rank){
+    
+    std::vector<std::pair<TransferInfo<N>, std::vector<T>>> ret;
+
+    for (size_t i = 0; i < channel.tags.size(); ++i){
+        if (channel.tags[i].receiver_rank == receiver_rank) {
+
+            ret.push_back(make_pair(channel.tags[i], channel.datas[i]));
+        }
+    }
+    return ret;
+
+}
+
 
 static auto get_end(auto begin, auto extent) {
 
@@ -90,7 +88,8 @@ auto put(const Data&           data,
                               .receiver_begin = r_begin[i],
                               .extent         = extent[i]};
 
-            buffer.append(t, slice_send_data(data, sender, topo, t));
+            put(buffer, t, slice_send_data(data, sender, topo, t));
+
         }
     }
 }
@@ -100,7 +99,7 @@ void get(auto&       data,
          const auto& channel,
          const auto& receiver) {
 
-    for (const auto& [info, slice] : channel.get(receiver.rank)) {
+    for (const auto& [info, slice] : get(channel, receiver.rank)) {
 
         auto begin    = info.receiver_begin;
         auto end      = get_end(begin, info.extent);
