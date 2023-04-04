@@ -555,8 +555,7 @@ TEST_CASE("Test data exchange"){
         };
 
 
-        auto channel = send(data, topo, 0);
-        receive(data, channel, 0);
+        send_receive(data, topo, 0);
         
 
         CHECK(data == correct);

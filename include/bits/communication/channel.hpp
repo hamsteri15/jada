@@ -23,12 +23,12 @@ template <size_t N, class T> struct Channel {
         }
     }
 
-    void get(std::vector<T>& data, BoxRankPair<N> recvr_box) const {
+    void get(std::vector<T>& data, BoxRankPair<N> receiver) const {
 
         for (const auto& [transfer, buffer] : m_sends) {
 
-            if (transfer.receiver_rank == recvr_box.rank) {
-                place_to(recvr_box, data, buffer, transfer);
+            if (transfer.receiver_rank == receiver.rank) {
+                place_to(receiver, data, buffer, transfer);
             }
         }
     }
