@@ -11,17 +11,19 @@ auto send(const Data& data, const Topology<N>& topology, int rank) {
 
     using T = typename Data::value_type;
 
-    auto channel = Channel<N, T>(topology);
+    Channel<N, T> buffer;
 
-    for (const auto& box : topology.get_boxes(rank)) { channel.put(data, box); }
+    for (const auto& sender : topology.get_boxes(rank)){
+        put(data, buffer, topology, sender); 
+    }
+    return buffer;
 
-    return channel;
 }
 
-void receive(auto& data, auto& channel, int rank) {
+void receive(auto& data, const auto& topology, auto& channel, int rank) {
 
-    for (const auto& box : channel.topology().get_boxes(rank)) {
-        channel.get(data, box);
+    for (const auto& box : topology.get_boxes(rank)) {
+        get(data, topology, channel, box);
     }
 }
 
@@ -31,7 +33,7 @@ template <class Data, size_t N>
 void send_receive(Data& data, const Topology<N>& topology, int rank) {
 
     auto channel = detail::send(data, topology, rank);
-    detail::receive(data, channel, rank);
+    detail::receive(data, topology, channel, rank);
 }
 
 } // namespace jada
