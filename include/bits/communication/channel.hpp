@@ -7,6 +7,37 @@
 
 namespace jada {
 
+
+template <size_t N, class T> struct ChannelBuffer {
+
+    void append(TransferInfo<N> tag, const std::vector<T>& data) {
+        m_tags.push_back(tag);
+        m_datas.push_back(data);
+    }
+
+    auto get(int receiver_rank) const {
+
+        std::vector<std::pair<TransferInfo<N>, std::vector<T>>> ret;
+
+        for (size_t i = 0; i < m_tags.size(); ++i)
+            if (m_tags[i].receiver_rank == receiver_rank) {
+
+                ret.push_back(make_pair(m_tags[i], m_datas[i]));
+            }
+
+        return ret;
+    }
+
+    auto get_tags() const {
+        return m_tags;
+    }
+
+private:
+    std::vector<std::vector<T>>  m_datas;
+    std::vector<TransferInfo<N>> m_tags;
+};
+
+
 template <size_t N, class T> struct Channel {
 
     Channel(Topology<N> topo)
@@ -15,6 +46,9 @@ template <size_t N, class T> struct Channel {
 
     const auto& topology() const { return m_topology; }
     auto&       topology() { return m_topology; }
+
+    const auto& buffer() const {return m_sends;}
+
 
     void put(const std::vector<T>& data, BoxRankPair<N> sender) {
 
@@ -25,11 +59,9 @@ template <size_t N, class T> struct Channel {
 
     void get(std::vector<T>& data, BoxRankPair<N> receiver) const {
 
-        for (const auto& [transfer, buffer] : m_sends) {
+        for (const auto& [transfer, buffer] : m_sends.get(receiver.rank)) {
 
-            if (transfer.receiver_rank == receiver.rank) {
-                place_to(receiver, data, buffer, transfer);
-            }
+            place_to(receiver, data, buffer, transfer);
         }
     }
 
@@ -38,7 +70,7 @@ template <size_t N, class T> struct Channel {
 
 private:
     Topology<N>                               m_topology;
-    std::map<TransferInfo<N>, std::vector<T>> m_sends;
+    ChannelBuffer<N, T>                       m_sends;
 
     static auto get_end(auto begin, auto extent) {
 
@@ -95,8 +127,7 @@ private:
                               .receiver_begin = receiver_begins[i],
                               .extent         = extents[i]};
 
-            m_sends[t] =
-                get_send_buffer(data, sender, sender_begins[i], extents[i]);
+            m_sends.append(t, get_send_buffer(data, sender, sender_begins[i], extents[i]));
         }
     }
 };
@@ -104,8 +135,8 @@ private:
 template <size_t L, class TT>
 std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& v) {
 
-    for (const auto& [transfer, buffer] : v.m_sends) {
-        os << transfer << std::endl;
+    for (const auto& tag: v.buffer().get_tags()) {
+        os << tag << std::endl;
     }
     return os;
 }
