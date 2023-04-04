@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+#include <sstream>
 
 #include "topology.hpp"
 
@@ -21,11 +22,10 @@ template <size_t N> struct Transfer {
     
     bool operator<(const Transfer<N>& rhs) const
     {
+        std::stringstream s1; s1 << *this;
+        std::stringstream s2; s2 << rhs;
 
-        auto l = (sender_rank +1) * (receiver_rank+1) * flat_size(make_extent(sender_begin)) * flat_size(make_extent(extent));
-        auto r = (rhs.sender_rank + 1) * (rhs.receiver_rank + 1) * flat_size(make_extent(rhs.sender_begin)) * flat_size(make_extent(rhs.extent));
-    
-        return l < r;
+        return s1.str() < s2.str();
     }
     
     
@@ -39,14 +39,22 @@ std::ostream& operator<<(std::ostream& os, const Transfer<L>& t) {
 
     os << "Sender: " << t.sender_rank;
     os << " Receiver: " << t.receiver_rank;
-    os << " N elements: " << flat_size(t.extent);
+    os << " Sender begin: ";
+    for (auto e : t.sender_begin) {os << e << " ";}
+
+    os << " Receiver begin: ";
+    for (auto e : t.receiver_begin) {os << e << " ";}
+
+    os << " Extent: ";
+    for (auto e : t.extent) {os << e << " ";}
+
     return os;
 }
 
 auto get_end(auto begin, auto extent) {
 
     auto ret = begin;
-    for (size_t i = 0; i < begin.size(); ++i) { begin[i] += index_type(extent[i]); }
+    for (size_t i = 0; i < begin.size(); ++i) { ret[i] += index_type(extent[i]); }
     return ret;
 }
 
@@ -87,22 +95,26 @@ template <size_t N, class T> struct Channel {
                     small_span, buffer_span, [](auto val) { return val; });
 
                 m_sends[t] = buffer;
+
             }
         }
     }
 
     auto get(std::vector<T>& data, BoxRankPair<N> recvr_box) const {
 
+        auto big_span = make_span(data, m_topology.get_padded_extent(recvr_box));
+        
+
         for (const auto& [transfer, buffer] : m_sends) {
 
             if (transfer.receiver_rank == recvr_box.rank) {
 
-                auto o_span = make_subspan(
-                    make_span(data, m_topology.get_padded_extent(recvr_box)),
-                    transfer.receiver_begin,
-                    get_end(transfer.receiver_begin, transfer.extent));
+                auto begin = transfer.receiver_begin;
+                auto end = get_end(transfer.receiver_begin, transfer.extent);
+                auto o_span = make_subspan(big_span, begin, end);
 
                 auto i_span = make_span(buffer, transfer.extent);
+
 
                 transform(i_span, o_span, [](auto val) { return val; });
             }

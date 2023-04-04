@@ -649,9 +649,11 @@ TEST_CASE("Test topology") {
 
 TEST_CASE("Test channel"){
 
+    
+
     SECTION("Periodic box"){
 
-        auto domain = Box<2>{{0,0}, {3,4}};
+        auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, 0}};
         auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
 
@@ -668,7 +670,7 @@ TEST_CASE("Test channel"){
         
         std::vector<int> correct = 
         {
-            12,  10, 11, 12,  10,
+            12, 10, 11, 12, 10,
             3,  1,  2,  3,  1,
             6,  4,  5,  6,  4,
             9,  7,  8,  9,  7,
@@ -679,26 +681,12 @@ TEST_CASE("Test channel"){
 
         Channel<2, int> channel(topo);
 
-
-
-
         channel.put(data, boxes[0]);
-
-        std::cout << channel << std::endl;
-
-
         channel.get(data, boxes[0]);
 
         CHECK(data == correct);
 
     }
-    /*
-            auto [domain, boxes] = test_dec2d();
-
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true, true}, bpad, epad);
-    */
 }
 
 TEST_CASE("Test data_exchange"){
