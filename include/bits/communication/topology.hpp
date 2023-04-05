@@ -9,6 +9,8 @@ template <size_t N> struct BoxRankPair {
     Box<N> box;
     int    rank;
 
+    auto get_extent() const { return box.get_extent(); }
+
     bool operator==(const BoxRankPair<N>& lhs) const = default;
     bool operator!=(const BoxRankPair<N>& lhs) const = default;
 
@@ -121,22 +123,20 @@ public:
         runtime_assert(this->is_valid(), "Invalid topology");
     }
 
+    const auto& get_domain() const { return m_domain; }
+
     const auto& get_boxes() const { return m_boxes; }
 
     auto get_boxes(int rank) const {
 
         std::vector<BoxRankPair<N>> ret;
 
-        for (const auto& b : get_boxes()){
-            if (b.rank == rank){
-                ret.push_back(b);
-            }
+        for (const auto& b : get_boxes()) {
+            if (b.rank == rank) { ret.push_back(b); }
         }
 
         return ret;
-
     }
-
 
     /// @brief Checks that the topology is valid
     /// @return true if valid topology, false otherwise
@@ -204,8 +204,7 @@ public:
     auto global_to_local(const BoxRankPair<N>&            owner,
                          const std::array<index_type, N>& coord) const {
 
-        runtime_assert(m_domain.contains(coord),
-                       "Coordinate not in domain.");
+        runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
 
         auto box = expand(owner.box, m_begin_padding, m_end_padding);
 
@@ -232,17 +231,15 @@ public:
         return ret;
     }
 
-    
-    //TODO: does not belong here
-    auto get_padded_extent(const BoxRankPair<N>& b) const{
+    // TODO: does not belong here
+    auto get_padded_extent(const BoxRankPair<N>& b) const {
 
         auto ret = extent_to_array(b.box.get_extent());
-        for (size_t i = 0; i < N; ++i){
+        for (size_t i = 0; i < N; ++i) {
             ret[i] += size_type(m_begin_padding[i] + m_end_padding[i]);
         }
         return ret;
     }
-    
 
     auto get_locations(const BoxRankPair<N>& sender,
                        const BoxRankPair<N>& receiver) const {
@@ -299,6 +296,17 @@ public:
 
         return std::make_tuple(sender_begins, receiver_begins, extents);
     }
+
+    template <size_t L>
+    friend std::ostream& operator<<(std::ostream& os, const Topology<L>& topo);
 };
+
+template <size_t L>
+std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
+
+    os << "Domain: " << topo.m_domain << std::endl;
+    for (auto e : topo.get_boxes()) { os << e << std::endl; }
+    return os;
+}
 
 } // namespace jada

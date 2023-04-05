@@ -24,6 +24,15 @@ template <class B, class E> static constexpr auto md_indices(B begin, E end) {
     }
     (std::make_integer_sequence<size_t, rank(begin)>{});
 }
+/// @brief Returns a view of multi-dimensional index tuples
+/// @param end index set of end indices
+/// @return A view of index tuples from [0, end)
+template <class E> static constexpr auto md_indices(E end) {
+
+    E begin{};
+    return md_indices(begin, end);
+
+}
 
 /// @brief Returns all multi-dimensional indices spanned by the extent of the
 /// input span

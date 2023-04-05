@@ -22,7 +22,11 @@ struct all_of<Trait, std::pair<Types...>> : std::conjunction<Trait<Types>...> {
 
 #ifdef DEBUG
 constexpr void runtime_assert(bool condition, const char* msg) {
-    if (!condition) throw std::runtime_error(msg);
+    if (!condition) {
+        
+        throw std::runtime_error(msg);
+    }
+    
 }
 #else
 constexpr void runtime_assert([[maybe_unused]] bool        condition,
