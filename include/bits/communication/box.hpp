@@ -9,6 +9,8 @@ namespace jada {
 template <size_t N> struct Box {
 
 public:
+    static constexpr size_t dimension_count = N;
+
     std::array<index_type, N> m_begin{}; // inclusive begin
     std::array<index_type, N> m_end{};   // non-inclusive end
 
@@ -25,7 +27,7 @@ public:
     bool operator==(const Box<N>& rhs) const = default;
     bool operator!=(const Box<N>& rhs) const = default;
 
-    auto get_extent() const {
+    constexpr auto get_extent() const {
         auto diff = [this]() {
             std::array<size_type, N> ret{};
             for (size_t i = 0; i < N; ++i) { ret[i] = size_type(m_end[i] - m_begin[i]); }

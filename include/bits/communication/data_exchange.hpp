@@ -42,7 +42,6 @@ void mpi_send_receive(Data& data, const Topology<N>& topology, int rank) {
     MpiChannel<N, T> channel;
 
     detail::send(data, topology, channel, rank);
-    std::cout << channel << std::endl;
     detail::receive(data, topology, channel, rank);
 }
 

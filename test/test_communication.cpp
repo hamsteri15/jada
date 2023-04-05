@@ -563,10 +563,10 @@ TEST_CASE("Test data exchange"){
     }
     
     SECTION("Mpi periodic box"){
-        mpi::init();
         
+        //Each process creates an own topology and sends to self
         auto domain = Box<2>{{0,0}, {4, 3}};
-        auto boxes = std::vector<BoxRankPair<2>>{{domain, 0}};
+        auto boxes = std::vector<BoxRankPair<2>>{{domain, mpi::get_world_rank()}};
         auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
 
         std::vector<int> data = 
@@ -590,32 +590,17 @@ TEST_CASE("Test data exchange"){
         };
 
 
-        mpi_send_receive(data, topo, 0);
+        mpi_send_receive(data, topo, mpi::get_world_rank());
         
         CHECK(data == correct);
     
-        mpi::finalize();
-
     }
     
 
 }
 
-TEST_CASE("Test MpiChannel"){
 
 
-    SECTION("Constructors"){
-        REQUIRE_NOTHROW(MpiChannel<3, int>{});
-    }
-
-
-}
-
-
-TEST_CASE("Another"){
-
-
-}
 
 TEST_CASE("Test Neighbours"){
 

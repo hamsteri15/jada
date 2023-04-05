@@ -30,9 +30,9 @@ static auto get_end(auto begin, auto extent) {
 
 template <class Data, size_t N>
 auto make_sendable_slice(const Data&            data,
-                     const BoxRankPair<N>&  sender,
-                     const Topology<N>&     topo,
-                     const TransferInfo<N>& info) {
+                         const BoxRankPair<N>&  sender,
+                         const Topology<N>&     topo,
+                         const TransferInfo<N>& info) {
 
     using T = typename Data::value_type;
 
@@ -56,29 +56,6 @@ void put(Channel<N, T>&         channel,
     channel.datas.push_back(data);
 }
 
-template <class Data, class T, size_t N>
-void put(const Data&           data,
-         Channel<N, T>&        channel,
-         const Topology<N>&    topo,
-         const BoxRankPair<N>& sender) {
-
-    for (auto recvr : topo.get_boxes()) {
-
-        auto [s_begin, r_begin, extent] = topo.get_locations(sender, recvr);
-
-        for (size_t i = 0; i < s_begin.size(); ++i) {
-
-            TransferInfo<N> t{.sender_rank    = sender.rank,
-                              .receiver_rank  = recvr.rank,
-                              .sender_begin   = s_begin[i],
-                              .receiver_begin = r_begin[i],
-                              .extent         = extent[i]};
-
-            put(channel, t, make_sendable_slice(data, sender, topo, t));
-        }
-    }
-}
-
 
 template <size_t N, class T>
 auto get(const Channel<N, T>& channel, int receiver_rank) {
@@ -96,6 +73,28 @@ auto get(const Channel<N, T>& channel, int receiver_rank) {
 
 
 
+
+void put(const auto& data,
+         auto&       channel,
+         const auto& topo,
+         const auto& sender) {
+
+    for (auto recvr : topo.get_boxes()) {
+
+        auto [s_begin, r_begin, extent] = topo.get_locations(sender, recvr);
+
+        for (size_t i = 0; i < s_begin.size(); ++i) {
+
+            TransferInfo t{.sender_rank    = sender.rank,
+                           .receiver_rank  = recvr.rank,
+                           .sender_begin   = s_begin[i],
+                           .receiver_begin = r_begin[i],
+                           .extent         = extent[i]};
+
+            put(channel, t, make_sendable_slice(data, sender, topo, t));
+        }
+    }
+}
 
 void get(auto&       data,
          const auto& topo,

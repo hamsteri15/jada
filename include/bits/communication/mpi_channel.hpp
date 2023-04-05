@@ -44,28 +44,6 @@ void put(MpiChannel<N, T>&      channel,
              channel.comm_handle);
 }
 
-template <class Data, class T, size_t N>
-void put(const Data&           data,
-         MpiChannel<N, T>&     channel,
-         const Topology<N>&    topo,
-         const BoxRankPair<N>& sender) {
-
-    for (auto recvr : topo.get_boxes()) {
-
-        auto [s_begin, r_begin, extent] = topo.get_locations(sender, recvr);
-
-        for (size_t i = 0; i < s_begin.size(); ++i) {
-
-            TransferInfo<N> t{.sender_rank    = sender.rank,
-                              .receiver_rank  = recvr.rank,
-                              .sender_begin   = s_begin[i],
-                              .receiver_begin = r_begin[i],
-                              .extent         = extent[i]};
-
-            put(channel, t, make_sendable_slice(data, sender, topo, t));
-        }
-    }
-}
 
 template <size_t N, class T>
 auto get(const MpiChannel<N, T>& channel, int receiver_rank) {
