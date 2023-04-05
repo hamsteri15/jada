@@ -23,7 +23,6 @@ target_link_libraries(MpiTest.bin PRIVATE catch_main project_options project_war
 target_include_directories(MpiTest.bin PUBLIC
                             ${CMAKE_SOURCE_DIR}
                             ${CMAKE_SOURCE_DIR}/catch
-#                            #${MPI_CXX_INCLUDE_PATH}
                           )
 
 add_test( NAME MpiTest COMMAND MpiTest.bin)

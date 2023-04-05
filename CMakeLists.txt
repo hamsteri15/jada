@@ -9,6 +9,12 @@ add_library(project_options INTERFACE)
 
 target_compile_features(project_options INTERFACE cxx_std_20) #use c++20
 
+
+find_package(MPI REQUIRED)
+message("STATUS MPI FOUND: ${MPI_CXX_FOUND}")
+target_link_libraries(project_options INTERFACE MPI::MPI_CXX)
+
+
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "PGI")
   #set(flags -stdpar)
   set(flags --gcc-toolchain=g++ -stdpar=gpu)

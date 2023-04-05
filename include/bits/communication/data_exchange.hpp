@@ -1,29 +1,23 @@
 #pragma once
 
 #include "channel.hpp"
+#include "mpi_channel.hpp"
 
 namespace jada {
 
 namespace detail {
 
-template <class Data, size_t N>
-auto send(const Data& data, const Topology<N>& topology, int rank) {
+void send(auto& data, const auto& topology, auto& channel, int rank) {
 
-    using T = typename Data::value_type;
-
-    Channel<N, T> buffer;
-
-    for (const auto& sender : topology.get_boxes(rank)){
-        put(data, buffer, topology, sender); 
+    for (const auto& sender : topology.get_boxes(rank)) {
+        put(data, channel, topology, sender);
     }
-    return buffer;
-
 }
 
 void receive(auto& data, const auto& topology, auto& channel, int rank) {
 
-    for (const auto& box : topology.get_boxes(rank)) {
-        get(data, topology, channel, box);
+    for (const auto& receiver : topology.get_boxes(rank)) {
+        get(data, topology, channel, receiver);
     }
 }
 
@@ -32,7 +26,23 @@ void receive(auto& data, const auto& topology, auto& channel, int rank) {
 template <class Data, size_t N>
 void send_receive(Data& data, const Topology<N>& topology, int rank) {
 
-    auto channel = detail::send(data, topology, rank);
+    using T = typename Data::value_type;
+
+    Channel<N, T> channel;
+
+    detail::send(data, topology, channel, rank);
+    detail::receive(data, topology, channel, rank);
+}
+
+template <class Data, size_t N>
+void mpi_send_receive(Data& data, const Topology<N>& topology, int rank) {
+
+    using T = typename Data::value_type;
+
+    MpiChannel<N, T> channel;
+
+    detail::send(data, topology, channel, rank);
+    std::cout << channel << std::endl;
     detail::receive(data, topology, channel, rank);
 }
 
