@@ -9,7 +9,7 @@ add_library(project_options INTERFACE)
 
 target_compile_features(project_options INTERFACE cxx_std_20) #use c++20
 
-
+# Configure mpi
 find_package(MPI REQUIRED)
 message("STATUS MPI FOUND: ${MPI_CXX_FOUND}")
 target_link_libraries(project_options INTERFACE MPI::MPI_CXX)
@@ -24,7 +24,7 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC" OR ${CMAKE_CXX_COMPILER_ID} MATCHES
   target_link_options(project_options INTERFACE ${flags})
 
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES ".*Clang")
-  
+
   find_package(TBB REQUIRED)
   target_link_libraries(project_options INTERFACE TBB::tbb)
 endif()
@@ -42,14 +42,6 @@ set_project_warnings(project_warnings)
 # allow for static analysis options
 include(cmake/StaticAnalyzers.cmake)
 
-
-#Configure MPI
-#option(USE_MPI "Enable building with mpi" No)
-#if (USE_MPI)
-#find_package(MPI REQUIRED)
-#message("STATUS MPI FOUND: ${MPI_CXX_FOUND}")
-#add_compile_definitions(USE_MPI)
-#endif()
 
 
 
