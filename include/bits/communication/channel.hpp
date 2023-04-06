@@ -81,21 +81,15 @@ void put(const auto& data,
 
     for (auto recvr : topo.get_boxes()) {
 
-        auto [s_begin, r_begin, extent] =
-            topo.get_locations(sender, recvr, begin_padding, end_padding);
+        auto transfers =
+            topo.get_transfers(sender, recvr, begin_padding, end_padding);
 
-        for (size_t i = 0; i < s_begin.size(); ++i) {
-
-            TransferInfo t{.sender_rank    = sender.rank,
-                           .receiver_rank  = recvr.rank,
-                           .sender_begin   = s_begin[i],
-                           .receiver_begin = r_begin[i],
-                           .extent         = extent[i]};
+        for (const auto& transfer : transfers) {
 
             put(channel,
-                t,
+                transfer,
                 make_sendable_slice(
-                    data, sender, begin_padding, end_padding, t));
+                    data, sender, begin_padding, end_padding, transfer));
         }
     }
 }

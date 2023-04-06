@@ -214,205 +214,8 @@ TEST_CASE("Test topology") {
         CHECK(!topo.found(BoxRankPair{.box = b1, .rank = 433}));
     }
 
-    /*
-    SECTION("get_neighbours()") {
 
-        using namespace Catch::Matchers;
-
-        SECTION("non-periodic") {
-
-            auto [domain, boxes] = test_dec2d();
-
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-
-            Topology topo(domain, boxes, {false, false}, bpad, epad);
-
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[0]),
-                UnorderedEquals(std::vector{boxes[1], boxes[4], boxes[5]}));
-
-            REQUIRE_THAT(topo.get_neighbours(boxes[1]),
-                         UnorderedEquals(std::vector{
-                             boxes[0], boxes[2], boxes[3], boxes[5]}));
-
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[2]),
-                UnorderedEquals(std::vector{boxes[1], boxes[3], boxes[5]}));
-
-            REQUIRE_THAT(topo.get_neighbours(boxes[3]),
-                         UnorderedEquals(std::vector{
-                             boxes[1], boxes[2], boxes[4], boxes[5]}));
-
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[4]),
-                UnorderedEquals(std::vector{boxes[0], boxes[3], boxes[5]}));
-
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[5]),
-                UnorderedEquals(std::vector{
-                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
-        }
-
-        SECTION("periodic-x") {
-
-            auto [domain, boxes] = test_dec2d();
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true, false}, bpad, epad);
-
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[0]),
-                UnorderedEquals(std::vector{
-                    boxes[1], boxes[2], boxes[3], boxes[4], boxes[5]}));
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[5]),
-                UnorderedEquals(std::vector{
-                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
-        }
-
-        SECTION("periodic-y") {
-
-            auto [domain, boxes] = test_dec2d();
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-            Topology topo(domain, boxes, {false, true}, bpad, epad);
-
-            REQUIRE_THAT(topo.get_neighbours(boxes[0]),
-                         UnorderedEquals(std::vector{
-                             boxes[0], boxes[1], boxes[4], boxes[5]}));
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[1]),
-                UnorderedEquals(std::vector{
-                    boxes[0], boxes[2], boxes[3], boxes[4], boxes[5]}));
-        }
-
-        SECTION("periodic-both") {
-
-            auto [domain, boxes] = test_dec2d();
-
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true, true}, bpad, epad);
-
-            REQUIRE_THAT(topo.get_neighbours(boxes[0]),
-                         UnorderedEquals(std::vector{boxes[0],
-                                                     boxes[1],
-                                                     boxes[2],
-                                                     boxes[3],
-                                                     boxes[4],
-                                                     boxes[5]}));
-            REQUIRE_THAT(
-                topo.get_neighbours(boxes[5]),
-                UnorderedEquals(std::vector{
-                    boxes[0], boxes[1], boxes[2], boxes[3], boxes[4]}));
-        }
-
-        SECTION("Single periodic box") {
-
-            auto domain = Box<3>{{0, 0, 0}, {1, 1, 1}};
-
-            std::vector<BoxRankPair<3>> boxes{
-                BoxRankPair{.box = Box<3>{{0, 0, 0}, {1, 1, 1}}, .rank = 0}};
-
-            auto bpad = std::array<index_type ,3>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,3>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true, true, true}, bpad, epad);
-
-            auto result = topo.get_neighbours(boxes[0]);
-            CHECK(result == std::vector{boxes[0]});
-
-            CHECK(topo.get_intersections(boxes[0], boxes[0]).size() ==
-                  Neighbours<3, ConnectivityType::Box>::count());
-        }
-    }
-
-    SECTION("get_intersections") {
-
-        SECTION("one dimensional domain"){
-
-            auto domain = Box<1>{{0}, {10}};
-
-            auto boxes = std::vector<BoxRankPair<1>>{
-                BoxRankPair<1>{.box = Box<1>{{0}, {2}}, .rank = 0},
-                BoxRankPair<1>{.box = Box<1>{{2}, {5}}, .rank = 1},
-                BoxRankPair<1>{.box = Box<1>{{5}, {7}}, .rank = 2},
-                BoxRankPair<1>{.box = Box<1>{{7}, {10}}, .rank = 3}};
-
-            auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,1>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true}, bpad, epad);
-
-            CHECK(topo.get_intersections(boxes[0], boxes[1]) ==
-                  std::vector{Box<1>{{2}, {3}}});
-            CHECK(topo.get_intersections(boxes[1], boxes[0]) ==
-                  std::vector{Box<1>{{1}, {2}}});
-            CHECK(topo.get_intersections(boxes[3], boxes[0]) ==
-                  std::vector{Box<1>{{10}, {11}}});
-            CHECK(topo.get_intersections(boxes[0], boxes[3]) ==
-                  std::vector{Box<1>{{-1}, {0}}});
-        }
-
-
-        SECTION("two dimensional domain") {
-
-            using namespace Catch::Matchers;
-
-            auto [domain, boxes] = test_dec2d();
-
-            auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,2>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true, false}, bpad, epad);
-
-            CHECK(topo.get_intersections(boxes[0], boxes[1]) ==
-                  std::vector{Box<2>{{4, 5}, {5, 7}}});
-
-            CHECK(topo.get_intersections(boxes[0], boxes[5]) ==
-                  std::vector{Box<2>{{4, 3}, {5, 5}}});
-
-            REQUIRE_THAT(topo.get_intersections(boxes[0], boxes[4]),
-                         UnorderedEquals(std::vector{Box<2>{{4, 0}, {5, 3}},
-                                                     Box<2>{{-1, 0}, {0, 3}}}));
-        }
-    }
-
-    SECTION("global_to_local") {
-
-        SECTION("1D tests") {
-            auto [domain, boxes] = test_dec1d();
-
-            auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,1>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true}, bpad, epad);
-
-            CHECK(topo.global_to_local(boxes[0], {0}) ==
-                  std::array<index_type, 1>{1});
-
-            CHECK(topo.global_to_local(boxes[1], {3}) ==
-                  std::array<index_type, 1>{1});
-        }
-    }
-
-
-    SECTION("local_to_global"){
-        SECTION("1D tests") {
-            auto [domain, boxes] = test_dec1d();
-
-            auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
-            auto epad = std::array<index_type ,1>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true}, bpad, epad);
-
-            CHECK(topo.local_to_global(boxes[0], {1}) ==
-                  std::array<index_type, 1>{1});
-
-            CHECK(topo.local_to_global(boxes[1], {1}) ==
-                  std::array<index_type, 1>{4});
-        }
-
-    }
-    */
-
-    SECTION("get_locations"){
+    SECTION("get_transfers"){
 
         using namespace Catch::Matchers;
 
@@ -425,48 +228,50 @@ TEST_CASE("Test topology") {
 
             SECTION("Test 1"){
 
-                auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[1], bpad, epad);
+                auto transfers = topo.get_transfers(boxes[0], boxes[1], bpad, epad);
 
-                CHECK(sender_begins ==
-                      std::vector<std::array<index_type, 1>>{{3}});
+                CHECK(transfers.front().sender_begin ==
+                      std::array<index_type, 1>{3});
 
-                CHECK(receiver_begins ==
-                      std::vector<std::array<index_type, 1>>{{0}});
+                CHECK(transfers.front().receiver_begin ==
+                      std::array<index_type, 1>{0});
 
-                CHECK(extents ==
-                      std::vector<std::array<size_type, 1>>{{1}});
+                CHECK(transfers.front().extent ==
+                      std::array<size_type, 1>{1});
+
             }
+
 
             SECTION("Test 2"){
 
-                auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[1], boxes[0], bpad, epad);
+                auto transfers = topo.get_transfers(boxes[1], boxes[0], bpad, epad);
 
-                CHECK(sender_begins ==
-                      std::vector<std::array<index_type, 1>>{{1}});
+                CHECK(transfers.front().sender_begin ==
+                      std::array<index_type, 1>{1});
 
-                CHECK(receiver_begins ==
-                      std::vector<std::array<index_type, 1>>{{4}});
+                CHECK(transfers.front().receiver_begin ==
+                      std::array<index_type, 1>{4});
 
-                CHECK(extents ==
-                      std::vector<std::array<size_type, 1>>{{1}});
+                CHECK(transfers.front().extent ==
+                      std::array<size_type, 1>{1});
+
             }
 
             SECTION("Test 3 periodicity"){
 
-                auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[2], bpad, epad);
+                auto transfers = topo.get_transfers(boxes[0], boxes[2], bpad, epad);
 
-                CHECK(sender_begins ==
-                      std::vector<std::array<index_type, 1>>{{1}});
+                CHECK(transfers.front().sender_begin ==
+                      std::array<index_type, 1>{1});
 
-                CHECK(receiver_begins ==
-                      std::vector<std::array<index_type, 1>>{{5}});
+                CHECK(transfers.front().receiver_begin ==
+                      std::array<index_type, 1>{5});
 
-                CHECK(extents ==
-                      std::vector<std::array<size_type, 1>>{{1}});
+                CHECK(transfers.front().extent ==
+                      std::array<size_type, 1>{1});
+
             }
+
 
         }
 
@@ -479,29 +284,25 @@ TEST_CASE("Test topology") {
                 auto epad = std::array<index_type ,2>{}; epad.fill(1);
                 Topology topo(domain, boxes, {false, false});
 
-                auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[1], bpad, epad);
-
-                REQUIRE_THAT(
-                    extents,
-                    UnorderedEquals(std::vector<std::array<size_type, 2>>{
-                        {1, 3}}));
+                auto transfers = topo.get_transfers(boxes[0], boxes[1], bpad, epad);
 
 
-                REQUIRE_THAT(
-                    sender_begins,
-                    UnorderedEquals(std::vector<std::array<index_type, 2>>{
-                        {4, 5}}));
+
+                TransferInfo<2> correct
+                {
+                    .sender_rank = boxes[0].rank,
+                    .receiver_rank = boxes[1].rank,
+                    .sender_begin = std::array<index_type, 2>{4,5},
+                    .receiver_begin = std::array<index_type, 2>{0,0},
+                    .extent = std::array<size_type, 2>{1,3},
+                };
 
 
-                REQUIRE_THAT(
-                    receiver_begins,
-                    UnorderedEquals(std::vector<std::array<index_type, 2>>{
-                        {0,0}}));
-
+                CHECK(transfers.front() == correct);
 
             }
         }
+
 
 
     }

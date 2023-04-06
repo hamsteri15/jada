@@ -1,6 +1,7 @@
 #pragma once
 
 #include "box.hpp"
+#include "transfer_info.hpp"
 #include <vector>
 
 namespace jada {
@@ -26,8 +27,6 @@ std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
     return os;
 }
 
-
-
 template <size_t N> struct Topology {
 
 private:
@@ -36,8 +35,6 @@ private:
     Box<N>                      m_domain;
     std::vector<BoxRankPair<N>> m_boxes;
     std::array<bool, N>         m_periodic;
-    std::array<index_type, N>   m_begin_padding;
-    std::array<index_type, N>   m_end_padding;
 
     ///
     ///@brief Checks that none of the m_boxes have overlap
@@ -173,66 +170,12 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
-    /*
-    std::vector<BoxRankPair<N>>
-    get_neighbours(const BoxRankPair<N>& owner) const {
-
-        runtime_assert(found(owner), "Box not in topology.");
-
-        std::vector<BoxRankPair<N>> ret;
-
-        for (const auto& neighbour : m_boxes) {
-
-            if (are_neighbours(owner, neighbour)) { ret.push_back(neighbour); }
-        }
-
-        return ret;
-    }
-
-
-    auto get_intersections(const BoxRankPair<N>& owner,
-                           const BoxRankPair<N>& neighbour) const {
-
-        std::vector<Box<N>> intersections;
-
-        // Check physical intersection
-        if (owner != neighbour) {
-            const auto physical_inter =
-                intersection(expand(owner.box, m_begin_padding, m_end_padding),
-                             neighbour.box);
-            if (volume(physical_inter) > 0) {
-                intersections.push_back(physical_inter);
-            }
-        }
-
-        // Check intersections due to periodicity, also handles owner ==
-        // neighbour
-        for (auto dir : get_directions()) {
-
-            if (is_periodic_dir(dir)) {
-
-                auto t     = get_translation(dir);
-                auto n     = translate(neighbour.box, t);
-                auto inter = intersection(
-                    expand(owner.box, m_begin_padding, m_end_padding), n);
-
-                if ((volume(inter) > 0)) { intersections.push_back(inter); }
-            }
-        }
-
-        return intersections;
-    }
-
-
-    */
-    auto get_locations(const BoxRankPair<N>&     sender,
+    auto get_transfers(const BoxRankPair<N>&     sender,
                        const BoxRankPair<N>&     receiver,
                        std::array<index_type, N> begin_padding,
                        std::array<index_type, N> end_padding) const {
 
-        std::vector<std::array<index_type, N>> sender_begins;
-        std::vector<std::array<index_type, N>> receiver_begins;
-        std::vector<std::array<size_type, N>>  extents;
+        std::vector<TransferInfo<N>> ret;
 
         // Check physical intersection
         if (sender != receiver) {
@@ -247,9 +190,15 @@ public:
                                           begin_padding,
                                           end_padding);
 
-                extents.push_back(extent_to_array(physical_inter.get_extent()));
-                sender_begins.push_back(sb);
-                receiver_begins.push_back(rb);
+                auto extent = extent_to_array(physical_inter.get_extent());
+
+                TransferInfo info{.sender_rank    = sender.rank,
+                               .receiver_rank  = receiver.rank,
+                               .sender_begin   = sb,
+                               .receiver_begin = rb,
+                               .extent         = extent};
+
+                ret.push_back(info);
             }
         }
 
@@ -266,9 +215,9 @@ public:
 
                 if ((volume(inter) > 0)) {
                     auto t_neg = [=]() {
-                        auto ret = t;
-                        for (auto& elem : ret) { elem *= -1; }
-                        return ret;
+                        auto negated = t;
+                        for (auto& elem : negated) { elem *= -1; }
+                        return negated;
                     }();
 
                     auto sb = global_to_local(
@@ -279,14 +228,20 @@ public:
                                               begin_padding,
                                               end_padding);
 
-                    extents.push_back(extent_to_array(inter.get_extent()));
-                    sender_begins.push_back(sb);
-                    receiver_begins.push_back(rb);
+                    auto extent = extent_to_array(inter.get_extent());
+
+                    TransferInfo info{.sender_rank    = sender.rank,
+                                   .receiver_rank  = receiver.rank,
+                                   .sender_begin   = sb,
+                                   .receiver_begin = rb,
+                                   .extent         = extent};
+
+                    ret.push_back(info);
                 }
             }
         }
 
-        return std::make_tuple(sender_begins, receiver_begins, extents);
+        return ret;
     }
 
     template <size_t L>
