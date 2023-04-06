@@ -22,7 +22,7 @@ static constexpr auto offset(T1 coords, T2 coord_dims, T3 global_grid_dims) {
 
     runtime_assert(indices_in_bounds(coords, coord_dims),
                    "Domain coordinates not in bounds.");
-    using idx = typename decltype(global_grid_dims)::value_type;
+    using idx = typename decltype(coords)::value_type;
 
     auto offset(coords);
     for (size_t i = 0; i < rank(coords); ++i) {
@@ -50,15 +50,15 @@ local_dimensions(T1 coords, T2 coord_dims, T3 global_grid_dims) {
                    "Domain coordinates not in bounds.");
 
     decltype(global_grid_dims) local_dims{};
-    using idx = typename decltype(local_dims)::value_type;
+    using idx = typename decltype(coords)::value_type;
 
     for (size_t i = 0; i < rank(coords); ++i) {
-        local_dims[i] = idx(global_grid_dims[i] / coord_dims[i]);
+        local_dims[i] = global_grid_dims[i] / coord_dims[i];
 
         // Uneven points added to the last subdomain in the corresponding
         // direction
         if (coords[i] == idx(coord_dims[i] - 1)) {
-            local_dims[i] += idx(global_grid_dims[i] % coord_dims[i]);
+            local_dims[i] += global_grid_dims[i] % coord_dims[i];
         }
     }
     return local_dims;

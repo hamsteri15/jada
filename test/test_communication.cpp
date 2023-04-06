@@ -519,122 +519,23 @@ TEST_CASE("Test topology") {
 
     }
 
-   
-
-}
-
-
-auto make_slice(std::vector<int> global, auto topo, auto box){
-
-    std::vector<int> ret(flat_size(box.box.get_extent()));
-
-    auto big_span = make_span(global, topo.get_domain().get_extent());
-    auto smaller = make_subspan(big_span, box.box.m_begin, box.box.m_end);
-
-    auto out = make_span(ret, box.box.get_extent());
-
-    transform(smaller, out, [](auto val){return val;});
-    return ret;
-
-}
-
-auto add_padding(std::vector<int> vec, auto extent, auto pbegin, auto pend){
-
-    auto temp = extent_to_array(extent);
-
-    for (size_t i = 0; i < rank(pbegin); ++i){
-        temp[i] += size_t(pbegin[i] + pend[i]);
-    }
-
-    auto new_extent = make_extent(temp);
-    
-    std::vector<int> ret(flat_size(new_extent), 1);
-
-
-    auto i_span = make_span(vec, extent);
-
-    auto sbegin = pbegin;
-    auto send = get_end(pbegin, extent_to_array(extent));
-
-    auto o_span = make_subspan(make_span(ret, new_extent), sbegin, send);
-
-
-    transform(i_span, o_span, [](auto val){return val;});
-
-
-    return ret;
 
 
 }
 
 
-auto decompose(std::vector<int> global, auto topology){
-
-    runtime_assert(global.size() == flat_size(topology.get_domain().get_extent()), "Can not decompose.");
-
-    std::vector<std::vector<int>> datas;
-
-
-    for (auto box : topology.get_boxes()){
-
-        std::vector<int> local(flat_size(box.box.get_extent()));
-
-        auto local_span = make_span(local, box.box.get_extent());
-        auto global_span = make_span(global, topology.get_domain().get_extent());
-        auto global_subspan = make_subspan(global_span, box.box.m_begin, box.box.m_end);
-        
-        transform_indexed
-        (
-            global_subspan,
-            local_span,
-            [](auto val) {return val;}
-        );
-
-        datas.push_back(local);
-
-    }
-
-}
-
-/*
-auto apply_kernel(auto data, auto box, auto kernel){
-
-    //TODO: This function requires all kinds of extents and stuffs
-
-    dectlype(data) ret(data.size(), 0);
-
-    return ret;
-
-}
-*/
 
 TEST_CASE("Test data exchange"){
 
-    auto test_dec2d = []() {
-        Box<2> domain({0, 0}, {10, 7});
-        Box<2> b0({0, 0}, {4, 7});
-        Box<2> b1({4, 5}, {7, 7});
-        Box<2> b2({7, 5}, {10, 7});
-        Box<2> b3({7, 3}, {10, 5});
-        Box<2> b4({4, 0}, {10, 3});
-        Box<2> b5({4, 3}, {7, 5});
 
-        std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
-                                          BoxRankPair{.box = b1, .rank = 1},
-                                          BoxRankPair{.box = b2, .rank = 2},
-                                          BoxRankPair{.box = b3, .rank = 3},
-                                          BoxRankPair{.box = b4, .rank = 4},
-                                          BoxRankPair{.box = b5, .rank = 5}};
 
-        return std::make_pair(domain, boxes);
-    };
-    
+
     SECTION("Periodic box"){
         auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, 0}};
         auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
 
-        std::vector<int> data = 
+        std::vector<int> data =
         {
             0,  0,  0,  0,  0,
             0,  1,  2,  3,  0,
@@ -643,8 +544,8 @@ TEST_CASE("Test data exchange"){
             0,  10, 11, 12, 0,
             0,  0,  0,  0,  0
         };
-        
-        std::vector<int> correct = 
+
+        std::vector<int> correct =
         {
             12, 10, 11, 12, 10,
             3,  1,  2,  3,  1,
@@ -656,20 +557,20 @@ TEST_CASE("Test data exchange"){
 
 
         send_receive(data, topo, 0);
-        
+
 
         CHECK(data == correct);
 
     }
-    
+
     SECTION("Mpi periodic box"){
-        
+
         //Each process creates an own topology and sends to self
         auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, mpi::get_world_rank()}};
         auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
 
-        std::vector<int> data = 
+        std::vector<int> data =
         {
             0,  0,  0,  0,  0,
             0,  1,  2,  3,  0,
@@ -678,8 +579,8 @@ TEST_CASE("Test data exchange"){
             0,  10, 11, 12, 0,
             0,  0,  0,  0,  0
         };
-        
-        std::vector<int> correct = 
+
+        std::vector<int> correct =
         {
             12, 10, 11, 12, 10,
             3,  1,  2,  3,  1,
@@ -691,53 +592,12 @@ TEST_CASE("Test data exchange"){
 
 
         mpi_send_receive(data, topo, mpi::get_world_rank());
-        
+
         CHECK(data == correct);
-    
-    }
-    
-    SECTION("Distributed transform"){
-
-        auto domain = Box<2>{{0,0}, {10, 11}};
-        int n_ranks = 3;
-        auto periods = std::array<bool, 2>{true, true};
-        auto padding = std::array<index_type, 2>{1,1};
-
-        auto topo = decompose(domain, n_ranks, periods, padding, padding);
-
-
-        auto global = std::vector<int>(flat_size(domain.get_extent()));
-        std::iota(global.begin(), global.end(), 0);
-
-        auto kernel = [](auto f){
-            return f(0,0) + f(-1,1) + f(0, 1) + f(-1,-1) + f(1,0) + f(1,1);
-        };
-
-        //This mocks mpi processes
-        for (int i = 0; i < n_ranks; ++i){
-
-            int rank = i; 
-
-            for (auto box : topo.get_boxes(rank)){
-
-                auto local = make_slice(global, topo, box);
-                auto padded_local = add_padding(local, box.get_extent(), padding, padding);
-                auto padded_local_extent = topo.get_padded_extent(box);
-
-                
-
-
-
-
-            }
-
-        }
-
-
-
-
 
     }
+
+
 
 
 }
