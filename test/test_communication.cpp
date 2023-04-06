@@ -177,10 +177,8 @@ TEST_CASE("Test topology") {
                 BoxRankPair{.box = b2, .rank = 1},
                 BoxRankPair{.box = b3, .rank = 1}};
 
-            auto bpad = std::array<index_type ,3>{};
-            auto epad = std::array<index_type ,3>{};
 
-            CHECK(Topology(domain, boxes1, {false, false, false}, bpad, epad).is_valid());
+            CHECK(Topology(domain, boxes1, {false, false, false}).is_valid());
         }
 
         SECTION("Test 2") {
@@ -194,10 +192,7 @@ TEST_CASE("Test topology") {
                 BoxRankPair{.box = b2, .rank = 1},
                 BoxRankPair{.box = b3, .rank = 1}};
 
-            auto bpad = std::array<index_type ,3>{};
-            auto epad = std::array<index_type ,3>{};
-
-            CHECK(!Topology(domain, boxes1, {false, false, false}, bpad, epad).is_valid());
+            CHECK(!Topology(domain, boxes1, {false, false, false}).is_valid());
         }
     }
 
@@ -212,15 +207,14 @@ TEST_CASE("Test topology") {
                                            BoxRankPair{.box = b2, .rank = 1},
                                            BoxRankPair{.box = b3, .rank = 1}};
 
-        auto bpad = std::array<index_type ,3>{};
-        auto epad = std::array<index_type ,3>{};
-        Topology topo(domain, boxes1, {false, false, false}, bpad, epad);
+        Topology topo(domain, boxes1, {false, false, false});
 
         CHECK(topo.found(boxes1[1]));
 
         CHECK(!topo.found(BoxRankPair{.box = b1, .rank = 433}));
     }
 
+    /*
     SECTION("get_neighbours()") {
 
         using namespace Catch::Matchers;
@@ -416,6 +410,7 @@ TEST_CASE("Test topology") {
         }
 
     }
+    */
 
     SECTION("get_locations"){
 
@@ -426,12 +421,12 @@ TEST_CASE("Test topology") {
             auto [domain, boxes] = test_dec1d();
             auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
             auto epad = std::array<index_type ,1>{}; epad.fill(1);
-            Topology topo(domain, boxes, {true}, bpad, epad);
+            Topology topo(domain, boxes, {true});
 
             SECTION("Test 1"){
 
                 auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[1]);
+                    topo.get_locations(boxes[0], boxes[1], bpad, epad);
 
                 CHECK(sender_begins ==
                       std::vector<std::array<index_type, 1>>{{3}});
@@ -446,7 +441,7 @@ TEST_CASE("Test topology") {
             SECTION("Test 2"){
 
                 auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[1], boxes[0]);
+                    topo.get_locations(boxes[1], boxes[0], bpad, epad);
 
                 CHECK(sender_begins ==
                       std::vector<std::array<index_type, 1>>{{1}});
@@ -461,7 +456,7 @@ TEST_CASE("Test topology") {
             SECTION("Test 3 periodicity"){
 
                 auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[2]);
+                    topo.get_locations(boxes[0], boxes[2], bpad, epad);
 
                 CHECK(sender_begins ==
                       std::vector<std::array<index_type, 1>>{{1}});
@@ -482,10 +477,10 @@ TEST_CASE("Test topology") {
                 auto [domain, boxes] = test_dec2d();
                 auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
                 auto epad = std::array<index_type ,2>{}; epad.fill(1);
-                Topology topo(domain, boxes, {false, false}, bpad, epad);
+                Topology topo(domain, boxes, {false, false});
 
                 auto [sender_begins, receiver_begins, extents] =
-                    topo.get_locations(boxes[0], boxes[1]);
+                    topo.get_locations(boxes[0], boxes[1], bpad, epad);
 
                 REQUIRE_THAT(
                     extents,
@@ -515,17 +510,14 @@ TEST_CASE("Test topology") {
 
 }
 
-
-
 TEST_CASE("Test data exchange"){
-
-
-
 
     SECTION("Periodic box"){
         auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, 0}};
-        auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
+        std::array<index_type, 2> bpad{}; bpad.fill(1);
+        std::array<index_type, 2> epad{}; epad.fill(1);
+        auto topo = Topology<2>{domain, boxes, {true, true}};
 
         std::vector<int> data =
         {
@@ -548,19 +540,22 @@ TEST_CASE("Test data exchange"){
         };
 
 
-        send_receive(data, topo, 0);
+        send_receive(data, topo, bpad, epad, 0);
 
 
         CHECK(data == correct);
 
     }
+
 
     SECTION("Mpi periodic box"){
 
         //Each process creates an own topology and sends to self
         auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, mpi::get_world_rank()}};
-        auto topo = Topology<2>{domain, boxes, {true, true}, {1,1}, {1,1}};
+        std::array<index_type, 2> bpad{}; bpad.fill(1);
+        std::array<index_type, 2> epad{}; epad.fill(1);
+        auto topo = Topology<2>{domain, boxes, {true, true}};
 
         std::vector<int> data =
         {
@@ -583,13 +578,11 @@ TEST_CASE("Test data exchange"){
         };
 
 
-        mpi_send_receive(data, topo, mpi::get_world_rank());
+        mpi_send_receive(data, topo, bpad, epad, mpi::get_world_rank());
 
         CHECK(data == correct);
 
     }
-
-
 
 
 }

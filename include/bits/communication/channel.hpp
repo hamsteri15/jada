@@ -29,18 +29,20 @@ static auto get_end(auto begin, auto extent) {
 }
 
 template <class Data, size_t N>
-auto make_sendable_slice(const Data&            data,
-                         const BoxRankPair<N>&  sender,
-                         const Topology<N>&     topo,
-                         const TransferInfo<N>& info) {
+auto make_sendable_slice(const Data&               data,
+                         const BoxRankPair<N>&     sender,
+                         std::array<index_type, N> begin_padding,
+                         std::array<index_type, N> end_padding,
+                         const TransferInfo<N>&    info) {
 
     using T = typename Data::value_type;
 
     std::vector<T> buffer(flat_size(info.extent));
     auto           buffer_span = make_span(buffer, info.extent);
 
-    auto big_span = make_span(data, topo.get_padded_extent(sender));
-    auto slice    = make_subspan(
+    auto big_span = make_span(
+        data, add_padding(sender.get_extent(), begin_padding, end_padding));
+    auto slice = make_subspan(
         big_span, info.sender_begin, get_end(info.sender_begin, info.extent));
 
     transform(slice, buffer_span, [](auto val) { return val; });
@@ -56,7 +58,6 @@ void put(Channel<N, T>&         channel,
     channel.datas.push_back(data);
 }
 
-
 template <size_t N, class T>
 auto get(const Channel<N, T>& channel, int receiver_rank) {
 
@@ -71,17 +72,17 @@ auto get(const Channel<N, T>& channel, int receiver_rank) {
     return ret;
 }
 
-
-
-
 void put(const auto& data,
-         auto&       channel,
          const auto& topo,
+         auto        begin_padding,
+         auto        end_padding,
+         auto&       channel,
          const auto& sender) {
 
     for (auto recvr : topo.get_boxes()) {
 
-        auto [s_begin, r_begin, extent] = topo.get_locations(sender, recvr);
+        auto [s_begin, r_begin, extent] =
+            topo.get_locations(sender, recvr, begin_padding, end_padding);
 
         for (size_t i = 0; i < s_begin.size(); ++i) {
 
@@ -91,13 +92,17 @@ void put(const auto& data,
                            .receiver_begin = r_begin[i],
                            .extent         = extent[i]};
 
-            put(channel, t, make_sendable_slice(data, sender, topo, t));
+            put(channel,
+                t,
+                make_sendable_slice(
+                    data, sender, begin_padding, end_padding, t));
         }
     }
 }
 
 void get(auto&       data,
-         const auto& topo,
+         auto        begin_padding,
+         auto        end_padding,
          const auto& channel,
          const auto& receiver) {
 
@@ -105,8 +110,10 @@ void get(auto&       data,
 
         auto begin    = info.receiver_begin;
         auto end      = get_end(begin, info.extent);
-        auto big_span = make_span(data, topo.get_padded_extent(receiver));
-        auto to       = make_subspan(big_span, begin, end);
+        auto big_span = make_span(
+            data,
+            add_padding(receiver.get_extent(), begin_padding, end_padding));
+        auto to = make_subspan(big_span, begin, end);
 
         auto from = make_span(slice, info.extent);
 

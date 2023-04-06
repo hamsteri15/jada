@@ -26,14 +26,7 @@ std::ostream& operator<<(std::ostream& os, const BoxRankPair<L>& v) {
     return os;
 }
 
-template <size_t L, class T>
-std::ostream& operator<<(std::ostream& os, const std::array<T, L>& v) {
 
-    os << "{ ";
-    for (auto e : v) { os << e << " "; }
-    os << " }";
-    return os;
-}
 
 template <size_t N> struct Topology {
 
@@ -108,18 +101,45 @@ private:
         return get_intersections(owner, neighbour).size() > 0;
     }
 
+    auto global_to_local(const BoxRankPair<N>&            owner,
+                         const std::array<index_type, N>& coord,
+                         std::array<index_type, N>        begin_padding,
+                         std::array<index_type, N>        end_padding) const {
+
+        runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
+
+        auto box = expand(owner.box, begin_padding, end_padding);
+
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i) { ret[i] = coord[i] - box.m_begin[i]; }
+
+        runtime_assert(box.contains(ret), "Coordinate not in box.");
+
+        return ret;
+    }
+
+    auto local_to_global(const BoxRankPair<N>&            owner,
+                         const std::array<index_type, N>& coord) const {
+
+        runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
+
+        auto box = owner.box;
+
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i) { ret[i] = box.m_begin[i] + coord[i]; }
+
+        runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
+
+        return ret;
+    }
+
 public:
     Topology(Box<N>                      domain,
              std::vector<BoxRankPair<N>> boxes,
-             std::array<bool, N>         periodic,
-             std::array<index_type, N>   begin_padding,
-             std::array<index_type, N>   end_padding)
+             std::array<bool, N>         periodic)
         : m_domain(domain)
         , m_boxes(boxes)
-        , m_periodic(periodic)
-        , m_begin_padding(begin_padding)
-        , m_end_padding(end_padding) {
-
+        , m_periodic(periodic) {
         runtime_assert(this->is_valid(), "Invalid topology");
     }
 
@@ -153,6 +173,7 @@ public:
         return std::find(m_boxes.begin(), m_boxes.end(), b) != m_boxes.end();
     }
 
+    /*
     std::vector<BoxRankPair<N>>
     get_neighbours(const BoxRankPair<N>& owner) const {
 
@@ -167,6 +188,7 @@ public:
 
         return ret;
     }
+
 
     auto get_intersections(const BoxRankPair<N>& owner,
                            const BoxRankPair<N>& neighbour) const {
@@ -201,35 +223,6 @@ public:
         return intersections;
     }
 
-    auto global_to_local(const BoxRankPair<N>&            owner,
-                         const std::array<index_type, N>& coord) const {
-
-        runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
-
-        auto box = expand(owner.box, m_begin_padding, m_end_padding);
-
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = coord[i] - box.m_begin[i]; }
-
-        runtime_assert(box.contains(ret), "Coordinate not in box.");
-
-        return ret;
-    }
-
-    auto local_to_global(const BoxRankPair<N>&            owner,
-                         const std::array<index_type, N>& coord) const {
-
-        runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
-
-        auto box = owner.box;
-
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = box.m_begin[i] + coord[i]; }
-
-        runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
-
-        return ret;
-    }
 
     // TODO: does not belong here
     auto get_padded_extent(const BoxRankPair<N>& b) const {
@@ -240,9 +233,11 @@ public:
         }
         return ret;
     }
-
-    auto get_locations(const BoxRankPair<N>& sender,
-                       const BoxRankPair<N>& receiver) const {
+    */
+    auto get_locations(const BoxRankPair<N>&     sender,
+                       const BoxRankPair<N>&     receiver,
+                       std::array<index_type, N> begin_padding,
+                       std::array<index_type, N> end_padding) const {
 
         std::vector<std::array<index_type, N>> sender_begins;
         std::vector<std::array<index_type, N>> receiver_begins;
@@ -251,12 +246,15 @@ public:
         // Check physical intersection
         if (sender != receiver) {
             const auto physical_inter = intersection(
-                expand(receiver.box, m_begin_padding, m_end_padding),
-                sender.box);
+                expand(receiver.box, begin_padding, end_padding), sender.box);
             if (volume(physical_inter) > 0) {
 
-                auto sb = global_to_local(sender, physical_inter.m_begin);
-                auto rb = global_to_local(receiver, physical_inter.m_begin);
+                auto sb = global_to_local(
+                    sender, physical_inter.m_begin, begin_padding, end_padding);
+                auto rb = global_to_local(receiver,
+                                          physical_inter.m_begin,
+                                          begin_padding,
+                                          end_padding);
 
                 extents.push_back(extent_to_array(physical_inter.get_extent()));
                 sender_begins.push_back(sb);
@@ -272,8 +270,8 @@ public:
 
                 auto t     = get_translation(dir);
                 auto n     = translate(receiver.box, t);
-                auto inter = intersection(
-                    expand(n, m_begin_padding, m_end_padding), sender.box);
+                auto inter = intersection(expand(n, begin_padding, end_padding),
+                                          sender.box);
 
                 if ((volume(inter) > 0)) {
                     auto t_neg = [=]() {
@@ -282,10 +280,13 @@ public:
                         return ret;
                     }();
 
-                    auto sb = global_to_local(sender, inter.m_begin);
+                    auto sb = global_to_local(
+                        sender, inter.m_begin, begin_padding, end_padding);
                     // Translate back here
                     auto rb = global_to_local(receiver,
-                                              translate(inter, t_neg).m_begin);
+                                              translate(inter, t_neg).m_begin,
+                                              begin_padding,
+                                              end_padding);
 
                     extents.push_back(extent_to_array(inter.get_extent()));
                     sender_begins.push_back(sb);

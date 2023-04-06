@@ -321,6 +321,9 @@ TEST_CASE("extents"){
         auto ext1 = make_extent(std::array<size_t, 3>{4,4,4});
         auto ext2 = make_extent(std::array<size_t, 3>{0,0,0});
 
+        //std::cout << ext1 << std::endl;
+
+
         CHECK(indices_in_bounds(tpl, ext1) == true);
         CHECK(indices_in_bounds(tpl, ext2) == false);
 
@@ -329,6 +332,17 @@ TEST_CASE("extents"){
         CHECK(indices_in_bounds(arr, ext1) == true);
 
     }
+
+
+    SECTION("add_padding"){
+        auto ext1 = make_extent(std::array<size_t, 3>{1,2,3});
+        CHECK(
+            add_padding(ext1, std::array{1,1,1}, std::array{2,2,2}) == extents<3>{4, 5, 6}
+        );
+
+        CHECK(add_padding(ext1, extents<3>{1,1,1}) == extents<3>{3,4,5});
+    }
+
 
 }
 
