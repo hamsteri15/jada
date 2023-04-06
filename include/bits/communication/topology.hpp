@@ -224,15 +224,6 @@ public:
     }
 
 
-    // TODO: does not belong here
-    auto get_padded_extent(const BoxRankPair<N>& b) const {
-
-        auto ret = extent_to_array(b.box.get_extent());
-        for (size_t i = 0; i < N; ++i) {
-            ret[i] += size_type(m_begin_padding[i] + m_end_padding[i]);
-        }
-        return ret;
-    }
     */
     auto get_locations(const BoxRankPair<N>&     sender,
                        const BoxRankPair<N>&     receiver,
