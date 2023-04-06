@@ -2,6 +2,7 @@
 
 
 #include "box.hpp"
+#include "box_rank_pair.hpp"
 #include "neighbours.hpp"
 #include "decomposition.hpp"
 #include "topology.hpp"
