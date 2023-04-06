@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 
-#include "include/bits/utils.hpp"
+#include "include/bits/core/utils.hpp"
 
 #include "channel.hpp"
 

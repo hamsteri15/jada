@@ -3,7 +3,7 @@
 #include <array>
 #include <sstream>
 
-#include "include/bits/integer_types.hpp"
+#include "include/bits/core/integer_types.hpp"
 
 namespace jada{
 

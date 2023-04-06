@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <execution>
 
-#include "include/bits/counting_iterator.hpp"
-#include "include/bits/loop.hpp"
-#include "include/bits/mdspan.hpp"
-#include "include/bits/utils.hpp"
+#include "include/bits/core/counting_iterator.hpp"
+#include "include/bits/core/loop.hpp"
+#include "include/bits/core/mdspan.hpp"
+#include "include/bits/core/utils.hpp"
 
 namespace jada {
 

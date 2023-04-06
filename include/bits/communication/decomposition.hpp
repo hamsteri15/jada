@@ -2,8 +2,8 @@
 
 #include "channel.hpp"
 #include "divide_equally.hpp"
-#include "include/bits/utils.hpp"
 #include "topology.hpp"
+#include "include/bits/core/utils.hpp"
 
 #include <array>
 #include <cstddef>

@@ -127,14 +127,6 @@ TEST_CASE("Test box") {
     }
 }
 
-TEST_CASE("Test block"){
-
-    SECTION("Constructors"){
-
-        Block<3>(Box<3>({0,0,0}, {1,1,1}), 1);
-
-    }
-}
 
 TEST_CASE("Test topology") {
 
