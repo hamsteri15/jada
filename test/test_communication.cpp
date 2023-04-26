@@ -388,8 +388,91 @@ TEST_CASE("Test data exchange"){
 
 }
 
+TEST_CASE("Test DistributedArray")
+{
+
+    SECTION("Constructors"){
+        
+        auto domain = Box<2>{{0,0}, {3, 4}};
+        std::array<bool, 2> periods = {false, false};
+        auto topo = decompose(domain, mpi::world_size(), periods);
+
+        std::vector<int> global_data = 
+        {
+            2,0,0,1,
+            0,0,0,0,
+            0,0,3,0
+        };
+
+        auto darray = distribute(global_data, topo, mpi::get_world_rank());
 
 
+        CHECK
+        (
+            global_data == reduce(darray)
+        );
+
+
+
+        /*
+        auto bpad = std::array<index_type, 2>{1,1};
+        auto epad = bpad;
+
+        DistributedArray<2, int> data(mpi::get_world_rank(), topo, bpad, epad);
+
+
+        auto asd = reduce(data);
+        */
+
+
+    }
+
+
+}
+
+/*
+auto call_fdm_kernel(auto&       data,
+                     const auto& topology,
+                     auto        begin_padding,
+                     auto        end_padding,
+                     auto        op,
+                     int         rank) {
+
+
+    decltype(data) ret(data.size());
+
+
+    return ret;
+
+}
+
+TEST_CASE("Test temp"){
+
+    auto domain = Box<2>{{0,0}, {3, 4}};
+    std::array<bool, 2> periods = {false, false};
+
+
+    auto topo = decompose(domain, mpi::world_size(), periods);
+    
+    auto bpad = std::array<index_type, 2>{1,1};
+    auto epad = bpad;
+
+    std::vector<std::vector<int>> my_datas;
+
+    for (auto box : topo.get_boxes(mpi::get_world_rank())){
+
+        auto ext = box.get_extent();
+        auto pext = add_padding(ext, bpad, epad);
+
+        std::vector<int> data(flat_size(pext), 1);
+        my_datas.push_back(data);
+
+    }
+
+
+
+}
+*/
 
 TEST_CASE("Test Neighbours"){
 

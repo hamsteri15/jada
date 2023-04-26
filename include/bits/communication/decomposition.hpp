@@ -2,8 +2,8 @@
 
 #include "channel.hpp"
 #include "divide_equally.hpp"
-#include "topology.hpp"
 #include "include/bits/core/utils.hpp"
+#include "topology.hpp"
 
 #include <array>
 #include <cstddef>
@@ -65,11 +65,7 @@ local_dimensions(T1 coords, T2 coord_dims, T3 global_grid_dims) {
 }
 
 template <size_t N>
-Topology<N> decompose(Box<N>                    domain,
-                      int                       n_ranks,
-                      std::array<bool, N>       periods,
-                      std::array<index_type, N> bpad,
-                      std::array<index_type, N> epad) {
+Topology<N> decompose(Box<N> domain, int n_ranks, std::array<bool, N> periods) {
 
     auto topo_dims = divide_equally<N>(size_t(n_ranks));
 
@@ -94,7 +90,7 @@ Topology<N> decompose(Box<N>                    domain,
         current_rank++;
     }
 
-    auto ret = Topology<N>(domain, boxes, periods, bpad, epad);
+    auto ret = Topology<N>(domain, boxes, periods);
     runtime_assert(ret.is_valid(), "Invalid topology.");
 
     return ret;
