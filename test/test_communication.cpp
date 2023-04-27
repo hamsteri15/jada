@@ -128,39 +128,42 @@ TEST_CASE("Test box") {
 }
 
 
+auto test_dec1d(){
+    Box<1> domain({0}, {10});
+    Box<1> b0({0}, {3});
+    Box<1> b1({3}, {6});
+    Box<1> b2({6}, {10});
+
+    std::vector<BoxRankPair<1>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                    BoxRankPair{.box = b1, .rank = 1},
+                                    BoxRankPair{.box = b2, .rank = 2}};
+
+    return std::make_pair(domain, boxes);
+}
+
+auto test_dec2d() {
+    Box<2> domain({0, 0}, {10, 7});
+    Box<2> b0({0, 0}, {4, 7});
+    Box<2> b1({4, 5}, {7, 7});
+    Box<2> b2({7, 5}, {10, 7});
+    Box<2> b3({7, 3}, {10, 5});
+    Box<2> b4({4, 0}, {10, 3});
+    Box<2> b5({4, 3}, {7, 5});
+
+    std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                        BoxRankPair{.box = b1, .rank = 1},
+                                        BoxRankPair{.box = b2, .rank = 2},
+                                        BoxRankPair{.box = b3, .rank = 3},
+                                        BoxRankPair{.box = b4, .rank = 4},
+                                        BoxRankPair{.box = b5, .rank = 5}};
+
+    return std::make_pair(domain, boxes);
+}
+
+
 TEST_CASE("Test topology") {
 
-    auto test_dec1d = [](){
-        Box<1> domain({0}, {10});
-        Box<1> b0({0}, {3});
-        Box<1> b1({3}, {6});
-        Box<1> b2({6}, {10});
 
-        std::vector<BoxRankPair<1>> boxes{BoxRankPair{.box = b0, .rank = 0},
-                                          BoxRankPair{.box = b1, .rank = 1},
-                                          BoxRankPair{.box = b2, .rank = 2}};
-
-        return std::make_pair(domain, boxes);
-    };
-
-    auto test_dec2d = []() {
-        Box<2> domain({0, 0}, {10, 7});
-        Box<2> b0({0, 0}, {4, 7});
-        Box<2> b1({4, 5}, {7, 7});
-        Box<2> b2({7, 5}, {10, 7});
-        Box<2> b3({7, 3}, {10, 5});
-        Box<2> b4({4, 0}, {10, 3});
-        Box<2> b5({4, 3}, {7, 5});
-
-        std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
-                                          BoxRankPair{.box = b1, .rank = 1},
-                                          BoxRankPair{.box = b2, .rank = 2},
-                                          BoxRankPair{.box = b3, .rank = 3},
-                                          BoxRankPair{.box = b4, .rank = 4},
-                                          BoxRankPair{.box = b5, .rank = 5}};
-
-        return std::make_pair(domain, boxes);
-    };
 
 
 
@@ -390,12 +393,22 @@ TEST_CASE("Test data exchange"){
 
 TEST_CASE("Test DistributedArray")
 {
+    Box<2> domain({0, 0}, {3, 4});
+    Box<2> b0({0, 0}, {1, 4});
+    Box<2> b1({1, 0}, {2, 4});
+    Box<2> b2({2, 0}, {3, 4});
+
+    std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                        BoxRankPair{.box = b1, .rank = 0},
+                                        BoxRankPair{.box = b2, .rank = 0}};
+
+
 
     SECTION("Constructors"){
         
-        auto domain = Box<2>{{0,0}, {3, 4}};
-        std::array<bool, 2> periods = {false, false};
-        auto topo = decompose(domain, mpi::world_size(), periods);
+        auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
+        auto epad = std::array<index_type ,2>{}; epad.fill(1);
+        Topology topo(domain, boxes, {false, false});
 
         std::vector<int> global_data = 
         {
@@ -414,65 +427,13 @@ TEST_CASE("Test DistributedArray")
 
 
 
-        /*
-        auto bpad = std::array<index_type, 2>{1,1};
-        auto epad = bpad;
-
-        DistributedArray<2, int> data(mpi::get_world_rank(), topo, bpad, epad);
-
-
-        auto asd = reduce(data);
-        */
-
 
     }
 
 
 }
 
-/*
-auto call_fdm_kernel(auto&       data,
-                     const auto& topology,
-                     auto        begin_padding,
-                     auto        end_padding,
-                     auto        op,
-                     int         rank) {
 
-
-    decltype(data) ret(data.size());
-
-
-    return ret;
-
-}
-
-TEST_CASE("Test temp"){
-
-    auto domain = Box<2>{{0,0}, {3, 4}};
-    std::array<bool, 2> periods = {false, false};
-
-
-    auto topo = decompose(domain, mpi::world_size(), periods);
-    
-    auto bpad = std::array<index_type, 2>{1,1};
-    auto epad = bpad;
-
-    std::vector<std::vector<int>> my_datas;
-
-    for (auto box : topo.get_boxes(mpi::get_world_rank())){
-
-        auto ext = box.get_extent();
-        auto pext = add_padding(ext, bpad, epad);
-
-        std::vector<int> data(flat_size(pext), 1);
-        my_datas.push_back(data);
-
-    }
-
-
-
-}
-*/
 
 TEST_CASE("Test Neighbours"){
 
