@@ -251,4 +251,45 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
     return os;
 }
 
+
+
+template<size_t N, class Data>
+auto make_subspans(const Data& data, const Topology<N>& topo, int rank){
+
+    using T = const typename Data::value_type;
+
+    std::vector<span<T, N>> ret;
+    auto bigspan = make_span(data, topo.get_domain().get_extent());
+
+    for (auto pair : topo.get_boxes(rank)) {
+        ret.push_back
+        (
+            make_subspan(bigspan, pair.box.m_begin, pair.box.m_end)
+        );
+    }
+    return ret;
+
+
+}
+template<size_t N, class Data>
+auto make_subspans(Data& data, const Topology<N>& topo, int rank){
+
+    using T = typename Data::value_type;
+    
+    std::vector<span<T, N>> ret;
+    auto bigspan = make_span(data, topo.get_domain().get_extent());
+
+    for (auto pair : topo.get_boxes(rank)) {
+        ret.push_back
+        (
+            make_subspan(bigspan, pair.box.m_begin, pair.box.m_end)
+        );
+    }
+    return ret;
+
+
+}
+
+
+
 } // namespace jada

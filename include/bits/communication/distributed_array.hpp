@@ -141,40 +141,7 @@ private:
 };
 
 
-template <size_t N, class Data>
-auto make_unpadded_local_subspans(const Data&        data,
-                                  const Topology<N>& topo,
-                                  int                rank) {
-    using T = const typename Data::value_type;
-    std::vector<span<T, N>> ret;
-    
 
-    auto bigspan = make_span(data, topo.get_domain().get_extent());
-
-    for (auto pair : topo.get_boxes(rank)) {
-        auto ss = make_subspan(bigspan, pair.box.m_begin, pair.box.m_end);
-        ret.push_back(ss);
-    }
-    return ret;
-}
-
-template <size_t N, class Data>
-auto make_unpadded_local_subspans(Data&              data,
-                                  const Topology<N>& topo,
-                                  int                rank) {
-    using T = typename Data::value_type;
-
-    std::vector<span<T, N>> ret;
-    
-    auto bigspan = make_span(data, topo.get_domain().get_extent());
-
-    for (auto pair : topo.get_boxes(rank)) {
-        auto ss = make_subspan(bigspan, pair.box.m_begin, pair.box.m_end);
-        ret.push_back(ss);
-    }
-    
-    return ret;
-}
 
 template <size_t N, class Data>
 auto distribute(const Data&               data,
@@ -189,7 +156,7 @@ auto distribute(const Data&               data,
 
         
     auto d_array_spans = ret.unpadded_local_spans();
-    auto data_spans    = make_unpadded_local_subspans(data, topo, rank);
+    auto data_spans    = make_subspans(data, topo, rank);
 
     for (size_t i = 0; i < data_spans.size(); ++i) {
         transform(data_spans[i], d_array_spans[i], [](auto r) { return r; });
@@ -204,8 +171,7 @@ template <size_t N, class T> auto reduce(const DistributedArray<N, T>& array) {
 
     std::vector<T> ret(flat_size(global_dims));
 
-    auto data_spans =
-        make_unpadded_local_subspans(ret, array.topology(), array.get_rank());
+    auto data_spans = make_subspans(ret, array.topology(), array.get_rank());
 
     auto d_array_spans = array.unpadded_local_spans();
 
