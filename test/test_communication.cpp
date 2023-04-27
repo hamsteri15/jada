@@ -403,22 +403,33 @@ TEST_CASE("Test DistributedArray")
                                         BoxRankPair{.box = b2, .rank = 0}};
 
 
+    SECTION("Unpadded distribute/reduce"){
+        auto bpad = std::array<index_type ,2>{};
+        auto epad = std::array<index_type ,2>{};
+        Topology topo(domain, boxes, {false, false});
 
-    SECTION("Constructors"){
-        
+        std::vector<int> global_data(flat_size(domain.get_extent()));
+        std::iota(global_data.begin(), global_data.end(), 0);
+
+
+        auto darray = distribute(global_data, topo, mpi::get_world_rank(), bpad, epad);
+
+        CHECK
+        (
+            global_data == reduce(darray)
+        );
+
+    }
+
+    SECTION("Padded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
         auto epad = std::array<index_type ,2>{}; epad.fill(1);
         Topology topo(domain, boxes, {false, false});
 
-        std::vector<int> global_data = 
-        {
-            2,0,0,1,
-            0,0,0,0,
-            0,0,3,0
-        };
+        std::vector<int> global_data(flat_size(domain.get_extent()));
+        std::iota(global_data.begin(), global_data.end(), 0);
 
-        auto darray = distribute(global_data, topo, mpi::get_world_rank());
-
+        auto darray = distribute(global_data, topo, mpi::get_world_rank(), bpad, epad);
 
         CHECK
         (
@@ -426,10 +437,7 @@ TEST_CASE("Test DistributedArray")
         );
 
 
-
-
     }
-
 
 }
 
