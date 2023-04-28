@@ -21,9 +21,7 @@ public:
              std::array<bool, N>         periodic)
         : m_domain(domain)
         , m_boxes(boxes)
-        , m_periodic(periodic) {
-
-    }
+        , m_periodic(periodic) {}
 
     const auto& get_domain() const { return m_domain; }
 
@@ -136,7 +134,6 @@ public:
                                       .receiver_begin = rb,
                                       .extent         = extent};
 
-
                     ret.push_back(info);
                 }
             }
@@ -195,12 +192,9 @@ private:
     auto negate_translation(auto t) const {
 
         std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i){
-            ret[i] = -t[i];
-        }
+        for (size_t i = 0; i < N; ++i) { ret[i] = -t[i]; }
         return ret;
     }
-
 
     bool is_periodic_dir(auto dir) const {
 
@@ -226,12 +220,10 @@ private:
                          std::array<index_type, N>        begin_padding,
                          std::array<index_type, N>        end_padding) const {
 
-
         auto box = expand(owner.box, begin_padding, end_padding);
 
         std::array<index_type, N> local{};
         for (size_t i = 0; i < N; ++i) { local[i] = coord[i] - box.m_begin[i]; }
-
 
         return local;
     }
@@ -244,7 +236,9 @@ private:
         auto box = owner.box;
 
         std::array<index_type, N> global{};
-        for (size_t i = 0; i < N; ++i) { global[i] = box.m_begin[i] + coord[i]; }
+        for (size_t i = 0; i < N; ++i) {
+            global[i] = box.m_begin[i] + coord[i];
+        }
 
         runtime_assert(m_domain.contains(global), "Coordinate not in domain.");
 
@@ -260,10 +254,8 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
     return os;
 }
 
-
-
-template<size_t N, class Data>
-auto make_subspans(const Data& data, const Topology<N>& topo, int rank){
+template <size_t N, class Data>
+auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
 
     using T = const typename Data::value_type;
 
@@ -271,17 +263,13 @@ auto make_subspans(const Data& data, const Topology<N>& topo, int rank){
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
-        ret.push_back
-        (
-            make_subspan(bigspan, pair.box.m_begin, pair.box.m_end)
-        );
+        ret.push_back(make_subspan(bigspan, pair.box.m_begin, pair.box.m_end));
     }
     return ret;
-
-
 }
-template<size_t N, class Data>
-auto make_subspans(Data& data, const Topology<N>& topo, int rank){
+
+template <size_t N, class Data>
+auto make_subspans(Data& data, const Topology<N>& topo, int rank) {
 
     using T = typename Data::value_type;
 
@@ -289,16 +277,9 @@ auto make_subspans(Data& data, const Topology<N>& topo, int rank){
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
-        ret.push_back
-        (
-            make_subspan(bigspan, pair.box.m_begin, pair.box.m_end)
-        );
+        ret.push_back(make_subspan(bigspan, pair.box.m_begin, pair.box.m_end));
     }
     return ret;
-
-
 }
-
-
 
 } // namespace jada

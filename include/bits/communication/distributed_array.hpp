@@ -24,113 +24,17 @@ template <size_t N, class T> struct DistributedArray {
             auto data = std::vector<T>(flat_size(pext), T(0));
             m_data.push_back(data);
         }
-        
     }
 
     const auto& topology() const { return m_topology; }
     const auto& local_data() const { return m_data; }
+    auto&       local_data() { return m_data; }
+
+    auto begin_padding() const { return m_begin_padding; }
+    auto end_padding() const { return m_end_padding; }
 
     int get_rank() const { return m_rank; }
 
-    auto unpadded_local_data() const {
-
-        std::vector<std::vector<T>> ret;
-
-        size_t i = 0;
-        for (auto box : m_topology.get_boxes(m_rank)) {
-
-            auto ext  = box.get_extent();
-            auto pext = add_padding(ext, m_begin_padding, m_end_padding);
-
-            auto data = std::vector<T>(flat_size(ext));
-
-            auto i_span =
-                make_subspan(make_span(m_data[i], pext),
-                             m_begin_padding,
-                             get_end(m_begin_padding, extent_to_array(ext)));
-
-            auto o_span = make_span(data, ext);
-
-            transform(i_span, o_span, [](auto r) { return r; });
-            ret.push_back(data);
-
-            ++i;
-        }
-
-        return ret;
-    }
-
-    // TODO: get rid and work with data insted (create spans on call site)
-    auto local_spans() {
-        std::vector<span<T, N>> ret;
-
-        size_t i = 0;
-        for (auto box : m_topology.get_boxes(m_rank)) {
-            auto ext  = box.get_extent();
-            auto pext = add_padding(ext, m_begin_padding, m_end_padding);
-
-            ret.push_back(make_span(m_data[i], pext));
-            ++i;
-        }
-
-        return ret;
-    }
-
-    // TODO: get rid and work with data insted (create spans on call site)
-    auto local_spans() const {
-        std::vector<span<const T, N>> ret;
-
-        size_t i = 0;
-        for (auto box : m_topology.get_boxes(m_rank)) {
-            auto ext  = box.get_extent();
-            auto pext = add_padding(ext, m_begin_padding, m_end_padding);
-
-            ret.push_back(make_span(m_data[i], pext));
-            ++i;
-        }
-
-        return ret;
-    }
-
-    // TODO: get rid and work with data insted (create spans on call site)
-    auto unpadded_local_spans() {
-
-        auto spans = local_spans();
-
-        std::vector<span<T, N>> ret;
-
-        auto boxes = m_topology.get_boxes(m_rank);
-
-        for (size_t i = 0; i < spans.size(); ++i) {
-            auto begin = m_begin_padding;
-            auto end   = get_end(begin, extent_to_array(boxes[i].get_extent()));
-
-            auto ss = make_subspan(spans[i], begin, end);
-
-            ret.push_back(ss);
-        }
-        return ret;
-    }
-
-    // TODO: get rid and work with data insted (create spans on call site)
-    auto unpadded_local_spans() const {
-
-        auto spans = local_spans();
-
-        std::vector<span<const T, N>> ret;
-
-        auto boxes = m_topology.get_boxes(m_rank);
-
-        for (size_t i = 0; i < spans.size(); ++i) {
-            auto begin = m_begin_padding;
-            auto end   = get_end(begin, extent_to_array(boxes[i].get_extent()));
-
-            auto ss = make_subspan(spans[i], begin, end);
-
-            ret.push_back(ss);
-        }
-        return ret;
-    }
 
 private:
     int                         m_rank;
@@ -140,8 +44,67 @@ private:
     std::vector<std::vector<T>> m_data;
 };
 
+template <size_t N, class T>
+auto make_subspans(const DistributedArray<N, T>& array) {
+
+    using span_t = span_base<const T, N, stdex::layout_stride>;
+
+    std::vector<span_t> ret;
+
+    const auto& data  = array.local_data();
+    auto boxes = array.topology().get_boxes(array.get_rank());
+
+    auto bpad = array.begin_padding();
+    auto epad = array.end_padding();
+
+    for (size_t i = 0; i < data.size(); ++i) {
+
+        auto unpadded_extent = boxes[i].box.get_extent();
+        auto padded_extent = add_padding(unpadded_extent, bpad, epad);
 
 
+        auto sbegin = bpad;
+        auto send = get_end(bpad, extent_to_array(unpadded_extent));
+
+        auto bigspan = make_span(data[i], padded_extent);
+        auto sspan = make_subspan(bigspan, sbegin, send);
+
+        ret.push_back(sspan);
+    }
+    return ret;
+
+}
+
+template <size_t N, class T>
+auto make_subspans(DistributedArray<N, T>& array) {
+
+    using span_t = span_base<T, N, stdex::layout_stride>;
+
+    std::vector<span_t> ret;
+
+    auto& data  = array.local_data();
+    auto boxes = array.topology().get_boxes(array.get_rank());
+
+    auto bpad = array.begin_padding();
+    auto epad = array.end_padding();
+
+    for (size_t i = 0; i < data.size(); ++i) {
+
+        auto unpadded_extent = boxes[i].box.get_extent();
+        auto padded_extent = add_padding(unpadded_extent, bpad, epad);
+
+
+        auto sbegin = bpad;
+        auto send = get_end(bpad, extent_to_array(unpadded_extent));
+
+        auto bigspan = make_span(data[i], padded_extent);
+        auto sspan = make_subspan(bigspan, sbegin, send);
+
+        ret.push_back(sspan);
+    }
+    return ret;
+
+}
 
 template <size_t N, class Data>
 auto distribute(const Data&               data,
@@ -154,14 +117,13 @@ auto distribute(const Data&               data,
 
     DistributedArray<N, T> ret(rank, topo, begin_padding, end_padding);
 
-        
-    auto d_array_spans = ret.unpadded_local_spans();
+    auto d_array_spans = make_subspans(ret);
     auto data_spans    = make_subspans(data, topo, rank);
 
     for (size_t i = 0; i < data_spans.size(); ++i) {
         transform(data_spans[i], d_array_spans[i], [](auto r) { return r; });
     }
-    
+
     return ret;
 }
 
@@ -173,12 +135,12 @@ template <size_t N, class T> auto reduce(const DistributedArray<N, T>& array) {
 
     auto data_spans = make_subspans(ret, array.topology(), array.get_rank());
 
-    auto d_array_spans = array.unpadded_local_spans();
+    auto d_array_spans = make_subspans(array);
 
     for (size_t i = 0; i < data_spans.size(); ++i) {
         transform(d_array_spans[i], data_spans[i], [](auto r) { return r; });
     }
-    
+
     return ret;
 }
 

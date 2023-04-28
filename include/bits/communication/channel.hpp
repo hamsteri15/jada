@@ -19,6 +19,7 @@ std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& v) {
     return os;
 }
 
+//TODO: REMOVE THIS AND MAKE SOMETHING GENRIC IN extents.hpp
 static auto get_end(auto begin, auto extent) {
 
     auto ret = begin;

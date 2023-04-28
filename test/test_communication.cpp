@@ -446,7 +446,52 @@ TEST_CASE("Test DistributedArray")
                                         BoxRankPair{.box = b2, .rank = 0}};
 
 
-    //REQUIRE_THROWS(runtime_assert(false, "Test"));
+
+    SECTION("make_subspans"){
+
+        SECTION("unpadded"){
+            auto bpad = std::array<index_type ,2>{};
+            auto epad = std::array<index_type ,2>{};
+            Topology topo(domain, boxes, {false, false});
+
+            DistributedArray<2, int> arr(0, topo, bpad, epad);
+
+
+            int i = 0;
+
+            for (auto s : make_subspans(arr)){
+                for_each(s, [=](auto& e){e = i;});
+                ++i;
+            }
+
+            CHECK(arr.local_data()[0] == std::vector<int>{0,0,0,0});
+            CHECK(arr.local_data()[1] == std::vector<int>{1,1,1,1});
+            CHECK(arr.local_data()[2] == std::vector<int>{2,2,2,2});
+        }
+
+        SECTION("padded"){
+            auto bpad = std::array<index_type ,2>{0, 1};
+            auto epad = std::array<index_type ,2>{0, 2};
+            Topology topo(domain, boxes, {false, false});
+
+            DistributedArray<2, int> arr(0, topo, bpad, epad);
+
+
+            int i = 0;
+
+            for (auto s : make_subspans(arr)){
+                for_each(s, [=](auto& e){e = i;});
+                ++i;
+            }
+
+            CHECK(arr.local_data()[0] == std::vector<int>{0,0,0,0,0,0,0});
+            CHECK(arr.local_data()[1] == std::vector<int>{0,1,1,1,1,0,0});
+            CHECK(arr.local_data()[2] == std::vector<int>{0,2,2,2,2,0,0});
+        }
+
+
+
+    }
 
     SECTION("Unpadded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{};
@@ -466,7 +511,7 @@ TEST_CASE("Test DistributedArray")
 
     }
 
-    /*
+
     SECTION("Padded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
         auto epad = std::array<index_type ,2>{}; epad.fill(1);
@@ -484,7 +529,8 @@ TEST_CASE("Test DistributedArray")
         );
 
     }
-    */
+
+
 }
 
 
