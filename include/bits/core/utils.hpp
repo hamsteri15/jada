@@ -8,8 +8,6 @@
 
 #ifndef NDEBUG
     #define JADA_DEBUG_BUILD 1
-#else
-    #define JADE_DEBUG_BUILD 0
 #endif
 
 namespace jada {

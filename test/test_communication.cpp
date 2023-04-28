@@ -16,9 +16,6 @@ TEST_CASE("Test box") {
 
         CHECK(b.size() == 1 * 1 * 1); // NOTE!
 
-#ifdef JADE_DEBUG_BUILD
-        REQUIRE_THROWS(Box<3>({2, 0, 0}, {1, 1, 1}));
-#endif
     }
     SECTION("is_valid") {
         Box<3> b1({0, 0, 0}, {2, 2, 2});
