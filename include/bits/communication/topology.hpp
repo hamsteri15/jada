@@ -120,11 +120,11 @@ public:
 
                     // Negate the translation vector to transform receiver back
                     // to original position
-                    for (auto& e : t) { e *= -1; }
+                    auto neg_t = negate_translation(t);
 
                     // Translate back here
                     auto rb = global_to_local(receiver,
-                                              translate(inter, t).m_begin,
+                                              translate(inter, neg_t).m_begin,
                                               begin_padding,
                                               end_padding);
 
@@ -135,6 +135,7 @@ public:
                                       .sender_begin   = sb,
                                       .receiver_begin = rb,
                                       .extent         = extent};
+
 
                     ret.push_back(info);
                 }
@@ -191,6 +192,16 @@ private:
         return t;
     }
 
+    auto negate_translation(auto t) const {
+
+        std::array<index_type, N> ret{};
+        for (size_t i = 0; i < N; ++i){
+            ret[i] = -t[i];
+        }
+        return ret;
+    }
+
+
     bool is_periodic_dir(auto dir) const {
 
         for (size_t i = 0; i < N; ++i) {
@@ -215,14 +226,12 @@ private:
                          std::array<index_type, N>        begin_padding,
                          std::array<index_type, N>        end_padding) const {
 
-        //runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
 
         auto box = expand(owner.box, begin_padding, end_padding);
 
         std::array<index_type, N> local{};
         for (size_t i = 0; i < N; ++i) { local[i] = coord[i] - box.m_begin[i]; }
 
-        //runtime_assert(box.contains(local), "Coordinate not in box.");
 
         return local;
     }
@@ -230,14 +239,14 @@ private:
     auto local_to_global(const BoxRankPair<N>&            owner,
                          const std::array<index_type, N>& coord) const {
 
-        //runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
+        runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
 
         auto box = owner.box;
 
         std::array<index_type, N> global{};
         for (size_t i = 0; i < N; ++i) { global[i] = box.m_begin[i] + coord[i]; }
 
-        //runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
+        runtime_assert(m_domain.contains(global), "Coordinate not in domain.");
 
         return global;
     }

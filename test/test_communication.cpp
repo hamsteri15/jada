@@ -115,6 +115,18 @@ TEST_CASE("Test box") {
 
         Box<3> b4({3, 3, 3}, {4, 4, 4});
         CHECK(!b1.contains(b4));
+
+
+        SECTION("Bug 1"){
+
+            Box<1> bb({0}, {10});
+
+            CHECK(bb.contains(std::array<index_type, 1>{0}));
+
+        }
+
+
+
     }
 
     SECTION("distance") {
@@ -228,6 +240,7 @@ TEST_CASE("Test topology") {
             SECTION("Test 1"){
 
                 auto transfers = topo.get_transfers(boxes[0], boxes[1], bpad, epad);
+
 
                 CHECK(transfers.front().sender_begin ==
                       std::array<index_type, 1>{3});
@@ -343,12 +356,15 @@ TEST_CASE("Test topology") {
 
 TEST_CASE("Test data exchange"){
 
+
+
     SECTION("Periodic box"){
         auto domain = Box<2>{{0,0}, {4, 3}};
         auto boxes = std::vector<BoxRankPair<2>>{{domain, 0}};
         std::array<index_type, 2> bpad{}; bpad.fill(1);
         std::array<index_type, 2> epad{}; epad.fill(1);
         auto topo = Topology<2>{domain, boxes, {true, true}};
+
 
         std::vector<int> data =
         {
@@ -373,8 +389,8 @@ TEST_CASE("Test data exchange"){
 
         send_receive(data, topo, bpad, epad, 0);
 
-
         CHECK(data == correct);
+
 
     }
 
