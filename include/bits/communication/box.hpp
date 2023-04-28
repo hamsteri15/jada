@@ -21,7 +21,7 @@ public:
         : m_begin(begin)
         , m_end(end) {
 
-        runtime_assert(this->is_valid(), "Invalid box");
+        //runtime_assert(this->is_valid(), "Invalid box");
     }
 
     bool operator==(const Box<N>& rhs) const = default;

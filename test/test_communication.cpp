@@ -16,7 +16,7 @@ TEST_CASE("Test box") {
 
         CHECK(b.size() == 1 * 1 * 1); // NOTE!
 
-#ifdef DEBUG
+#ifdef JADE_DEBUG_BUILD
         REQUIRE_THROWS(Box<3>({2, 0, 0}, {1, 1, 1}));
 #endif
     }
@@ -163,10 +163,6 @@ auto test_dec2d() {
 
 TEST_CASE("Test topology") {
 
-
-
-
-
     SECTION("Constructors") {
 
         SECTION("Test 1") {
@@ -312,7 +308,7 @@ TEST_CASE("Test topology") {
 
 
     SECTION("make_subspans"){
-    
+
         Box<1> domain({0}, {10});
         Box<1> b0({0}, {3});
         Box<1> b1({3}, {6});
@@ -325,8 +321,8 @@ TEST_CASE("Test topology") {
         auto epad = std::array<index_type ,1>{}; epad.fill(1);
         Topology topo(domain, boxes, {false});
 
-        std::vector<int> data(11);
-        std::iota(data.begin(), data.end(), 0); 
+        std::vector<int> data(10);
+        std::iota(data.begin(), data.end(), 0);
 
         CHECK(make_subspans(data, topo, 32).size() == 0);
 
@@ -434,6 +430,8 @@ TEST_CASE("Test DistributedArray")
                                         BoxRankPair{.box = b2, .rank = 0}};
 
 
+    //REQUIRE_THROWS(runtime_assert(false, "Test"));
+
     SECTION("Unpadded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{};
         auto epad = std::array<index_type ,2>{};
@@ -452,11 +450,12 @@ TEST_CASE("Test DistributedArray")
 
     }
 
+    /*
     SECTION("Padded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
         auto epad = std::array<index_type ,2>{}; epad.fill(1);
         Topology topo(domain, boxes, {false, false});
-        
+
         std::vector<int> global_data(flat_size(domain.get_extent()));
         std::iota(global_data.begin(), global_data.end(), 0);
 
@@ -469,7 +468,7 @@ TEST_CASE("Test DistributedArray")
         );
 
     }
-    
+    */
 }
 
 

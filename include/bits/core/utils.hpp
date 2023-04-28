@@ -6,6 +6,12 @@
 #include <tuple>
 #include <type_traits>
 
+#ifndef NDEBUG
+    #define JADA_DEBUG_BUILD 1
+#else
+    #define JADE_DEBUG_BUILD 0
+#endif
+
 namespace jada {
 
 // Trait to type check all types of a std::tuple
@@ -21,13 +27,13 @@ struct all_of<Trait, std::pair<Types...>> : std::conjunction<Trait<Types>...> {
 };
 
 
-#ifdef DEBUG
+#ifdef JADA_DEBUG_BUILD
 constexpr void runtime_assert(bool condition, const char* msg) {
     if (!condition) {
-        
+
         throw std::runtime_error(msg);
     }
-    
+
 }
 #else
 constexpr void runtime_assert([[maybe_unused]] bool        condition,

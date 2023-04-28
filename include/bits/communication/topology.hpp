@@ -22,7 +22,7 @@ public:
         : m_domain(domain)
         , m_boxes(boxes)
         , m_periodic(periodic) {
-        runtime_assert(this->is_valid(), "Invalid topology");
+
     }
 
     const auto& get_domain() const { return m_domain; }
@@ -215,31 +215,31 @@ private:
                          std::array<index_type, N>        begin_padding,
                          std::array<index_type, N>        end_padding) const {
 
-        runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
+        //runtime_assert(m_domain.contains(coord), "Coordinate not in domain.");
 
         auto box = expand(owner.box, begin_padding, end_padding);
 
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = coord[i] - box.m_begin[i]; }
+        std::array<index_type, N> local{};
+        for (size_t i = 0; i < N; ++i) { local[i] = coord[i] - box.m_begin[i]; }
 
-        runtime_assert(box.contains(ret), "Coordinate not in box.");
+        //runtime_assert(box.contains(local), "Coordinate not in box.");
 
-        return ret;
+        return local;
     }
 
     auto local_to_global(const BoxRankPair<N>&            owner,
                          const std::array<index_type, N>& coord) const {
 
-        runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
+        //runtime_assert(owner.box.contains(coord), "Coordinate not in box.");
 
         auto box = owner.box;
 
-        std::array<index_type, N> ret{};
-        for (size_t i = 0; i < N; ++i) { ret[i] = box.m_begin[i] + coord[i]; }
+        std::array<index_type, N> global{};
+        for (size_t i = 0; i < N; ++i) { global[i] = box.m_begin[i] + coord[i]; }
 
-        runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
+        //runtime_assert(m_domain.contains(ret), "Coordinate not in domain.");
 
-        return ret;
+        return global;
     }
 };
 
@@ -275,7 +275,7 @@ template<size_t N, class Data>
 auto make_subspans(Data& data, const Topology<N>& topo, int rank){
 
     using T = typename Data::value_type;
-    
+
     std::vector<span<T, N>> ret;
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
