@@ -135,6 +135,7 @@ template <size_t N, class T> auto reduce(const DistributedArray<N, T>& array) {
 
     auto data_spans = make_subspans(ret, array.topology(), array.get_rank());
 
+    
     auto d_array_spans = make_subspans(array);
 
     for (size_t i = 0; i < data_spans.size(); ++i) {
