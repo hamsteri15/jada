@@ -157,5 +157,108 @@ static bool topo_test(MPI_Comm comm) {
     return status != MPI_UNDEFINED;
 }
 
+/// @brief Reduces data from all processes to the recv_data buffer on the _root
+/// process_.
+/// @param send_data the local data to reduce
+/// @param recv_data the buffer to place the reduced data (significant only on
+/// root)
+/// @param count number of elements to reduce
+/// @param datatype the element type of the send_data
+/// @param op reduction operation
+/// @param root the process to reduce the data onto
+/// @param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
+static void reduce(void*        send_data,
+                   void*        recv_data,
+                   int          count,
+                   MPI_Datatype datatype,
+                   MPI_Op       op,
+                   int          root,
+                   MPI_Comm     communicator = MPI_COMM_WORLD) {
+    auto err = MPI_Reduce(
+        send_data, recv_data, count, datatype, op, root, communicator);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Reduce fails");
+}
+
+/// @brief Reduces data from all processes to the recv_data buffer on _all
+/// processes_.
+/// @param send_data the local data to reduce
+/// @param recv_data the buffer to place the reduced data
+/// @param count number of elements to reduce
+/// @param datatype the element type of the send_data
+/// @param op reduction operation
+/// @param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
+static void all_reduce(const void*  send_data,
+                       void*        recv_data,
+                       int          count,
+                       MPI_Datatype datatype,
+                       MPI_Op       op,
+                       MPI_Comm     communicator = MPI_COMM_WORLD) {
+
+    auto err =
+        MPI_Allreduce(send_data, recv_data, count, datatype, op, communicator);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Allreduce fails.");
+}
+
+///
+///@brief Gathers data from all processes to the recv_data buffer on the _root
+/// process_.
+///
+///@param send_data the local data to gather
+///@param send_count number of elements in the send_data
+///@param send_datatype the element type of the send_data
+///@param recv_data the buffer to place the gathered data (significant only on
+/// root)
+///@param recv_count element count of the recv_data
+///@param recv_datatype element type of the recv_data
+///@param root the process to gather data onto
+///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
+///
+static void gather(void*        send_data,
+                   int          send_count,
+                   MPI_Datatype send_datatype,
+                   void*        recv_data,
+                   int          recv_count,
+                   MPI_Datatype recv_datatype,
+                   int          root,
+                   MPI_Comm     communicator = MPI_COMM_WORLD) {
+    auto err = MPI_Gather(send_data,
+                          send_count,
+                          send_datatype,
+                          recv_data,
+                          recv_count,
+                          recv_datatype,
+                          root,
+                          communicator);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Gather fails");
+}
+
+///
+///@brief Gathers data from all processes to _all processes_.
+///
+///@param send_data the local data to gather
+///@param send_count number of elements in the send_data
+///@param send_datatype the element type of the send buffer
+///@param recv_data the buffer to place the gathered data to
+///@param recv_count element count of the recv_data
+///@param recv_datatype the element type of the recv_data
+///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
+///
+static void all_gather(void*        send_data,
+                       int          send_count,
+                       MPI_Datatype send_datatype,
+                       void*        recv_data,
+                       int          recv_count,
+                       MPI_Datatype recv_datatype,
+                       MPI_Comm     communicator) {
+    auto err = MPI_Allgather(send_data,
+                             send_count,
+                             send_datatype,
+                             recv_data,
+                             recv_count,
+                             recv_datatype,
+                             communicator);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Allgather fails.");
+}
+
 } // namespace mpi
 } // namespace jada
