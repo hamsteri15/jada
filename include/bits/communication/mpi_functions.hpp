@@ -135,6 +135,39 @@ static void type_commit(MPI_Datatype t) {
 }
 
 ///
+///@brief Creates a contiguous datatype
+///
+///@param count number of times to repeat the old_type
+///@param old_type the type to repeat
+///@return MPI_Datatype a contiguous datatype
+///
+static MPI_Datatype type_contiguous(int count, MPI_Datatype old_type) {
+    MPI_Datatype new_type;
+
+    auto err = MPI_Type_contiguous(count, old_type, &new_type);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Type_contiguous fails.");
+    return new_type;
+}
+
+template <class T> struct MakeDatatype {};
+
+template <> struct MakeDatatype<int> {
+
+    MPI_Datatype operator()() { return MPI_INT; }
+};
+
+/// @brief Make a contiguous datatype for contiguous stl-like containers
+/// @param v input vector to make the contiguous datatype for 
+/// @return contiguous mpi datatype
+template <class Container>
+static MPI_Datatype type_contiguous(const Container& v) {
+
+    using element_type = typename Container::element_type;
+    MakeDatatype<element_type> old_type;
+    return type_contiguous(static_cast<int>(std::size(v)), old_type());
+}
+
+///
 ///@brief Call mpi abort on the given communicator
 ///
 ///@param comm communicator handle to abort
@@ -167,7 +200,7 @@ static bool topo_test(MPI_Comm comm) {
 /// @param op reduction operation
 /// @param root the process to reduce the data onto
 /// @param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
-static void reduce(void*        send_data,
+static void reduce(const void*        send_data,
                    void*        recv_data,
                    int          count,
                    MPI_Datatype datatype,
@@ -178,6 +211,17 @@ static void reduce(void*        send_data,
         send_data, recv_data, count, datatype, op, root, communicator);
     runtime_assert(err == MPI_SUCCESS, "MPI_Reduce fails");
 }
+
+template<class T>
+T sum_reduce(const T& local, int root, MPI_Comm communicator = MPI_COMM_WORLD){
+
+    T ret;
+    MakeDatatype<T> dt;
+    reduce(&local, &ret, 1, dt(), MPI_SUM, root, communicator);
+    return ret;
+
+}
+
 
 /// @brief Reduces data from all processes to the recv_data buffer on _all
 /// processes_.
@@ -213,7 +257,7 @@ static void all_reduce(const void*  send_data,
 ///@param root the process to gather data onto
 ///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
 ///
-static void gather(void*        send_data,
+static void gather(const void*        send_data,
                    int          send_count,
                    MPI_Datatype send_datatype,
                    void*        recv_data,
@@ -231,6 +275,7 @@ static void gather(void*        send_data,
                           communicator);
     runtime_assert(err == MPI_SUCCESS, "MPI_Gather fails");
 }
+
 
 ///
 ///@brief Gathers data from all processes to _all processes_.

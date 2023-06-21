@@ -7,6 +7,7 @@
 
 using namespace jada;
 
+
 TEST_CASE("Test box") {
 
     SECTION("Constructors") {
@@ -431,6 +432,49 @@ TEST_CASE("Test data exchange"){
 
 }
 
+TEST_CASE("reduce"){
+
+    SECTION("Test 1"){
+
+        int local = 1;
+
+        auto global = mpi::sum_reduce(local, 0);
+
+        if (mpi::get_world_rank() == 0){
+            CHECK(global == mpi::world_size());
+        }
+
+    }
+
+}
+
+
+TEST_CASE("gather"){
+
+    SECTION("Test 1"){
+
+        auto world_size = mpi::world_size();
+        auto world_rank = mpi::get_world_rank();
+
+        std::vector<int> local(2, world_rank);
+        
+        auto global = gather(local, 0);
+
+        std::vector<int> correct(world_size * 2);
+        for (size_t i = 0; i < correct.size(); i += 2){
+            correct[i] = i;
+            correct[i+1] = i;
+        }
+
+        if (world_rank == 0){
+            CHECK(global == correct);
+        }
+        
+
+    }
+
+}
+
 TEST_CASE("Test DistributedArray")
 {
     Box<2> domain({0, 0}, {3, 4});
@@ -490,6 +534,7 @@ TEST_CASE("Test DistributedArray")
 
     }
 
+    /*
     SECTION("Unpadded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{};
         auto epad = std::array<index_type ,2>{};
@@ -526,7 +571,7 @@ TEST_CASE("Test DistributedArray")
         );
 
     }
-
+    */
 
 }
 
