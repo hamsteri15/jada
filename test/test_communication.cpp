@@ -449,34 +449,116 @@ TEST_CASE("reduce"){
 }
 
 
-TEST_CASE("gather"){
+TEST_CASE("mpi functions"){
 
-    SECTION("Test 1"){
+    
+    SECTION("sum_reduce"){
+        int data = 1;
 
-        auto world_size = mpi::world_size();
-        auto world_rank = mpi::get_world_rank();
+        int root = 0;
 
-        std::vector<int> local(2, world_rank);
-        
-        auto global = gather(local, 0);
+        int recv = jada::mpi::sum_reduce(data, root, MPI_COMM_WORLD);
+        mpi::wait(MPI_COMM_WORLD);
 
-        std::vector<int> correct(world_size * 2);
-        for (size_t i = 0; i < correct.size(); i += 2){
-            correct[i] = i;
-            correct[i+1] = i;
-        }
-
-        if (world_rank == 0){
-            CHECK(global == correct);
+        if (mpi::get_world_rank() == root){
+            CHECK(recv == data * mpi::world_size());
         }
         
+    }
+    
+    
+    SECTION("all_sum_reduce 1"){
+        int data = 1;
 
+        int recv = jada::mpi::all_sum_reduce(data);
+
+        CHECK(recv == data * mpi::world_size());
+    }
+    
+    SECTION("all_sum_reduce 1"){
+        std::vector<int> data = {1};
+
+        size_t recv = jada::mpi::all_sum_reduce(data.size());
+
+        CHECK(recv == size_t(mpi::world_size()));
+    }
+
+    
+
+
+}
+
+TEST_CASE("all_gather"){
+
+    
+    
+
+    SECTION("Single element test"){
+
+        
+        std::vector<int> local = {mpi::get_world_rank()};
+
+        auto global = all_gather(local);
+
+        std::vector<int> correct(size_t(mpi::world_size()));
+
+
+        for (size_t i = 0; i < correct.size(); ++i){
+            correct[i] = int(i);
+        }
+
+        CHECK(global == correct);
+        
+    }
+    SECTION("Two element test"){
+
+        
+        std::vector<int> local(2, mpi::get_world_rank());
+
+        auto global = all_gather(local);
+
+        std::vector<int> correct(2 * size_t(mpi::world_size()));
+
+        int j = 0;
+        for (size_t i = 0; i < correct.size(); i+=2){
+            correct[i] = j;
+            correct[i+1] = j;
+            j++;
+        }
+
+        
+
+        CHECK(global == correct);
+        
+    }
+
+    SECTION("Variable local element count test"){
+
+        
+        std::vector<int> local(size_t(mpi::get_world_rank()));
+
+        for (auto& e : local){
+            e = mpi::get_world_rank();
+        }
+
+        auto global = all_gather(local);
+
+        std::vector<int> correct;
+        for (int i = 0; i < mpi::world_size(); ++i){
+            for (int j = 0; j < i; ++j){
+                correct.push_back(i);
+            }
+        }
+
+        CHECK(global == correct);
+        
     }
 
 }
 
 TEST_CASE("Test DistributedArray")
 {
+    
     Box<2> domain({0, 0}, {3, 4});
     Box<2> b0({0, 0}, {1, 4});
     Box<2> b1({1, 0}, {2, 4});
@@ -486,6 +568,17 @@ TEST_CASE("Test DistributedArray")
                                         BoxRankPair{.box = b1, .rank = 0},
                                         BoxRankPair{.box = b2, .rank = 0}};
 
+    
+    SECTION("local_element_count/local_capacity"){
+        auto bpad = std::array<index_type ,2>{0, 1};
+        auto epad = std::array<index_type ,2>{0, 2};
+        Topology topo(domain, boxes, {false, false});
+
+        DistributedArray<2, int> arr(0, topo, bpad, epad);
+
+        CHECK(local_element_count(arr) == 1*4 + 1*4 + 1*4);
+        CHECK(local_capacity(arr) == 1*(4+1+2) + 1*(4+1+2) + 1*(4+1+2));
+    }
 
 
     SECTION("make_subspans"){
@@ -533,8 +626,9 @@ TEST_CASE("Test DistributedArray")
 
 
     }
-
+    
     /*
+    
     SECTION("Unpadded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{};
         auto epad = std::array<index_type ,2>{};
@@ -552,7 +646,7 @@ TEST_CASE("Test DistributedArray")
         );
 
     }
-
+    
 
     SECTION("Padded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
@@ -572,6 +666,7 @@ TEST_CASE("Test DistributedArray")
 
     }
     */
+    
 
 }
 
@@ -738,6 +833,9 @@ TEST_CASE("Test Neighbours"){
         }
     }
 }
+
+
+
 
 
 TEST_CASE("Test decomposition"){

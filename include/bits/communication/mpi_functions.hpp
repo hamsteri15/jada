@@ -134,6 +134,8 @@ static void type_commit(MPI_Datatype t) {
     runtime_assert(err == MPI_SUCCESS, "MPI_Type_commit fails.");
 }
 
+static inline void wait(MPI_Comm comm = MPI_COMM_WORLD) { MPI_Barrier(comm); }
+
 ///
 ///@brief Creates a contiguous datatype
 ///
@@ -156,8 +158,13 @@ template <> struct MakeDatatype<int> {
     MPI_Datatype operator()() { return MPI_INT; }
 };
 
+template <> struct MakeDatatype<size_t> {
+
+    MPI_Datatype operator()() { return MPI_UNSIGNED_LONG; }
+};
+
 /// @brief Make a contiguous datatype for contiguous stl-like containers
-/// @param v input vector to make the contiguous datatype for 
+/// @param v input vector to make the contiguous datatype for
 /// @return contiguous mpi datatype
 template <class Container>
 static MPI_Datatype type_contiguous(const Container& v) {
@@ -200,7 +207,7 @@ static bool topo_test(MPI_Comm comm) {
 /// @param op reduction operation
 /// @param root the process to reduce the data onto
 /// @param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
-static void reduce(const void*        send_data,
+static void reduce(const void*  send_data,
                    void*        recv_data,
                    int          count,
                    MPI_Datatype datatype,
@@ -212,16 +219,14 @@ static void reduce(const void*        send_data,
     runtime_assert(err == MPI_SUCCESS, "MPI_Reduce fails");
 }
 
-template<class T>
-T sum_reduce(const T& local, int root, MPI_Comm communicator = MPI_COMM_WORLD){
+template <class T>
+T sum_reduce(const T& local, int root, MPI_Comm communicator = MPI_COMM_WORLD) {
 
-    T ret;
+    T               ret;
     MakeDatatype<T> dt;
     reduce(&local, &ret, 1, dt(), MPI_SUM, root, communicator);
     return ret;
-
 }
-
 
 /// @brief Reduces data from all processes to the recv_data buffer on _all
 /// processes_.
@@ -243,21 +248,33 @@ static void all_reduce(const void*  send_data,
     runtime_assert(err == MPI_SUCCESS, "MPI_Allreduce fails.");
 }
 
+template <class T>
+static T all_sum_reduce(const T& local,
+                        MPI_Comm communicator = MPI_COMM_WORLD) {
+
+    T               ret;
+    MakeDatatype<T> dt;
+    all_reduce(&local, &ret, 1, dt(), MPI_SUM, communicator);
+    return ret;
+}
+
 ///
 ///@brief Gathers data from all processes to the recv_data buffer on the _root
-/// process_.
+/// process_. This function assumes that all processes send an equal amount of
+/// data.
 ///
 ///@param send_data the local data to gather
 ///@param send_count number of elements in the send_data
 ///@param send_datatype the element type of the send_data
 ///@param recv_data the buffer to place the gathered data (significant only on
 /// root)
-///@param recv_count element count of the recv_data
+///@param recv_count number of elements received from any process (significant
+/// only on root)
 ///@param recv_datatype element type of the recv_data
 ///@param root the process to gather data onto
 ///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
 ///
-static void gather(const void*        send_data,
+static void gather(const void*  send_data,
                    int          send_count,
                    MPI_Datatype send_datatype,
                    void*        recv_data,
@@ -276,19 +293,19 @@ static void gather(const void*        send_data,
     runtime_assert(err == MPI_SUCCESS, "MPI_Gather fails");
 }
 
-
 ///
-///@brief Gathers data from all processes to _all processes_.
+///@brief Gathers data from all processes to _all processes_. This function
+/// assumes that all processes send an equal amount of data.
 ///
 ///@param send_data the local data to gather
 ///@param send_count number of elements in the send_data
 ///@param send_datatype the element type of the send buffer
 ///@param recv_data the buffer to place the gathered data to
-///@param recv_count element count of the recv_data
+///@param recv_count number of elements received from any process
 ///@param recv_datatype the element type of the recv_data
 ///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
 ///
-static void all_gather(void*        send_data,
+static void all_gather(const void*  send_data,
                        int          send_count,
                        MPI_Datatype send_datatype,
                        void*        recv_data,
@@ -302,6 +319,39 @@ static void all_gather(void*        send_data,
                              recv_count,
                              recv_datatype,
                              communicator);
+    runtime_assert(err == MPI_SUCCESS, "MPI_Allgather fails.");
+}
+
+///
+///@brief Gathers data from all processes to _all processes_ without assuming
+/// constant send_data size.
+///
+///@param send_data the local data to gather
+///@param send_count number of elements in the send_data
+///@param send_datatype the element type of the send buffer
+///@param recv_data the buffer to place the gathered data to
+///@param recv_counts number of elements received from each process
+///@param displacements the offsets in recv_data buffer where to store the
+/// received data from each process
+///@param recv_datatype the element type of the recv_data
+///@param communicator the mpi communicator (defaults to MPI_COMM_WORLD)
+///
+static void all_gatherv(const void*  send_data,
+                        int          send_count,
+                        MPI_Datatype send_datatype,
+                        void*        recv_data,
+                        const int*   recv_counts,
+                        const int*   displacements,
+                        MPI_Datatype recv_datatype,
+                        MPI_Comm     communicator) {
+    auto err = MPI_Allgatherv(send_data,
+                              send_count,
+                              send_datatype,
+                              recv_data,
+                              recv_counts,
+                              displacements,
+                              recv_datatype,
+                              communicator);
     runtime_assert(err == MPI_SUCCESS, "MPI_Allgather fails.");
 }
 

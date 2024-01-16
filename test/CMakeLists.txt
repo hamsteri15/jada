@@ -26,3 +26,11 @@ target_include_directories(MpiTest.bin PUBLIC
                           )
 
 add_test( NAME MpiTest COMMAND MpiTest.bin)
+
+add_test( NAME MpiTest2
+          COMMAND mpirun -np 2 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MpiTest.bin
+          )
+
+add_test( NAME MpiTest3
+          COMMAND mpirun -np 3 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MpiTest.bin
+        )  

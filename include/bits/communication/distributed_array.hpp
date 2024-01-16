@@ -35,6 +35,16 @@ template <size_t N, class T> struct DistributedArray {
 
     int get_rank() const { return m_rank; }
 
+    ///
+    ///@brief Returns the boxes describing the shapes of data held locally by
+    /// this instance of a distributed array.
+    ///
+    ///@return std::vector<BoxRankPair<N>> A vector of box-rank pairs where the
+    /// rank is always m_rank.
+    ///
+    std::vector<BoxRankPair<N>> local_boxes() const {
+        return m_topology.get_boxes(m_rank);
+    }
 
 private:
     int                         m_rank;
@@ -44,6 +54,40 @@ private:
     std::vector<std::vector<T>> m_data;
 };
 
+///
+///@brief Returns the local element count (without padding) held by the input
+/// distributed array.
+///
+///@param array The input array to query the local element count from.
+///@return size_t The element count without padding held by the input array.
+///
+template <size_t N, class T>
+static inline size_t local_element_count(const DistributedArray<N, T>& array) {
+
+    auto   boxes = array.local_boxes();
+    size_t size  = 0;
+    for (auto box : boxes) {
+        auto ext = box.get_extent();
+        size += flat_size(ext);
+    }
+    return size;
+}
+
+///
+///@brief Returns the local capacity (with padding) held by the input array
+/// distributed array.
+///
+///@param array The input array to query the local capacity from.
+///@return size_t The local capacity with padding held by the input array.
+///
+template <size_t N, class T>
+static inline size_t local_capacity(const DistributedArray<N, T>& array) {
+
+    size_t size = 0;
+    for (const auto& v : array.local_data()) { size += v.size(); }
+    return size;
+}
+
 template <size_t N, class T>
 auto make_subspans(const DistributedArray<N, T>& array) {
 
@@ -52,7 +96,7 @@ auto make_subspans(const DistributedArray<N, T>& array) {
     std::vector<span_t> ret;
 
     const auto& data  = array.local_data();
-    auto boxes = array.topology().get_boxes(array.get_rank());
+    auto        boxes = array.topology().get_boxes(array.get_rank());
 
     auto bpad = array.begin_padding();
     auto epad = array.end_padding();
@@ -60,30 +104,27 @@ auto make_subspans(const DistributedArray<N, T>& array) {
     for (size_t i = 0; i < data.size(); ++i) {
 
         auto unpadded_extent = boxes[i].box.get_extent();
-        auto padded_extent = add_padding(unpadded_extent, bpad, epad);
-
+        auto padded_extent   = add_padding(unpadded_extent, bpad, epad);
 
         auto sbegin = bpad;
-        auto send = get_end(bpad, extent_to_array(unpadded_extent));
+        auto send   = get_end(bpad, extent_to_array(unpadded_extent));
 
         auto bigspan = make_span(data[i], padded_extent);
-        auto sspan = make_subspan(bigspan, sbegin, send);
+        auto sspan   = make_subspan(bigspan, sbegin, send);
 
         ret.push_back(sspan);
     }
     return ret;
-
 }
 
-template <size_t N, class T>
-auto make_subspans(DistributedArray<N, T>& array) {
+template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
 
     using span_t = span_base<T, N, stdex::layout_stride>;
 
     std::vector<span_t> ret;
 
     auto& data  = array.local_data();
-    auto boxes = array.topology().get_boxes(array.get_rank());
+    auto  boxes = array.topology().get_boxes(array.get_rank());
 
     auto bpad = array.begin_padding();
     auto epad = array.end_padding();
@@ -91,19 +132,17 @@ auto make_subspans(DistributedArray<N, T>& array) {
     for (size_t i = 0; i < data.size(); ++i) {
 
         auto unpadded_extent = boxes[i].box.get_extent();
-        auto padded_extent = add_padding(unpadded_extent, bpad, epad);
-
+        auto padded_extent   = add_padding(unpadded_extent, bpad, epad);
 
         auto sbegin = bpad;
-        auto send = get_end(bpad, extent_to_array(unpadded_extent));
+        auto send   = get_end(bpad, extent_to_array(unpadded_extent));
 
         auto bigspan = make_span(data[i], padded_extent);
-        auto sspan = make_subspan(bigspan, sbegin, send);
+        auto sspan   = make_subspan(bigspan, sbegin, send);
 
         ret.push_back(sspan);
     }
     return ret;
-
 }
 
 template <size_t N, class Data>
@@ -135,7 +174,6 @@ template <size_t N, class T> auto reduce(const DistributedArray<N, T>& array) {
 
     auto data_spans = make_subspans(ret, array.topology(), array.get_rank());
 
-    
     auto d_array_spans = make_subspans(array);
 
     for (size_t i = 0; i < data_spans.size(); ++i) {
