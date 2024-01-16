@@ -96,7 +96,7 @@ auto make_subspans(const DistributedArray<N, T>& array) {
     std::vector<span_t> ret;
 
     const auto& data  = array.local_data();
-    auto        boxes = array.topology().get_boxes(array.get_rank());
+    auto        boxes = array.local_boxes();
 
     auto bpad = array.begin_padding();
     auto epad = array.end_padding();
@@ -124,7 +124,7 @@ template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
     std::vector<span_t> ret;
 
     auto& data  = array.local_data();
-    auto  boxes = array.topology().get_boxes(array.get_rank());
+    auto  boxes = array.local_boxes();
 
     auto bpad = array.begin_padding();
     auto epad = array.end_padding();
