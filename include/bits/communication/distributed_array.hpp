@@ -88,6 +88,9 @@ static inline size_t local_capacity(const DistributedArray<N, T>& array) {
     return size;
 }
 
+/// @brief Returns the unpadded subspans to local data held by the input distributed array.
+/// @param array The input array to get the subspans to local data.
+/// @return The subspans to local data held by the input array.
 template <size_t N, class T>
 auto make_subspans(const DistributedArray<N, T>& array) {
 
@@ -117,6 +120,9 @@ auto make_subspans(const DistributedArray<N, T>& array) {
     return ret;
 }
 
+/// @brief Returns the unpadded subspans to local data held by the input distributed array.
+/// @param array The input array to get the subspans to local data.
+/// @return The subspans to local data held by the input array.
 template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
 
     using span_t = span_base<T, N, stdex::layout_stride>;
