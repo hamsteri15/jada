@@ -25,6 +25,7 @@ target_include_directories(MpiTest.bin PUBLIC
                             ${CMAKE_SOURCE_DIR}/catch
                           )
 
+#Note, the tests are written such that maximum 3 mpi-processes are assumed
 add_test( NAME MpiTest COMMAND MpiTest.bin)
 
 add_test( NAME MpiTest2
@@ -33,4 +34,4 @@ add_test( NAME MpiTest2
 
 add_test( NAME MpiTest3
           COMMAND mpirun -np 3 --oversubscribe ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MpiTest.bin
-        )  
+       )  

@@ -33,6 +33,13 @@ template <size_t N, class T> struct DistributedArray {
     auto begin_padding() const { return m_begin_padding; }
     auto end_padding() const { return m_end_padding; }
 
+    size_t local_subdomain_count() const { return m_data.size(); }
+
+    // Note this does not in general equal to number of processes
+    size_t global_subdomain_count() const {
+        return m_topology.get_boxes().size();
+    }
+
     int get_rank() const { return m_rank; }
 
     ///
@@ -88,7 +95,8 @@ static inline size_t local_capacity(const DistributedArray<N, T>& array) {
     return size;
 }
 
-/// @brief Returns the unpadded subspans to local data held by the input distributed array.
+/// @brief Returns the unpadded subspans to local data held by the input
+/// distributed array.
 /// @param array The input array to get the subspans to local data.
 /// @return The subspans to local data held by the input array.
 template <size_t N, class T>
@@ -120,7 +128,8 @@ auto make_subspans(const DistributedArray<N, T>& array) {
     return ret;
 }
 
-/// @brief Returns the unpadded subspans to local data held by the input distributed array.
+/// @brief Returns the unpadded subspans to local data held by the input
+/// distributed array.
 /// @param array The input array to get the subspans to local data.
 /// @return The subspans to local data held by the input array.
 template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
@@ -148,6 +157,43 @@ template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
 
         ret.push_back(sspan);
     }
+    return ret;
+}
+
+/// @brief Serializes the local data of the input distributed array to a flat
+/// vector. Note: This function neglects the padding in the output array.
+/// @param array The input array to serialize.
+/// @return A flat std::vector of the same element type containing the local
+/// data the input array holds.
+template <size_t N, class T>
+static inline std::vector<T>
+serialize_local(const DistributedArray<N, T>& array) {
+
+    auto size = local_element_count(array);
+
+    auto spans = make_subspans(array);
+
+    //Offsets in the output array where to begin writing
+    std::vector<size_t> offsets = [&]() {
+        std::vector<size_t> ret(array.local_subdomain_count());
+        ret[0] = 0;
+        for (size_t i = 1; i < array.local_subdomain_count(); ++i) {
+            ret[i] = ret[i - 1] + spans[i - 1].size();
+        }
+
+        return ret;
+    }();
+
+    std::vector<T> ret(size);
+
+    for (size_t i = 0; i < spans.size(); ++i) {
+
+        T*         begin = &(ret[offsets[i]]);
+        auto       ext   = extent(spans[i]);
+        span<T, N> to(begin, ext);
+        transform(spans[i], to, [](auto r) { return r; });
+    }
+
     return ret;
 }
 

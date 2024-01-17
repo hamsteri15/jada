@@ -556,76 +556,156 @@ TEST_CASE("all_gather"){
 
 }
 
+
+struct DistributedTestData{
+    
+    static constexpr size_t nboxes = 3;
+    static constexpr index_type ni = index_type(nboxes) * 1 + 1;
+    static constexpr index_type nj = 3;
+    static constexpr size_t unpadded_subspan_size = 1 * DistributedTestData::ni;
+    static constexpr size_t padded_subspan_size = 1 * (DistributedTestData::ni + 1 + 2);
+
+
+};
+
+static inline auto make_test_topology(){
+
+    size_t nprocs = size_t(mpi::world_size());
+
+    if (nprocs > 3){
+        throw std::logic_error("Only up to 3 mpi processes supported in tests.");
+    }
+
+    size_t nboxes = DistributedTestData::nboxes;
+
+    index_type ni = DistributedTestData::ni;
+    index_type nj = DistributedTestData::nj;
+
+    Box<2> domain({0,0}, {nj, ni});
+
+    std::vector<BoxRankPair<2>> boxes(nboxes);
+
+    //This distributes the boxes in round robin fashion
+    int rank = 0;
+    for (size_t i = 0; i < nboxes; ++i){
+
+        auto& pair = boxes[i];
+        pair.box.m_begin = std::array<index_type, 2>{{index_type(i), 0}};
+        pair.box.m_end = std::array<index_type, 2>{{index_type(i+1), ni}};
+        //int rank = 0;
+        pair.rank = rank;
+        rank++;
+        if (rank == int(nprocs)){
+            rank = 0;
+        }
+    }
+
+    return Topology<2>(domain, boxes, {false, false});
+
+
+}
+
+
+static inline auto make_test_array(bool add_padding){
+
+
+    std::array<index_type, 2> bpad{};
+    std::array<index_type, 2> epad{};
+
+    if (add_padding){
+        bpad[1] = 1;
+        epad[1] = 2;
+    }
+
+    auto topo = make_test_topology();
+
+    int myrank = mpi::get_world_rank();
+
+
+    DistributedArray<2, int> arr(myrank, topo, bpad, epad);
+
+
+    for (auto& v : arr.local_data()){
+        std::fill(v.begin(), v.end(), myrank + 1);
+    }
+
+    return arr;
+
+}
+
+
+
 TEST_CASE("Test DistributedArray")
 {
-    
-    Box<2> domain({0, 0}, {3, 4});
-    Box<2> b0({0, 0}, {1, 4});
-    Box<2> b1({1, 0}, {2, 4});
-    Box<2> b2({2, 0}, {3, 4});
 
-    std::vector<BoxRankPair<2>> boxes{BoxRankPair{.box = b0, .rank = 0},
-                                        BoxRankPair{.box = b1, .rank = 0},
-                                        BoxRankPair{.box = b2, .rank = 0}};
 
     
     SECTION("local_element_count/local_capacity"){
-        auto bpad = std::array<index_type ,2>{0, 1};
-        auto epad = std::array<index_type ,2>{0, 2};
-        Topology topo(domain, boxes, {false, false});
-
-        DistributedArray<2, int> arr(0, topo, bpad, epad);
-
-        CHECK(local_element_count(arr) == 1*4 + 1*4 + 1*4);
-        CHECK(local_capacity(arr) == 1*(4+1+2) + 1*(4+1+2) + 1*(4+1+2));
+        auto arr = make_test_array(true);
+        
+        CHECK(local_element_count(arr) == arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size);
+        CHECK(local_capacity(arr) == arr.local_subdomain_count() * DistributedTestData::padded_subspan_size);
+        
     }
 
 
+    
     SECTION("make_subspans"){
 
         SECTION("unpadded"){
-            auto bpad = std::array<index_type ,2>{};
-            auto epad = std::array<index_type ,2>{};
-            Topology topo(domain, boxes, {false, false});
-
-            DistributedArray<2, int> arr(0, topo, bpad, epad);
-
-
-            int i = 0;
+            auto arr = make_test_array(false);
 
             for (auto s : make_subspans(arr)){
-                for_each(s, [=](auto& e){e = i;});
-                ++i;
+                
+                for (index_type i = 0; i < 4; ++i){
+                    CHECK(s(0, i) == mpi::get_world_rank() + 1);
+                }
             }
-
-            CHECK(arr.local_data()[0] == std::vector<int>{0,0,0,0});
-            CHECK(arr.local_data()[1] == std::vector<int>{1,1,1,1});
-            CHECK(arr.local_data()[2] == std::vector<int>{2,2,2,2});
         }
 
         SECTION("padded"){
-            auto bpad = std::array<index_type ,2>{0, 1};
-            auto epad = std::array<index_type ,2>{0, 2};
-            Topology topo(domain, boxes, {false, false});
-
-            DistributedArray<2, int> arr(0, topo, bpad, epad);
-
-
-            int i = 0;
+            auto arr = make_test_array(true);
 
             for (auto s : make_subspans(arr)){
-                for_each(s, [=](auto& e){e = i;});
-                ++i;
+                
+                for (index_type i = 0; i < 4; ++i){
+                    CHECK(s(0, i) == mpi::get_world_rank() + 1);
+                }
             }
-
-            CHECK(arr.local_data()[0] == std::vector<int>{0,0,0,0,0,0,0});
-            CHECK(arr.local_data()[1] == std::vector<int>{0,1,1,1,1,0,0});
-            CHECK(arr.local_data()[2] == std::vector<int>{0,2,2,2,2,0,0});
         }
 
+    }
+    
 
+
+    
+    SECTION("serialize_local"){
+
+        SECTION("without padding"){
+            auto arr = make_test_array(false);
+            auto serial = serialize_local(arr);
+                    
+            size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
+            std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
+            
+            CHECK(serial == correct);
+        }
+        SECTION("with padding"){
+            auto arr = make_test_array(true);
+            auto serial = serialize_local(arr);
+                    
+            size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
+            std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
+            
+            CHECK(serial == correct);
+        }
+        
 
     }
+    
+
+
+    
     
     /*
     
@@ -667,6 +747,40 @@ TEST_CASE("Test DistributedArray")
     }
     */
     
+    /*
+    SECTION("distribute"){
+
+        
+        auto make_test_array(true);
+
+        std::vector<int> global = {1,  2,  3,  4,
+                                   6,  7,  8,  9,
+                                   10, 11, 12, 13};
+
+        auto dist = distribute(global, topo, mpi::get_world_rank(), bpad, epad);
+    
+    
+        if (mpi::get_world_rank() == 0){
+
+            auto spans = make_subspans(dist);
+            auto s1 = spans[0];
+            
+            CHECK(s1(0, 0) == 1);
+            CHECK(s1(0, 1) == 2);
+            CHECK(s1(0, 2) == 3);
+            CHECK(s1(0, 3) == 4);
+
+            auto s2 = spans[1];
+            
+            CHECK(s2(0, 0) == 6);
+            CHECK(s2(0, 1) == 7);
+            CHECK(s2(0, 2) == 8);
+            CHECK(s2(0, 3) == 9);
+
+
+        }
+    }
+    */
 
 }
 

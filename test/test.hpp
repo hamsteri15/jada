@@ -1,10 +1,23 @@
 #pragma once
+#include <vector>
+#include <iostream>
 
 template<class T>
 using vector_t = std::vector<T>;
 
 
-
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {
+    os << "[";
+    if (!vec.empty()) {
+        os << vec[0];
+        for (size_t i = 1; i < vec.size(); ++i) {
+            os << ", " << vec[i];
+        }
+    }
+    os << "]";
+    return os;
+}
 
 namespace jada {
 
