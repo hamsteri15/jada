@@ -304,6 +304,13 @@ TEST_CASE("extents"){
         REQUIRE_NOTHROW(extents<2>{4,4});
         REQUIRE_NOTHROW(extents<3>{4,4,0});
 
+    }
+
+    SECTION("assignment"){
+
+        extents<2> e1{10, 11};
+        extents<2> e2;
+        REQUIRE_NOTHROW(e1 = e2);
 
     }
 
@@ -437,7 +444,6 @@ TEST_CASE("mdspan tests"){
         //auto c = a + b;
 
     }
-
 
     SECTION("make_span"){
 

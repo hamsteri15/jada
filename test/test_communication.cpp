@@ -451,7 +451,7 @@ TEST_CASE("reduce"){
 
 TEST_CASE("mpi functions"){
 
-    
+
     SECTION("sum_reduce"){
         int data = 1;
 
@@ -463,10 +463,10 @@ TEST_CASE("mpi functions"){
         if (mpi::get_world_rank() == root){
             CHECK(recv == data * mpi::world_size());
         }
-        
+
     }
-    
-    
+
+
     SECTION("all_sum_reduce 1"){
         int data = 1;
 
@@ -474,7 +474,7 @@ TEST_CASE("mpi functions"){
 
         CHECK(recv == data * mpi::world_size());
     }
-    
+
     SECTION("all_sum_reduce 1"){
         std::vector<int> data = {1};
 
@@ -483,19 +483,19 @@ TEST_CASE("mpi functions"){
         CHECK(recv == size_t(mpi::world_size()));
     }
 
-    
+
 
 
 }
 
 TEST_CASE("all_gather"){
 
-    
-    
+
+
 
     SECTION("Single element test"){
 
-        
+
         std::vector<int> local = {mpi::get_world_rank()};
 
         auto global = all_gather(local);
@@ -508,11 +508,11 @@ TEST_CASE("all_gather"){
         }
 
         CHECK(global == correct);
-        
+
     }
     SECTION("Two element test"){
 
-        
+
         std::vector<int> local(2, mpi::get_world_rank());
 
         auto global = all_gather(local);
@@ -526,15 +526,15 @@ TEST_CASE("all_gather"){
             j++;
         }
 
-        
+
 
         CHECK(global == correct);
-        
+
     }
 
     SECTION("Variable local element count test"){
 
-        
+
         std::vector<int> local(size_t(mpi::get_world_rank()));
 
         for (auto& e : local){
@@ -551,14 +551,14 @@ TEST_CASE("all_gather"){
         }
 
         CHECK(global == correct);
-        
+
     }
 
 }
 
 
 struct DistributedTestData{
-    
+
     static constexpr size_t nboxes = 3;
     static constexpr index_type ni = index_type(nboxes) * 1 + 1;
     static constexpr index_type nj = 3;
@@ -639,24 +639,24 @@ TEST_CASE("Test DistributedArray")
 {
 
 
-    
+
     SECTION("local_element_count/local_capacity"){
         auto arr = make_test_array(true);
-        
+
         CHECK(local_element_count(arr) == arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size);
         CHECK(local_capacity(arr) == arr.local_subdomain_count() * DistributedTestData::padded_subspan_size);
-        
+
     }
 
 
-    
+
     SECTION("make_subspans"){
 
         SECTION("unpadded"){
             auto arr = make_test_array(false);
 
             for (auto s : make_subspans(arr)){
-                
+
                 for (index_type i = 0; i < 4; ++i){
                     CHECK(s(0, i) == mpi::get_world_rank() + 1);
                 }
@@ -667,48 +667,170 @@ TEST_CASE("Test DistributedArray")
             auto arr = make_test_array(true);
 
             for (auto s : make_subspans(arr)){
-                
+
                 for (index_type i = 0; i < 4; ++i){
                     CHECK(s(0, i) == mpi::get_world_rank() + 1);
                 }
             }
         }
+        SECTION("bug 1"){
+
+
+            index_type ny = 3;
+            index_type nx = 4;
+
+            Box<2> domain({0,0}, {ny, nx});
+
+            auto topo = decompose(domain, mpi::world_size(), {false, false});
+            std::vector<int> data(flat_size(domain.get_extent()));
+
+
+
+            std::array<index_type, 2> bpad{};
+            std::array<index_type, 2> epad{};
+            DistributedArray<2, int> arr(mpi::get_world_rank(), topo, bpad, epad);
+
+
+            auto subspans = make_subspans(arr);
+
+
+            for (auto span : subspans){
+                for_each(span, [](auto& e){ e = 1; });
+                print(span);
+            }
+
+
+
+            //print(span);
+
+
+        }
 
     }
-    
 
 
-    
+
+
     SECTION("serialize_local"){
 
         SECTION("without padding"){
             auto arr = make_test_array(false);
             auto serial = serialize_local(arr);
-                    
+
             size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
             std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
-            
+
             CHECK(serial == correct);
         }
         SECTION("with padding"){
             auto arr = make_test_array(true);
             auto serial = serialize_local(arr);
-                    
+
             size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
             std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
-            
+
             CHECK(serial == correct);
         }
-        
+
 
     }
-    
 
 
-    
-    
+    SECTION("distribute"){
+
+        index_type ny = 3;
+        index_type nx = 4;
+
+        Box<2> domain({0,0}, {ny, nx});
+
+
+        auto topo = decompose(domain, mpi::world_size(), {false, false});
+
+        std::vector<int> data(flat_size(domain.get_extent()));
+
+
+        auto subspans = make_subspans(data, topo, mpi::get_world_rank());
+
+        for (auto span : subspans){
+
+            for_each(span, [](auto& e){e = mpi::get_world_rank() + 1;});
+
+        }
+
+        std::array<index_type, 2> bpad{};
+        std::array<index_type, 2> epad{};
+        auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
+
+
+        if (mpi::world_size() == 1){
+
+            std::vector<int> correct = {1, 1, 1, 1,
+                                        1, 1, 1, 1,
+                                        1, 1, 1, 1};
+
+            CHECK(serialize_local(arr) == correct);
+
+        }
+        if (mpi::world_size() == 2){
+
+            if (mpi::get_world_rank() == 0){
+
+                std::vector<int> correct = {1, 1,
+                                            1, 1,
+                                            1, 1};
+
+                CHECK(serialize_local(arr) == correct);
+            }
+
+            if (mpi::get_world_rank() == 1){
+
+                std::vector<int> correct = {2, 2,
+                                            2, 2,
+                                            2, 2};
+            }
+
+        }
+
+        if (mpi::world_size() == 3){
+
+            if (mpi::get_world_rank() == 0){
+
+                std::vector<int> correct = {1,
+                                            1,
+                                            1};
+
+                CHECK(serialize_local(arr) == correct);
+            }
+            if (mpi::get_world_rank() == 1){
+
+                std::vector<int> correct = {2,
+                                            2,
+                                            2};
+
+                CHECK(serialize_local(arr) == correct);
+            }
+
+            if (mpi::get_world_rank() == 2){
+
+                std::vector<int> correct = {3, 3,
+                                            3, 3,
+                                            3, 3};
+
+                CHECK(serialize_local(arr) == correct);
+            }
+
+        }
+
+
+
+
+    }
+
+
+
+
     /*
-    
+
     SECTION("Unpadded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{};
         auto epad = std::array<index_type ,2>{};
@@ -726,7 +848,7 @@ TEST_CASE("Test DistributedArray")
         );
 
     }
-    
+
 
     SECTION("Padded distribute/reduce"){
         auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
@@ -746,11 +868,11 @@ TEST_CASE("Test DistributedArray")
 
     }
     */
-    
+
     /*
     SECTION("distribute"){
 
-        
+
         auto make_test_array(true);
 
         std::vector<int> global = {1,  2,  3,  4,
@@ -758,20 +880,20 @@ TEST_CASE("Test DistributedArray")
                                    10, 11, 12, 13};
 
         auto dist = distribute(global, topo, mpi::get_world_rank(), bpad, epad);
-    
-    
+
+
         if (mpi::get_world_rank() == 0){
 
             auto spans = make_subspans(dist);
             auto s1 = spans[0];
-            
+
             CHECK(s1(0, 0) == 1);
             CHECK(s1(0, 1) == 2);
             CHECK(s1(0, 2) == 3);
             CHECK(s1(0, 3) == 4);
 
             auto s2 = spans[1];
-            
+
             CHECK(s2(0, 0) == 6);
             CHECK(s2(0, 1) == 7);
             CHECK(s2(0, 2) == 8);

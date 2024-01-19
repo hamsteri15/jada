@@ -1725,13 +1725,13 @@ struct __no_unique_address_emulation<
                 // If the type isn't trivially destructible, its destructor
                 // won't be called at the right time, so don't use this
                 // specialization
-                _MDSPAN_TRAIT(is_trivially_destructible, _T)>> : 
+                _MDSPAN_TRAIT(is_trivially_destructible, _T)>> :
 #ifdef _MDSPAN_COMPILER_MSVC
     // MSVC doesn't allow you to access public static member functions of a type
     // when you *happen* to privately inherit from that type.
     protected
 #else
-    // But we still want this to be private if possible so that we don't accidentally 
+    // But we still want this to be private if possible so that we don't accidentally
     // access members of _T directly rather than calling __ref() first, which wouldn't
     // work if _T happens to be stateful and thus we're using the unspecialized definition
     // of __no_unique_address_emulation above.
@@ -3613,7 +3613,7 @@ struct __extents_to_partially_static_sizes;
 template <class IndexType, size_t... ExtentsPack>
 struct __extents_to_partially_static_sizes<::std::experimental::extents<IndexType, ExtentsPack...>> {
   using type = detail::__partially_static_sizes<
-          typename ::std::experimental::extents<IndexType, ExtentsPack...>::index_type, size_t, 
+          typename ::std::experimental::extents<IndexType, ExtentsPack...>::index_type, size_t,
           ExtentsPack...>;
 };
 
@@ -4286,6 +4286,7 @@ class layout_right::mapping {
         * TODO: check precondition
         * other.required_span_size() is a representable value of type index_type
         */
+
        #ifndef __CUDA_ARCH__
        size_t stride = 1;
        for(rank_type r=__extents.rank(); r>0; r--) {
@@ -4294,6 +4295,7 @@ class layout_right::mapping {
          stride *= __extents.extent(r-1);
        }
        #endif
+
     }
 
     MDSPAN_INLINE_FUNCTION_DEFAULTED _MDSPAN_CONSTEXPR_14_DEFAULTED mapping& operator=(mapping const&) noexcept = default;

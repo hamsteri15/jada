@@ -33,11 +33,10 @@ template <class Container>
 static inline Container all_gather(const Container& local_data,
                                    MPI_Comm communicator = MPI_COMM_WORLD) {
 
-    int rank = mpi::get_rank(communicator);
-    int size = mpi::comm_size(communicator);
+    size_t size = size_t(mpi::comm_size(communicator));
 
     // Determine the size of data on each process
-    int              localSize = local_data.size();
+    size_t              localSize = local_data.size();
     std::vector<int> recvCounts(size);
 
     // Calculate the total size of data on all processes
@@ -46,7 +45,7 @@ static inline Container all_gather(const Container& local_data,
 
     // Determine displacements for the gathered data
     std::vector<int> displacements(size, 0);
-    for (int i = 1; i < size; ++i) {
+    for (size_t i = 1; i < size; ++i) {
         displacements[i] = displacements[i - 1] + recvCounts[i - 1];
     }
 
@@ -57,7 +56,7 @@ static inline Container all_gather(const Container& local_data,
 
     // Use MPI_Allgatherv to send the gathered data to all processes
     mpi::all_gatherv(local_data.data(),
-                     localSize,
+                     int(localSize),
                      temp(),
                      global_data.data(),
                      recvCounts.data(),

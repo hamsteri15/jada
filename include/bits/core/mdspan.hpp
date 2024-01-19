@@ -61,4 +61,8 @@ static constexpr auto make_span(const Container& c, Dims dims) {
     return span<value_type, rank(ext)>(std::data(c), ext);
 }
 
+
+
+
+
 } // namespace jada

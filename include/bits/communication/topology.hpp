@@ -251,6 +251,36 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
 
     os << "Domain: " << topo.m_domain << std::endl;
     for (auto e : topo.get_boxes()) { os << e << std::endl; }
+
+    os << "Topology: " << std::endl;
+    if constexpr (L < 3) {
+
+        std::vector<int> v(flat_size(topo.get_domain().get_extent()), 0);
+
+        auto span  = make_span(v, topo.get_domain().get_extent());
+        auto boxes = topo.get_boxes();
+
+        for (auto box : boxes) {
+            auto subspan = make_subspan(span, box.box.m_begin, box.box.m_end);
+            for_each(subspan, [=](auto& e) { e = box.rank; });
+        }
+
+        if constexpr (rank(span) == 1) {
+            for (size_t i = 0; i < span.extent(0); ++i) {
+                os << span(i) << " ";
+            }
+            os << std::endl;
+        }
+        else if constexpr (rank(span) == 2) {
+            for (size_t i = 0; i < span.extent(0); ++i) {
+                for (size_t j = 0; j < span.extent(1); ++j) {
+                    os << span(i, j) << " ";
+                }
+                os << std::endl;
+            }
+        }
+    }
+
     return os;
 }
 

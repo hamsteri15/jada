@@ -30,7 +30,7 @@ template <size_t Dir, class Span> void set_linear(Span s) {
         e  = T(ii);
     };
     for_each_indexed(s, op);
-        
+
 }
 struct simpleDiff{
     static constexpr size_t begin_padding = 1;
