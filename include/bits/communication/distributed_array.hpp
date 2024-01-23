@@ -83,6 +83,19 @@ static inline size_t local_element_count(const DistributedArray<N, T>& array) {
 }
 
 ///
+///@brief Returns the global element count (without padding) of the input
+/// distributed array.
+///
+///@param array The input array to query the global element count from.
+///@return size_t The global element count without padding.
+///
+template <size_t N, class T>
+static inline size_t global_element_count(const DistributedArray<N, T>& array) {
+
+    return flat_size(array.topology().get_domain().get_extent());
+}
+
+///
 ///@brief Returns the local capacity (with padding) held by the input array
 /// distributed array.
 ///
@@ -313,4 +326,35 @@ array) {
     // return global;
 }
 */
+
+template <class ExecutionPolicy, size_t N, class T, class UnaryFunction>
+static void for_each(ExecutionPolicy&&       policy,
+                     DistributedArray<N, T>& arr,
+                     UnaryFunction           f) {
+
+    for (auto span : make_subspans(arr)) { for_each(policy, span, f); }
+}
+
+template <class ExecutionPolicy, size_t N, class T, class BinaryIndexFunction>
+static void for_each_indexed(ExecutionPolicy&&       policy,
+                             DistributedArray<N, T>& arr,
+                             BinaryIndexFunction     f) {
+
+    auto boxes = arr.local_boxes();
+    auto subspans = make_subspans(arr);
+    for (size_t i = 0; i < subspans.size(); ++i){
+        auto offset = boxes[i].box.m_begin;
+        auto span = subspans[i];
+
+        auto F = [=](auto md_idx){
+            auto copy = md_idx;
+            std::get<0>(copy) += std::get<0>(offset);
+            std::get<1>(copy) += std::get<1>(offset);
+            f(copy, span(md_idx));
+        };
+        detail::md_for_each(policy, all_indices(span), F);
+    }
+    
+}
+
 } // namespace jada

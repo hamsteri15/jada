@@ -865,6 +865,57 @@ TEST_CASE("Test DistributedArray")
     }
     */
     
+
+    SECTION("algorithms"){
+
+        index_type nj = 2;
+        index_type ni = 3;
+
+        std::array<index_type, 2> bpad{1,0};
+        std::array<index_type, 2> epad{4,2};
+
+        Box<2> domain({0,0}, {nj, ni});
+        auto topo = decompose(domain, mpi::world_size(), {false, false});
+        
+        const std::vector<int> org_data(size_t(nj * ni), 0);
+
+
+        SECTION("for_each"){
+            auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+            size_t n = global_element_count(arr);
+            auto op = [](auto& e){e = 43;};
+            for_each(std::execution::par_unseq, arr, op);
+
+            CHECK
+            (
+                to_vector(arr) == std::vector<int>(n, 43)
+            );
+
+        }
+        SECTION("for_each_indexed"){
+
+            auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+            auto op = [](auto idx, int& v){
+                auto j = std::get<0>(idx);
+                auto i = std::get<1>(idx);
+                v = int(i + j);
+            };
+
+            for_each_indexed(std::execution::par_unseq, arr, op);
+
+            std::vector<int> correct =
+            {
+                0,1,2,
+                1,2,3
+            };
+
+            CHECK(to_vector(arr) == correct);
+
+        }
+
+   }
+
     
 
 }
