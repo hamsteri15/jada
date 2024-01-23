@@ -1,8 +1,10 @@
 #pragma once
 
 #include "channel.hpp"
+#include "gather.hpp"
 #include "include/bits/algorithms/algorithms.hpp"
 #include "topology.hpp"
+
 namespace jada {
 
 template <size_t N, class T> struct DistributedArray {
@@ -173,7 +175,7 @@ serialize_local(const DistributedArray<N, T>& array) {
 
     auto spans = make_subspans(array);
 
-    //Offsets in the output array where to begin writing
+    // Offsets in the output array where to begin writing
     std::vector<size_t> offsets = [&]() {
         std::vector<size_t> ret(array.local_subdomain_count());
         ret[0] = 0;
@@ -197,6 +199,22 @@ serialize_local(const DistributedArray<N, T>& array) {
     return ret;
 }
 
+///
+///@brief Given an stl-like container of data, creates a distributed array
+/// slicing the local portions of the input container based on the input
+/// topology and rank.
+///
+///@param data An stl-like contiguous container from which the local portion is
+/// sliced.
+///@param topo The topology describing the distribution of the data.
+///@param rank The rank which data is put into the local data of the returned
+/// distributed array.
+///@param begin_padding Padding used for the beginning parts of the local
+/// subportions.
+///@param end_padding Padding used for the end parts of the local subportions.
+///@return DistributedArray of rank N and with same element type as the input
+/// data.
+///
 template <size_t N, class Data>
 auto distribute(const Data&               data,
                 const Topology<N>&        topo,
@@ -218,21 +236,81 @@ auto distribute(const Data&               data,
     return ret;
 }
 
-template <size_t N, class T> auto reduce(const DistributedArray<N, T>& array) {
+///
+///@brief Converts the input distributed array to an std::vector of same element
+/// type by first gathering the possibly distributed data from all processes to
+/// all processes. Preserves the topology of the input distributed array in the
+/// returned vector.
+///
+///@param array The input array to convert to an std::vector.
+///@return std::vector<T> A flat vector of global size of the distributed array
+/// where the subportion data is gathered from all caller processes. Each caller
+/// process gets the same data.
+///
+template <size_t N, class T>
+std::vector<T> to_vector(const DistributedArray<N, T>& array) {
 
-    auto global_dims = array.topology().get_domain().get_extent();
+    auto data = all_gather(serialize_local(array));
 
-    std::vector<T> ret(flat_size(global_dims));
+    std::vector<T> global(data.size());
 
-    auto data_spans = make_subspans(ret, array.topology(), array.get_rank());
+    std::vector<size_t> sizes;
+    sizes.reserve(array.global_subdomain_count());
 
-    auto d_array_spans = make_subspans(array);
+    for (int rank = 0; rank <= array.topology().get_max_rank(); ++rank) {
 
-    for (size_t i = 0; i < data_spans.size(); ++i) {
-        transform(d_array_spans[i], data_spans[i], [](auto r) { return r; });
+        auto boxes = array.topology().get_boxes(rank);
+        for (auto box : boxes) {
+            size_t size = flat_size(box.box.get_extent());
+            sizes.emplace_back(size);
+        }
     }
 
-    return ret;
+    std::vector<index_type> offsets(sizes.size(), 0);
+    for (size_t i = 1; i < offsets.size(); ++i) {
+        offsets[i] = offsets[i - 1] + sizes[i - 1];
+    }
+
+    auto bigspan =
+        make_span(global, array.topology().get_domain().get_extent());
+
+    size_t j = 0;
+    for (int rank = 0; rank <= array.topology().get_max_rank(); ++rank) {
+
+        auto boxes = array.topology().get_boxes(rank);
+        for (auto box : boxes) {
+
+            auto o_span = make_subspan(bigspan, box.box.m_begin, box.box.m_end);
+            T*   begin  = data.data() + offsets[j];
+            span<T, N> i_span(begin, box.box.get_extent());
+            transform(i_span, o_span, [](auto e) { return e; });
+            box.rank = array.get_rank();
+            ++j;
+        }
+    }
+
+    return global;
 }
 
+/*
+//TODO: This should return a Distributed array with all subportions converted to
+local subportions. For some reason the topology information is not correctly
+handled. template <size_t N, class T> auto reduce(const DistributedArray<N, T>&
+array) {
+
+    auto data = to_vector(array);
+
+    auto new_topology = array.topology();
+
+    for (auto& box : new_topology.get_boxes()) { box.rank = array.get_rank(); }
+
+    return distribute(data,
+                      new_topology,
+                      array.get_rank(),
+                      array.begin_padding(),
+                      array.end_padding());
+
+    // return global;
+}
+*/
 } // namespace jada

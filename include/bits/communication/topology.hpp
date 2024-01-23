@@ -26,6 +26,11 @@ public:
     const auto& get_domain() const { return m_domain; }
 
     const auto& get_boxes() const { return m_boxes; }
+    auto& get_boxes() { return m_boxes; }
+    
+    const auto& get_periods() const {return m_periodic;}
+
+    
 
     auto get_boxes(int rank) const {
 
@@ -36,6 +41,17 @@ public:
         }
 
         return ret;
+    }
+
+    int get_max_rank() const {
+        int max = 0;
+        for (const auto& box : m_boxes){
+            if (box.rank > max){
+                max = box.rank;
+            }
+            //max = std::max(box.rank, max);
+        }
+        return max;
     }
 
     /// @brief Checks that the topology is valid

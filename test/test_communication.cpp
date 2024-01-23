@@ -744,10 +744,7 @@ TEST_CASE("Test DistributedArray")
 
         std::vector<int> data(flat_size(domain.get_extent()));
 
-
-        auto subspans = make_subspans(data, topo, mpi::get_world_rank());
-
-        for (auto span : subspans){
+        for (auto span : make_subspans(data, topo, mpi::get_world_rank())){
 
             for_each(span, [](auto& e){e = mpi::get_world_rank() + 1;});
 
@@ -816,84 +813,59 @@ TEST_CASE("Test DistributedArray")
             }
 
         }
+    }
+
+    SECTION("to_vector"){
+
+        index_type ny = 3;
+        index_type nx = 4;
+
+        std::array<index_type, 2> bpad{1,0};
+        std::array<index_type, 2> epad{4,2};
+
+        Box<2> domain({0,0}, {ny, nx});
+        auto topo = decompose(domain, mpi::world_size(), {false, false});
+
+        std::vector<int> data(flat_size(domain.get_extent()));
         
+        std::iota(data.begin(), data.end(), 1);
 
+        auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
+
+        
+        CHECK(to_vector(arr) == data);        
+        
     }
+
+    /*
+    SECTION("reduce"){
+
+        index_type ny = 3;
+        index_type nx = 4;
+
+        std::array<index_type, 2> bpad{1,0};
+        std::array<index_type, 2> epad{4,2};
+
+        Box<2> domain({0,0}, {ny, nx});
+        auto topo = decompose(domain, mpi::world_size(), {false, false});
+
+        std::vector<int> data(flat_size(domain.get_extent()));
+
+        std::iota(data.begin(), data.end(), 1);
     
-    /*
+        auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
+        auto reduced = reduce(arr);
 
-    SECTION("Unpadded distribute/reduce"){
-        auto bpad = std::array<index_type ,2>{};
-        auto epad = std::array<index_type ,2>{};
-        Topology topo(domain, boxes, {false, false});
+        std::cout << std::endl << reduced.topology() << std::endl;
 
-        std::vector<int> global_data(flat_size(domain.get_extent()));
-        std::iota(global_data.begin(), global_data.end(), 0);
+        CAPTURE(mpi::get_world_rank());
 
-
-        auto darray = distribute(global_data, topo, mpi::get_world_rank(), bpad, epad);
-
-        CHECK
-        (
-            global_data == reduce(darray)
-        );
-
-    }
-
-
-    SECTION("Padded distribute/reduce"){
-        auto bpad = std::array<index_type ,2>{}; bpad.fill(1);
-        auto epad = std::array<index_type ,2>{}; epad.fill(1);
-        Topology topo(domain, boxes, {false, false});
-
-        std::vector<int> global_data(flat_size(domain.get_extent()));
-        std::iota(global_data.begin(), global_data.end(), 0);
-
-
-        auto darray = distribute(global_data, topo, mpi::get_world_rank(), bpad, epad);
-
-        CHECK
-        (
-            global_data == reduce(darray)
-        );
-
+        CHECK(serialize_local(reduced) == data);        
+        
     }
     */
-
-    /*
-    SECTION("distribute"){
-
-
-        auto make_test_array(true);
-
-        std::vector<int> global = {1,  2,  3,  4,
-                                   6,  7,  8,  9,
-                                   10, 11, 12, 13};
-
-        auto dist = distribute(global, topo, mpi::get_world_rank(), bpad, epad);
-
-
-        if (mpi::get_world_rank() == 0){
-
-            auto spans = make_subspans(dist);
-            auto s1 = spans[0];
-
-            CHECK(s1(0, 0) == 1);
-            CHECK(s1(0, 1) == 2);
-            CHECK(s1(0, 2) == 3);
-            CHECK(s1(0, 3) == 4);
-
-            auto s2 = spans[1];
-
-            CHECK(s2(0, 0) == 6);
-            CHECK(s2(0, 1) == 7);
-            CHECK(s2(0, 2) == 8);
-            CHECK(s2(0, 3) == 9);
-
-
-        }
-    }
-    */
+    
+    
 
 }
 
