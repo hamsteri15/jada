@@ -534,7 +534,6 @@ TEST_CASE("mdspan tests"){
         //span(t) = 21;
 
     }
-
 }
 
 TEST_CASE("algorithms"){

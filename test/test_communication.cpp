@@ -320,29 +320,57 @@ TEST_CASE("Test topology") {
 
     SECTION("make_subspans"){
 
-        Box<1> domain({0}, {10});
-        Box<1> b0({0}, {3});
-        Box<1> b1({3}, {6});
-        Box<1> b2({6}, {10});
+        SECTION("Test 1"){
+            Box<1> domain({0}, {10});
+            Box<1> b0({0}, {3});
+            Box<1> b1({3}, {6});
+            Box<1> b2({6}, {10});
 
-        std::vector<BoxRankPair<1>> boxes{BoxRankPair{.box = b0, .rank = 0},
-                                        BoxRankPair{.box = b1, .rank = 0},
-                                        BoxRankPair{.box = b2, .rank = 0}};
-        auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
-        auto epad = std::array<index_type ,1>{}; epad.fill(1);
-        Topology topo(domain, boxes, {false});
+            std::vector<BoxRankPair<1>> boxes{BoxRankPair{.box = b0, .rank = 0},
+                                            BoxRankPair{.box = b1, .rank = 0},
+                                            BoxRankPair{.box = b2, .rank = 0}};
+            auto bpad = std::array<index_type ,1>{}; bpad.fill(1);
+            auto epad = std::array<index_type ,1>{}; epad.fill(1);
+            Topology topo(domain, boxes, {false});
 
-        std::vector<int> data(10);
-        std::iota(data.begin(), data.end(), 0);
+            std::vector<int> data(10);
+            std::iota(data.begin(), data.end(), 0);
 
-        CHECK(make_subspans(data, topo, 32).size() == 0);
+            CHECK(make_subspans(data, topo, 32).size() == 0);
 
-        auto spans = make_subspans(data, topo, 0);
+            auto spans = make_subspans(data, topo, 0);
 
-        CHECK(spans[0](0) == 0);
-        CHECK(spans[0](1) == 1);
-        CHECK(spans[1](0) == 3);
-        CHECK(spans[1](1) == 4);
+            CHECK(spans[0](0) == 0);
+            CHECK(spans[0](1) == 1);
+            CHECK(spans[1](0) == 3);
+            CHECK(spans[1](1) == 4);
+        }
+
+        
+
+
+        SECTION("bug 1"){
+
+
+            index_type ny = 3;
+            index_type nx = 4;
+
+            Box<2> domain({0,0}, {ny, nx});
+            
+            std::vector<int> data(flat_size(domain.get_extent()));
+            
+            for (int world_size = 1; world_size < 4; ++world_size){
+                
+                auto topo = decompose(domain, world_size, {false, false});
+                
+                for (int rank = 0; rank < world_size; ++rank){
+                    REQUIRE_NOTHROW(make_subspans(data, topo, rank));
+                }
+
+            }
+
+            
+        }
 
 
 
@@ -673,43 +701,11 @@ TEST_CASE("Test DistributedArray")
                 }
             }
         }
-        SECTION("bug 1"){
-
-
-            index_type ny = 3;
-            index_type nx = 4;
-
-            Box<2> domain({0,0}, {ny, nx});
-
-            auto topo = decompose(domain, mpi::world_size(), {false, false});
-            std::vector<int> data(flat_size(domain.get_extent()));
-
-
-
-            std::array<index_type, 2> bpad{};
-            std::array<index_type, 2> epad{};
-            DistributedArray<2, int> arr(mpi::get_world_rank(), topo, bpad, epad);
-
-
-            auto subspans = make_subspans(arr);
-
-
-            for (auto span : subspans){
-                for_each(span, [](auto& e){ e = 1; });
-                print(span);
-            }
-
-
-
-            //print(span);
-
-
-        }
-
+        
     }
 
 
-
+    
 
     SECTION("serialize_local"){
 
@@ -734,10 +730,10 @@ TEST_CASE("Test DistributedArray")
 
 
     }
-
+    
 
     SECTION("distribute"){
-
+        
         index_type ny = 3;
         index_type nx = 4;
 
@@ -757,11 +753,11 @@ TEST_CASE("Test DistributedArray")
 
         }
 
-        std::array<index_type, 2> bpad{};
-        std::array<index_type, 2> epad{};
+        std::array<index_type, 2> bpad{1,1};
+        std::array<index_type, 2> epad{2,3};
         auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
 
-
+        
         if (mpi::world_size() == 1){
 
             std::vector<int> correct = {1, 1, 1, 1,
@@ -820,15 +816,10 @@ TEST_CASE("Test DistributedArray")
             }
 
         }
-
-
-
+        
 
     }
-
-
-
-
+    
     /*
 
     SECTION("Unpadded distribute/reduce"){

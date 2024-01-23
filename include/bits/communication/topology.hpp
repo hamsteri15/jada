@@ -270,8 +270,7 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
                 os << span(i) << " ";
             }
             os << std::endl;
-        }
-        else if constexpr (rank(span) == 2) {
+        } else if constexpr (rank(span) == 2) {
             for (size_t i = 0; i < span.extent(0); ++i) {
                 for (size_t j = 0; j < span.extent(1); ++j) {
                     os << span(i, j) << " ";
@@ -285,11 +284,11 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
 }
 
 template <size_t N, class Data>
-auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
+auto make_subspans(Data& data, const Topology<N>& topo, int rank) {
 
-    using T = const typename Data::value_type;
-
-    std::vector<span<T, N>> ret;
+    using T      = typename Data::value_type;
+    using span_t = span_base<T, N, stdex::layout_stride>;
+    std::vector<span_t> ret;
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
@@ -299,11 +298,11 @@ auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
 }
 
 template <size_t N, class Data>
-auto make_subspans(Data& data, const Topology<N>& topo, int rank) {
+auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
 
-    using T = typename Data::value_type;
-
-    std::vector<span<T, N>> ret;
+    using T      = typename Data::value_type;
+    using span_t = span_base<const T, N, stdex::layout_stride>;
+    std::vector<span_t> ret;
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
