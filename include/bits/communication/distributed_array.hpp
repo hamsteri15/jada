@@ -2,8 +2,9 @@
 
 #include "channel.hpp"
 #include "gather.hpp"
-#include "include/bits/algorithms/algorithms.hpp"
+#include "include/bits/core/tuple_extensions.hpp"
 #include "topology.hpp"
+#include "include/bits/algorithms/algorithms.hpp"
 
 namespace jada {
 
@@ -347,9 +348,7 @@ static void for_each_indexed(ExecutionPolicy&&       policy,
         auto span = subspans[i];
 
         auto F = [=](auto md_idx){
-            auto copy = md_idx;
-            std::get<0>(copy) += std::get<0>(offset);
-            std::get<1>(copy) += std::get<1>(offset);
+            const auto copy = elementwise_add(md_idx, offset);
             f(copy, span(md_idx));
         };
         detail::md_for_each(policy, all_indices(span), F);

@@ -51,4 +51,19 @@ template <typename tuple_t> constexpr auto tuple_to_array(tuple_t&& tuple) {
     return std::apply(get_array, std::forward<tuple_t>(tuple));
 }
 
+namespace detail{
+
+
+template<typename... Ts, size_t... Is>
+auto tuple_add(const std::tuple<Ts...>& tuple1, const std::tuple<Ts...>& tuple2, std::index_sequence<Is...>) {
+    return std::make_tuple((std::get<Is>(tuple1) + std::get<Is>(tuple2))...);
+}
+}
+
+template<typename... Ts>
+auto tuple_add(const std::tuple<Ts...>& tuple1, const std::tuple<Ts...>& tuple2) {
+    return detail::tuple_add(tuple1, tuple2, std::index_sequence_for<Ts...>{});
+}
+
+
 } // namespace jada

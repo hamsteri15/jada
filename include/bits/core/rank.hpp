@@ -36,6 +36,8 @@ public:
     static constexpr size_t value = 2;
 };
 
+
+
 /*
 template <class... Idx> struct Rank<ranges::common_tuple<Idx...>> {
 
