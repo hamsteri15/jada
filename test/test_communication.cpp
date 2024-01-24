@@ -913,8 +913,68 @@ TEST_CASE("Test DistributedArray")
             CHECK(to_vector(arr) == correct);
 
         }
+        
 
    }
+
+
+    SECTION("tile_transform"){
+
+        index_type ni = 4;
+        index_type nj = 3;
+
+        std::array<index_type, 2> bpad{1,1};
+        std::array<index_type, 2> epad{1,1};
+
+        std::vector<int> a(size_t(ni*nj), 0);
+        std::vector<int> b(size_t(ni*nj), 0);
+
+        Box<2> domain({0,0}, {nj, ni});
+        auto topo = decompose(domain, mpi::world_size(), {true, true});
+
+        auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+        auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
+
+        auto op = [](auto f) {
+            return f(-1) + f(1);
+        };
+
+        
+        for (auto& data : arr_a.local_data()){
+            std::fill(data.begin(), data.end(), 1);
+        }
+        for (auto& data : arr_b.local_data()){
+            std::fill(data.begin(), data.end(), -1);
+        }
+        
+        
+        //mpi::wait();
+
+        tile_transform<0>(std::execution::par_unseq, arr_a, arr_b, op);
+
+        mpi::wait();
+
+        std::vector<int> correct1 = 
+        {
+            2,2,2,2,
+            2,2,2,2,
+            2,2,2,2
+        };
+
+    
+        CHECK(to_vector(arr_b) == correct1);
+
+        for (auto& data : arr_b.local_data()){
+            std::fill(data.begin(), data.end(), -3);
+        }
+
+
+
+        tile_transform<1>(std::execution::par_unseq, arr_a, arr_b, op);
+
+        CHECK(to_vector(arr_b) == correct1);
+
+    }
 
     
 

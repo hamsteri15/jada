@@ -2,9 +2,9 @@
 
 #include "channel.hpp"
 #include "gather.hpp"
+#include "include/bits/algorithms/algorithms.hpp"
 #include "include/bits/core/tuple_extensions.hpp"
 #include "topology.hpp"
-#include "include/bits/algorithms/algorithms.hpp"
 
 namespace jada {
 
@@ -341,19 +341,43 @@ static void for_each_indexed(ExecutionPolicy&&       policy,
                              DistributedArray<N, T>& arr,
                              BinaryIndexFunction     f) {
 
-    auto boxes = arr.local_boxes();
+    auto boxes    = arr.local_boxes();
     auto subspans = make_subspans(arr);
-    for (size_t i = 0; i < subspans.size(); ++i){
+    for (size_t i = 0; i < subspans.size(); ++i) {
         auto offset = boxes[i].box.m_begin;
-        auto span = subspans[i];
+        auto span   = subspans[i];
 
-        auto F = [=](auto md_idx){
+        auto F = [=](auto md_idx) {
             const auto copy = elementwise_add(md_idx, offset);
             f(copy, span(md_idx));
         };
         detail::md_for_each(policy, all_indices(span), F);
     }
-    
+}
+
+template <size_t Dir,
+          class ExecutionPolicy,
+          size_t N,
+          class ET1,
+          class ET2,
+          class UnaryTileFunction>
+static void tile_transform(ExecutionPolicy&&               policy,
+                           const DistributedArray<N, ET1>& input,
+                           DistributedArray<N, ET2>&       output,
+                           UnaryTileFunction               f) {
+
+    auto boxes      = input.local_boxes();
+    auto i_subspans = make_subspans(input);
+    auto o_subspans = make_subspans(output);
+
+    for (size_t i = 0; i < i_subspans.size(); ++i) {
+        auto offset = boxes[i].box.m_begin;
+        auto i_span = i_subspans[i];
+        auto o_span = o_subspans[i];
+
+        tile_transform<Dir>(policy, i_span, o_span, f);
+        
+    }
 }
 
 } // namespace jada
