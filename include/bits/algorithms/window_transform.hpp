@@ -30,7 +30,7 @@ static constexpr void window_transform(ExecutionPolicy&&  policy,
 
 } // namespace detail
 
-/// @brief applies the input unary window function to all elements of the input
+/// @brief Applies the input unary window function to all elements of the input
 /// span and stores the result into the output span. A window accessor has the
 /// same dimensions as the input spans. Executed according to policy (not
 /// necessarily in order).
@@ -55,7 +55,7 @@ static constexpr void window_transform(ExecutionPolicy&&   policy,
     detail::window_transform(policy, i_span, o_span, f, window);
 }
 
-/// @brief applies the input unary window function to all elements of the input
+/// @brief Applies the input unary window function to all elements of the input
 /// span and stores the result into the output span. A window accessor has the
 /// same dimensions as the input spans. Executed in order.
 /// @param i_span the input span.

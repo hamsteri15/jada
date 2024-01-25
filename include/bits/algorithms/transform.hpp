@@ -7,7 +7,7 @@
 
 namespace jada {
 
-/// @brief applies the given function to a range spanned by multiple dimensions
+/// @brief Applies the given function to a range spanned by multiple dimensions
 /// and stores the result in another multidimensional range of same extent,
 /// keeping the original elements order and beginning at the zeroth element of
 /// i_span. Executed according to policy (not necessarily in order).
@@ -34,7 +34,7 @@ static constexpr void transform(ExecutionPolicy&& policy,
     detail::md_for_each(policy, all_indices(i_span), F);
 }
 
-/// @brief applies the given function to a range spanned by multiple dimensions
+/// @brief Applies the given function to a range spanned by multiple dimensions
 /// and stores the result in another multidimensional range of same extent,
 /// keeping the original elements order and beginning at the zeroth element of
 /// i_span. Executed in order.
@@ -49,7 +49,7 @@ transform(InputSpan i_span, OutputSpan o_span, UnaryFunction f) {
     transform(std::execution::seq, i_span, o_span, f);
 }
 
-/// @brief applies the given function f(md_idx, value) to a range spanned by
+/// @brief Applies the given function f(md_idx, value) to a range spanned by
 /// multiple dimensions and stores the result in another multidimensional range
 /// of same extent, keeping the original elements order and beginning at the
 /// zeroth element of i_span. Executed according to policy (not necessarily in
@@ -77,7 +77,7 @@ static constexpr void transform_indexed(ExecutionPolicy&&   policy,
     detail::md_for_each(policy, all_indices(i_span), F);
 }
 
-/// @brief applies the given function f(md_idx, value) to a range spanned by
+/// @brief Applies the given function f(md_idx, value) to a range spanned by
 /// multiple dimensions and stores the result in another multidimensional range
 /// of same extent, keeping the original elements order and beginning at the
 /// zeroth element of i_span. Executed in order.

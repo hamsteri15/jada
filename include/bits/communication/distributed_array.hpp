@@ -191,9 +191,8 @@ serialize_local(const DistributedArray<N, T>& array) {
 
     // Offsets in the output array where to begin writing
     std::vector<size_t> offsets = [&]() {
-        std::vector<size_t> ret(array.local_subdomain_count());
-        ret[0] = 0;
-        for (size_t i = 1; i < array.local_subdomain_count(); ++i) {
+        std::vector<size_t> ret(array.local_subdomain_count(), 0);
+        for (size_t i = 1; i < ret.size(); ++i) {
             ret[i] = ret[i - 1] + spans[i - 1].size();
         }
 
@@ -282,7 +281,7 @@ std::vector<T> to_vector(const DistributedArray<N, T>& array) {
 
     std::vector<index_type> offsets(sizes.size(), 0);
     for (size_t i = 1; i < offsets.size(); ++i) {
-        offsets[i] = offsets[i - 1] + sizes[i - 1];
+        offsets[i] = offsets[i - 1] + index_type(sizes[i - 1]);
     }
 
     auto bigspan =
@@ -328,18 +327,43 @@ array) {
 }
 */
 
+/// @brief Applies the given function object f to every element of the input
+/// array. The algorithm is executed according to policy (not necessarily in order).
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param arr the input array.
+/// @param f function object, to be applied to the result of subspan(md_idx).
 template <class ExecutionPolicy, size_t N, class T, class UnaryFunction>
-static void for_each(ExecutionPolicy&&       policy,
-                     DistributedArray<N, T>& arr,
-                     UnaryFunction           f) {
+static inline void for_each(ExecutionPolicy&&       policy,
+                            DistributedArray<N, T>& arr,
+                            UnaryFunction           f) {
 
     for (auto span : make_subspans(arr)) { for_each(policy, span, f); }
 }
 
+/// @brief Applies the given function object f to every element of the input
+/// array. Executed in order.
+/// @param arr the input array.
+/// @param f function object, to be applied to the result of subspan(md_idx).
+template <size_t N, class T, class UnaryFunction>
+static inline void for_each(DistributedArray<N, T>& arr, UnaryFunction f) {
+
+    for_each(std::execution::seq, arr, f);
+}
+
+/// @brief Applies the given function object f(global_md_idx, value) to the
+/// result of indexing every element of every subspan in the array (not
+/// necessarily in order). Note! The md_idx given to the function object f is
+/// the global index in the array topology. The algorithm is executed according
+/// to policy.
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param arr the input array.
+/// @param f binary function object where the first argument is the current
+/// (global) multidimensional index, to be applied to the result of
+/// subspan(local_md_idx).
 template <class ExecutionPolicy, size_t N, class T, class BinaryIndexFunction>
-static void for_each_indexed(ExecutionPolicy&&       policy,
-                             DistributedArray<N, T>& arr,
-                             BinaryIndexFunction     f) {
+static inline void for_each_indexed(ExecutionPolicy&&       policy,
+                                    DistributedArray<N, T>& arr,
+                                    BinaryIndexFunction     f) {
 
     auto boxes    = arr.local_boxes();
     auto subspans = make_subspans(arr);
@@ -355,29 +379,208 @@ static void for_each_indexed(ExecutionPolicy&&       policy,
     }
 }
 
+/// @brief Applies the given function object f(global_md_idx, value) to the
+/// result of indexing every element of every subspan in the array
+/// Note! The md_idx given to the function object f is the global index in the
+/// array topology. Executed in order.
+/// @param arr the input array.
+/// @param f binary function object where the first argument is the current
+/// (global) multidimensional index, to be applied to the result of
+/// subspan(local_md_idx).
+template <size_t N, class T, class BinaryIndexFunction>
+static inline void for_each_indexed(DistributedArray<N, T>& arr,
+                                    BinaryIndexFunction     f) {
+
+    for_each_indexed(std::execution::seq, arr, f);
+}
+
+/// @brief Applies the given function to every element (not necessarily in
+/// order) of the input distributed array and stores the result in the output
+/// distributed array of same extent. Executed according to policy (not
+/// necessarily in order).
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary function object which should return a type corresponding
+/// to the value_type of the output array.
+template <class ExecutionPolicy,
+          size_t N,
+          class ET1,
+          class ET2,
+          class UnaryFunction>
+static inline void transform(ExecutionPolicy&&               policy,
+                             const DistributedArray<N, ET1>& input,
+                             DistributedArray<N, ET2>&       output,
+                             UnaryFunction                   f) {
+
+    auto i_subspans = make_subspans(input);
+    auto o_subspans = make_subspans(output);
+
+    for (size_t i = 0; i < i_subspans.size(); ++i) {
+        auto i_span = i_subspans[i];
+        auto o_span = o_subspans[i];
+        transform(policy, i_span, o_span, f);
+    }
+}
+
+/// @brief Applies the given function f to every element of the input
+/// distributed array and stores the result in the output distributed array of
+/// same extent. Executed in order.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary function object which should return a type corresponding
+/// to the value_type of the output array.
+template <size_t N, class ET1, class ET2, class UnaryWindowFunction>
+static inline void transform(const DistributedArray<N, ET1>& input,
+                             DistributedArray<N, ET2>&       output,
+                             UnaryWindowFunction             f) {
+
+    transform(std::execution::seq, input, output, f);
+}
+
+/// @brief Applies the given function f(global_md_idx, value) to every element
+/// of the distributed array and stores the result to the output distributed
+/// array of same extent. Note! The md_idx given to the function object f is the
+/// global index in the array topology. Executed according to policy (not
+/// necessarily in order).
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the binary function object which should return a type corresponding
+/// to the value_type of output and take a current multidimensional index as the
+/// first argument.
+template <class ExecutionPolicy,
+          size_t N,
+          class ET1,
+          class ET2,
+          class UnaryWindowFunction>
+static inline void transform_indexed(ExecutionPolicy&&               policy,
+                                     const DistributedArray<N, ET1>& input,
+                                     DistributedArray<N, ET2>&       output,
+                                     UnaryWindowFunction             f) {
+
+    auto       i_subspans = make_subspans(input);
+    auto       o_subspans = make_subspans(output);
+    const auto boxes      = input.local_boxes();
+
+    for (size_t i = 0; i < i_subspans.size(); ++i) {
+        auto i_span = i_subspans[i];
+        auto o_span = o_subspans[i];
+        auto offset = boxes[i].box.m_begin;
+        auto F      = [=](auto md_idx) {
+            o_span(md_idx) = f(elementwise_add(md_idx, offset), i_span(md_idx));
+        };
+
+        detail::md_for_each(policy, all_indices(i_span), F);
+    }
+}
+
+/// @brief Applies the given function f(global_md_idx, value) to every element
+/// of the distributed array and stores the result to the output distributed
+/// array of same extent. Note! The md_idx given to the function object f is the
+/// global index in the array topology. Executed in order.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the binary function object which should return a type corresponding
+/// to the value_type of output and take a current multidimensional index as the
+/// first argument.
+template <size_t N, class ET1, class ET2, class UnaryWindowFunction>
+static inline void transform_indexed(const DistributedArray<N, ET1>& input,
+                                     DistributedArray<N, ET2>&       output,
+                                     UnaryWindowFunction             f) {
+
+    transform_indexed(std::execution::seq, input, output, f);
+}
+
+/// @brief Applies the input unary window function to all elements of the input
+/// array and stores the result into the output array. A window accessor has the
+/// same rank as the distributed arrays. Executed according to policy (not
+/// necessarily in order).
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary window operation. Example: f = [](auto accessor){return
+/// accessor(1,0) + accessor(-1,0);};
+template <class ExecutionPolicy,
+          size_t N,
+          class ET1,
+          class ET2,
+          class UnaryWindowFunction>
+static inline void window_transform(ExecutionPolicy&&               policy,
+                                    const DistributedArray<N, ET1>& input,
+                                    DistributedArray<N, ET2>&       output,
+                                    UnaryWindowFunction             f) {
+
+    auto i_subspans = make_subspans(input);
+    auto o_subspans = make_subspans(output);
+
+    for (size_t i = 0; i < i_subspans.size(); ++i) {
+        auto i_span = i_subspans[i];
+        auto o_span = o_subspans[i];
+        window_transform(policy, i_span, o_span, f);
+    }
+}
+
+/// @brief Applies the input unary window function to all elements of the input
+/// array and stores the result into the output array. A window accessor has the
+/// same rank as the distributed arrays. Executed in order.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary window operation. Example: f = [](auto accessor){return
+/// accessor(1,0) + accessor(-1,0);};
+template <size_t N, class ET1, class ET2, class UnaryWindowFunction>
+static inline void window_transform(const DistributedArray<N, ET1>& input,
+                                    DistributedArray<N, ET2>&       output,
+                                    UnaryWindowFunction             f) {
+
+    window_transform(std::execution::seq, input, output, f);
+}
+
+/// @brief Applies the input unary tile function f to all elements of the input
+/// array and stores the result into the output array. A tile accessor is one
+/// dimensional. Executed according to policy (not necessarily in order).
+/// @tparam Dir the direction (index) along which the tile is created.
+/// @param policy the execution policy to use. See execution policy for details.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary tile operation. Example: f = [](auto accessor){return
+/// accessor(0) + accessor(1);};
 template <size_t Dir,
           class ExecutionPolicy,
           size_t N,
           class ET1,
           class ET2,
           class UnaryTileFunction>
-static void tile_transform(ExecutionPolicy&&               policy,
-                           const DistributedArray<N, ET1>& input,
-                           DistributedArray<N, ET2>&       output,
-                           UnaryTileFunction               f) {
+static inline void tile_transform(ExecutionPolicy&&               policy,
+                                  const DistributedArray<N, ET1>& input,
+                                  DistributedArray<N, ET2>&       output,
+                                  UnaryTileFunction               f) {
 
-    auto boxes      = input.local_boxes();
     auto i_subspans = make_subspans(input);
     auto o_subspans = make_subspans(output);
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
-        auto offset = boxes[i].box.m_begin;
         auto i_span = i_subspans[i];
         auto o_span = o_subspans[i];
 
         tile_transform<Dir>(policy, i_span, o_span, f);
-        
     }
+}
+
+/// @brief Applies the input unary tile function f to all elements of the input
+/// array and stores the result into the output array. A tile accessor is one
+/// dimensional. Executed in order.
+/// @tparam Dir the direction (index) along which the tile is created.
+/// @param input the input array.
+/// @param output the output array.
+/// @param f the unary tile operation. Example: f = [](auto accessor){return
+/// accessor(0) + accessor(1);};
+template <size_t Dir, size_t N, class ET1, class ET2, class UnaryTileFunction>
+static inline void tile_transform(const DistributedArray<N, ET1>& input,
+                                  DistributedArray<N, ET2>&       output,
+                                  UnaryTileFunction               f) {
+
+    tile_transform<Dir>(std::execution::seq, input, output, f);
 }
 
 } // namespace jada

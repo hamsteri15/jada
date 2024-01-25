@@ -346,7 +346,7 @@ TEST_CASE("Test topology") {
             CHECK(spans[1](1) == 4);
         }
 
-        
+
 
 
         SECTION("bug 1"){
@@ -356,20 +356,20 @@ TEST_CASE("Test topology") {
             index_type nx = 4;
 
             Box<2> domain({0,0}, {ny, nx});
-            
+
             std::vector<int> data(flat_size(domain.get_extent()));
-            
+
             for (int world_size = 1; world_size < 4; ++world_size){
-                
+
                 auto topo = decompose(domain, world_size, {false, false});
-                
+
                 for (int rank = 0; rank < world_size; ++rank){
                     REQUIRE_NOTHROW(make_subspans(data, topo, rank));
                 }
 
             }
 
-            
+
         }
 
 
@@ -701,11 +701,11 @@ TEST_CASE("Test DistributedArray")
                 }
             }
         }
-        
+
     }
 
 
-    
+
 
     SECTION("serialize_local"){
 
@@ -730,10 +730,10 @@ TEST_CASE("Test DistributedArray")
 
 
     }
-    
+
 
     SECTION("distribute"){
-        
+
         index_type ny = 3;
         index_type nx = 4;
 
@@ -754,7 +754,7 @@ TEST_CASE("Test DistributedArray")
         std::array<index_type, 2> epad{2,3};
         auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
 
-        
+
         if (mpi::world_size() == 1){
 
             std::vector<int> correct = {1, 1, 1, 1,
@@ -827,14 +827,14 @@ TEST_CASE("Test DistributedArray")
         auto topo = decompose(domain, mpi::world_size(), {false, false});
 
         std::vector<int> data(flat_size(domain.get_extent()));
-        
+
         std::iota(data.begin(), data.end(), 1);
 
         auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
 
-        
-        CHECK(to_vector(arr) == data);        
-        
+
+        CHECK(to_vector(arr) == data);
+
     }
 
     /*
@@ -852,7 +852,7 @@ TEST_CASE("Test DistributedArray")
         std::vector<int> data(flat_size(domain.get_extent()));
 
         std::iota(data.begin(), data.end(), 1);
-    
+
         auto arr = distribute(data, topo, mpi::get_world_rank(), bpad, epad);
         auto reduced = reduce(arr);
 
@@ -860,123 +860,314 @@ TEST_CASE("Test DistributedArray")
 
         CAPTURE(mpi::get_world_rank());
 
-        CHECK(serialize_local(reduced) == data);        
-        
+        CHECK(serialize_local(reduced) == data);
+
     }
     */
-    
+
 
     SECTION("algorithms"){
 
-        index_type nj = 2;
-        index_type ni = 3;
+        const index_type nj = 2;
+        const index_type ni = 3;
+        const Box<2> domain({0,0}, {nj, ni});
+        const auto topo = decompose(domain, mpi::world_size(), {false, false});
 
-        std::array<index_type, 2> bpad{1,0};
-        std::array<index_type, 2> epad{4,2};
-
-        Box<2> domain({0,0}, {nj, ni});
-        auto topo = decompose(domain, mpi::world_size(), {false, false});
-        
-        const std::vector<int> org_data(size_t(nj * ni), 0);
 
 
         SECTION("for_each"){
+            std::array<index_type, 2> bpad{1,0};
+            std::array<index_type, 2> epad{4,2};
+            const std::vector<int> org_data(size_t(nj * ni), 0);
+
             auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
             size_t n = global_element_count(arr);
-            auto op = [](auto& e){e = 43;};
-            for_each(std::execution::par_unseq, arr, op);
 
-            CHECK
-            (
-                to_vector(arr) == std::vector<int>(n, 43)
-            );
+            SECTION("serial"){
+                auto op = [](auto& e){e = 43;};
+
+                for_each( arr, op);
+
+                CHECK
+                (
+                    to_vector(arr) == std::vector<int>(n, 43)
+                );
+            }
+            SECTION("parallel"){
+                auto op = [](auto& e){e = 11;};
+
+                for_each(std::execution::par_unseq, arr, op);
+
+                CHECK
+                (
+                    to_vector(arr) == std::vector<int>(n, 11)
+                );
+            }
 
         }
+
+
         SECTION("for_each_indexed"){
 
-            auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+            std::array<index_type, 2> bpad{1,0};
+            std::array<index_type, 2> epad{4,2};
 
-            auto op = [](auto idx, int& v){
+            auto op = [](auto idx, int& e){
                 auto j = std::get<0>(idx);
                 auto i = std::get<1>(idx);
-                v = int(i + j);
+                e = int(i + j);
             };
+            const std::vector<int> org_data(size_t(nj * ni), 0);
 
-            for_each_indexed(std::execution::par_unseq, arr, op);
+            SECTION("serial"){
+                auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+                for_each_indexed(arr, op);
 
-            std::vector<int> correct =
-            {
-                0,1,2,
-                1,2,3
-            };
+                std::vector<int> correct =
+                {
+                    0,1,2,
+                    1,2,3
+                };
+                CHECK(to_vector(arr) == correct);
 
-            CHECK(to_vector(arr) == correct);
+            }
+
+            SECTION("parallel"){
+                auto arr = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+                for_each_indexed(std::execution::par_unseq, arr, op);
+
+                std::vector<int> correct =
+                {
+                    0,1,2,
+                    1,2,3
+                };
+
+                CHECK(to_vector(arr) == correct);
+            }
+
 
         }
-        
+
+        SECTION("transform"){
+
+            std::array<index_type, 2> bpad{1,0};
+            std::array<index_type, 2> epad{4,2};
+            const std::vector<int> org_data(size_t(nj * ni), 1);
+            auto op = [](int e){
+                    return e + 1;
+            };
+            const std::vector<int> correct =
+            {
+                2,2,2,
+                2,2,2
+            };
+
+            SECTION("serial"){
+
+                const auto arr_a = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+                transform(arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+            SECTION("parallel"){
+
+                const auto arr_a = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+                transform(std::execution::par_unseq, arr_a, arr_b, op);
+
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+        }
+
+
+        SECTION("transform_indexed"){
+
+            std::array<index_type, 2> bpad{1,0};
+            std::array<index_type, 2> epad{4,2};
+            const std::vector<int> org_data(size_t(nj * ni), 1);
+
+            auto op = [](auto idx, int e){
+                    auto j = std::get<0>(idx);
+                    auto i = std::get<1>(idx);
+                    return e + int(i + j);
+            };
+
+            const std::vector<int> correct =
+                {
+                    1,2,3,
+                    2,3,4
+                };
+
+            SECTION("serial"){
+
+                const auto arr_a = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+                transform_indexed(arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+            SECTION("parallel"){
+
+                const auto arr_a = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(org_data, topo, mpi::get_world_rank(), bpad, epad);
+
+                transform_indexed(std::execution::par_unseq, arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+        }
+
+        SECTION("window_transform"){
+
+            std::array<index_type, 2> bpad{1,1};
+            std::array<index_type, 2> epad{1,1};
+
+            const std::vector<int> a(size_t(ni*nj), 0);
+            const std::vector<int> b(size_t(ni*nj), 0);
+
+            const std::vector<int> correct =
+            {
+                3,3,3,
+                3,3,3
+            };
+
+            auto op = [](auto f) {
+                return f(-1,-1) + f(0, 1) + f(1,1);
+            };
+
+            SECTION("serial"){
+
+                auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
+
+                for (auto& data : arr_a.local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -1);
+                }
+
+                window_transform(arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+            SECTION("parallel"){
+
+                auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
+
+                for (auto& data : arr_a.local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -1);
+                }
+
+                window_transform(std::execution::par_unseq, arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+
+        }
+
+
+        SECTION("tile_transform"){
+
+            std::array<index_type, 2> bpad{1,1};
+            std::array<index_type, 2> epad{1,1};
+
+            const std::vector<int> a(size_t(ni*nj), 0);
+            const std::vector<int> b(size_t(ni*nj), 0);
+
+
+
+            auto op = [](auto f) {
+                return f(-1) + f(1);
+            };
+
+            const std::vector<int> correct =
+            {
+                2,2,2,
+                2,2,2
+            };
+
+            SECTION("serial"){
+
+                auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
+
+                for (auto& data : arr_a.local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -1);
+                }
+
+                tile_transform<0>( arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -3);
+                }
+
+                tile_transform<1>( arr_a, arr_b, op);
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+            SECTION("parallel"){
+
+                auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+                auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
+
+                for (auto& data : arr_a.local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -1);
+                }
+
+
+                tile_transform<0>(std::execution::par_unseq, arr_a, arr_b, op);
+
+                CHECK(to_vector(arr_b) == correct);
+
+                for (auto& data : arr_b.local_data()){
+                    std::fill(data.begin(), data.end(), -3);
+                }
+
+                tile_transform<1>(std::execution::par_unseq, arr_a, arr_b, op);
+                CHECK(to_vector(arr_b) == correct);
+
+            }
+
+        }
+
 
    }
 
 
-    SECTION("tile_transform"){
-
-        index_type ni = 4;
-        index_type nj = 3;
-
-        std::array<index_type, 2> bpad{1,1};
-        std::array<index_type, 2> epad{1,1};
-
-        std::vector<int> a(size_t(ni*nj), 0);
-        std::vector<int> b(size_t(ni*nj), 0);
-
-        Box<2> domain({0,0}, {nj, ni});
-        auto topo = decompose(domain, mpi::world_size(), {true, true});
-
-        auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
-        auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
-
-        auto op = [](auto f) {
-            return f(-1) + f(1);
-        };
-
-        
-        for (auto& data : arr_a.local_data()){
-            std::fill(data.begin(), data.end(), 1);
-        }
-        for (auto& data : arr_b.local_data()){
-            std::fill(data.begin(), data.end(), -1);
-        }
-        
-        
-        //mpi::wait();
-
-        tile_transform<0>(std::execution::par_unseq, arr_a, arr_b, op);
-
-        mpi::wait();
-
-        std::vector<int> correct1 = 
-        {
-            2,2,2,2,
-            2,2,2,2,
-            2,2,2,2
-        };
-
-    
-        CHECK(to_vector(arr_b) == correct1);
-
-        for (auto& data : arr_b.local_data()){
-            std::fill(data.begin(), data.end(), -3);
-        }
 
 
 
-        tile_transform<1>(std::execution::par_unseq, arr_a, arr_b, op);
 
-        CHECK(to_vector(arr_b) == correct1);
-
-    }
-
-    
 
 }
 
