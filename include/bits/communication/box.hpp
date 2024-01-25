@@ -231,8 +231,8 @@ template <size_t N> Box<N> expand(const Box<N>& box, index_type thickness) {
 ///
 /// @param b1 first box to test.
 /// @param b2 second box to test.
-/// @return A pair of std::array<bool, N> where first value describes the shared
-/// beginning edges and the second value shared end edges.
+/// @return A pair of std::array<bool, N> where the first value describes the
+/// shared beginning edges and the second value shared end edges.
 template <size_t N> auto shared_edges(const Box<N>& b1, const Box<N>& b2) {
 
     std::array<bool, N> begin_edges{};
