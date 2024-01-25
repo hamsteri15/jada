@@ -135,6 +135,33 @@ TEST_CASE("Test box") {
         CHECK(distance(b1, b2) == std::array<index_type, 3>{2, 2, 2});
         CHECK(distance(b1, b3) == std::array<index_type, 3>{1, 2, 3});
     }
+
+    SECTION("shared_edges"){
+        Box<3> domain({0,0,0}, {1,2,3});
+
+
+        CHECK
+        (
+            shared_edges(Box<3>({0,0,0}, {1,2,3}), domain) == std::make_pair
+            (
+                std::array{true, true, true},
+                std::array{true, true, true}
+            )
+        );
+
+        CHECK
+        (
+            shared_edges(Box<3>({0,1,2}, {3,3,3}), domain) == std::make_pair
+            (
+                std::array{true, false, false},
+                std::array{false, false, true}
+            )
+        );
+
+
+
+    }
+
 }
 
 
@@ -1157,17 +1184,15 @@ TEST_CASE("Test DistributedArray")
                 CHECK(to_vector(arr_b) == correct);
 
             }
-
         }
-
-
    }
 
+    SECTION("Boundary fill"){
 
 
 
 
-
+    }
 
 }
 

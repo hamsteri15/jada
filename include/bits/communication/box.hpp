@@ -21,7 +21,7 @@ public:
         : m_begin(begin)
         , m_end(end) {
 
-        //runtime_assert(this->is_valid(), "Invalid box");
+        // runtime_assert(this->is_valid(), "Invalid box");
     }
 
     bool operator==(const Box<N>& rhs) const = default;
@@ -30,7 +30,9 @@ public:
     constexpr auto get_extent() const {
         auto diff = [this]() {
             std::array<size_type, N> ret{};
-            for (size_t i = 0; i < N; ++i) { ret[i] = size_type(m_end[i] - m_begin[i]); }
+            for (size_t i = 0; i < N; ++i) {
+                ret[i] = size_type(m_end[i] - m_begin[i]);
+            }
             return ret;
         }();
 
@@ -40,7 +42,6 @@ public:
     auto clone() const { return Box<N>{*this}; }
 
     size_t size() const { return flat_size(this->get_extent()); }
-
 
     bool is_valid() const {
         for (size_t i = 0; i < N; ++i) {
@@ -169,7 +170,7 @@ template <size_t N> bool have_overlap(const Box<N>& lhs, const Box<N>& rhs) {
 ///
 /// @brief Translates the input box by the input amount wrt. current position of
 /// the box.
-/// @param box the box to tranlate
+/// @param box the box to translate
 /// @param amount the amount to translate
 /// @return translated box
 ///
@@ -223,6 +224,26 @@ template <size_t N> Box<N> expand(const Box<N>& box, index_type thickness) {
     std::array<index_type, N> thick{};
     for (auto& e : thick) { e = thickness; }
     return expand(box, thick, thick);
+}
+
+///
+/// @brief Determines the shared edges of the two input boxes.
+///
+/// @param b1 first box to test.
+/// @param b2 second box to test.
+/// @return A pair of std::array<bool, N> where first value describes the shared
+/// beginning edges and the second value shared end edges.
+template <size_t N> auto shared_edges(const Box<N>& b1, const Box<N>& b2) {
+
+    std::array<bool, N> begin_edges{};
+    std::array<bool, N> end_edges{};
+    for (size_t i = 0; i < N; ++i) {
+
+        begin_edges[i] = (b1.m_begin[i] == b2.m_begin[i]);
+        end_edges[i]   = (b1.m_end[i] == b2.m_end[i]);
+    }
+
+    return std::make_pair(begin_edges, end_edges);
 }
 
 } // namespace jada
