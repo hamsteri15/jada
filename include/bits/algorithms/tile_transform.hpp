@@ -34,7 +34,7 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
     };
 }
 
-/// @brief applies the input unary tile function to all elements of the input
+/// @brief Applies the input unary tile function to all elements of the input
 /// span and stores the result into the output span. A tile accessor is one
 /// dimensional. Executed according to policy (not necessarily in order).
 /// @tparam Dir the direction (index) along which the tile is created.
@@ -60,7 +60,7 @@ static constexpr void tile_transform(ExecutionPolicy&& policy,
     detail::window_transform(policy, i_span, o_span, f, tile);
 }
 
-/// @brief applies the input unary tile function to all elements of the input
+/// @brief Applies the input unary tile function to all elements of the input
 /// span and stores the result into the output span. A tile accessor is
 /// one-dimensional. Executed in order.
 /// @tparam Dir the direction (index) along which the tile is created.
