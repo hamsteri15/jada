@@ -645,8 +645,8 @@ static inline auto make_test_topology(){
     for (size_t i = 0; i < nboxes; ++i){
 
         auto& pair = boxes[i];
-        pair.box.m_begin = std::array<index_type, 2>{{index_type(i), 0}};
-        pair.box.m_end = std::array<index_type, 2>{{index_type(i+1), ni}};
+        pair.box.begin = std::array<index_type, 2>{{index_type(i), 0}};
+        pair.box.end = std::array<index_type, 2>{{index_type(i+1), ni}};
         //int rank = 0;
         pair.rank = rank;
         rank++;

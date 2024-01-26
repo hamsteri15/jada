@@ -11,15 +11,15 @@ template <size_t N> struct Box {
 public:
     static constexpr size_t dimension_count = N;
 
-    std::array<index_type, N> m_begin{}; // inclusive begin
-    std::array<index_type, N> m_end{};   // non-inclusive end
+    std::array<index_type, N> begin{}; // inclusive begin
+    std::array<index_type, N> end{};   // non-inclusive end
 
 public:
     Box() = default;
 
-    Box(std::array<index_type, N> begin, std::array<index_type, N> end)
-        : m_begin(begin)
-        , m_end(end) {
+    Box(std::array<index_type, N> begin_, std::array<index_type, N> end_)
+        : begin(begin_)
+        , end(end_) {
 
         // runtime_assert(this->is_valid(), "Invalid box");
     }
@@ -31,7 +31,7 @@ public:
         auto diff = [this]() {
             std::array<size_type, N> ret{};
             for (size_t i = 0; i < N; ++i) {
-                ret[i] = size_type(m_end[i] - m_begin[i]);
+                ret[i] = size_type(end[i] - begin[i]);
             }
             return ret;
         }();
@@ -45,7 +45,7 @@ public:
 
     bool is_valid() const {
         for (size_t i = 0; i < N; ++i) {
-            if (m_begin[i] > m_end[i]) { return false; }
+            if (begin[i] > end[i]) { return false; }
         }
         return true;
     }
@@ -60,7 +60,7 @@ public:
         };
         for (size_t i = 0; i < N; ++i) {
 
-            if (!valid(m_begin[i], idx[i], m_end[i])) { return false; }
+            if (!valid(begin[i], idx[i], end[i])) { return false; }
         }
         return true;
     }
@@ -69,7 +69,7 @@ public:
     /// @param other the box to query
     /// @return true if other fits fully inside this box, false otherwise
     bool contains(const Box<N>& other) const {
-        return this->contains(other.m_begin) && this->contains(other.m_end);
+        return this->contains(other.begin) && this->contains(other.end);
     }
 
     template <size_t L>
@@ -84,10 +84,10 @@ template <size_t L>
 std::ostream& operator<<(std::ostream& os, const Box<L>& v) {
 
     os << "Box { ";
-    for (auto e : v.m_begin) { os << e << " "; }
+    for (auto e : v.begin) { os << e << " "; }
     os << "}, {";
 
-    for (auto e : v.m_end) { os << e << " "; }
+    for (auto e : v.end) { os << e << " "; }
 
     os << "}";
     return os;
@@ -99,7 +99,7 @@ std::ostream& operator<<(std::ostream& os, const Box<L>& v) {
 template <size_t N> index_type volume(const Box<N>& b) {
 
     index_type vol = 1;
-    for (size_t i = 0; i < N; ++i) { vol *= (b.m_end[i] - b.m_begin[i]); }
+    for (size_t i = 0; i < N; ++i) { vol *= (b.end[i] - b.begin[i]); }
     return vol;
 }
 
@@ -115,8 +115,8 @@ template <size_t N> Box<N> merge(const Box<N>& lhs, const Box<N>& rhs) {
     std::array<index_type, N> begin{};
     std::array<index_type, N> end{};
     for (size_t i = 0; i < N; ++i) {
-        begin[i] = std::min(lhs.m_begin[i], rhs.m_begin[i]);
-        end[i]   = std::max(lhs.m_end[i], rhs.m_end[i]);
+        begin[i] = std::min(lhs.begin[i], rhs.begin[i]);
+        end[i]   = std::max(lhs.end[i], rhs.end[i]);
     }
     return Box<N>(begin, end);
 }
@@ -133,8 +133,8 @@ template <size_t N> Box<N> intersection(const Box<N>& lhs, const Box<N>& rhs) {
     std::array<index_type, N> end{};
 
     for (size_t i = 0; i < N; ++i) {
-        begin[i] = std::max(lhs.m_begin[i], rhs.m_begin[i]);
-        end[i]   = std::min(lhs.m_end[i], rhs.m_end[i]);
+        begin[i] = std::max(lhs.begin[i], rhs.begin[i]);
+        end[i]   = std::min(lhs.end[i], rhs.end[i]);
     }
 
     Box<N> ret(begin, end);
@@ -151,7 +151,7 @@ template <size_t N>
 std::array<index_type, N> distance(const Box<N>& lhs, const Box<N>& rhs) {
 
     std::array<index_type, N> ret{};
-    for (size_t i = 0; i < N; ++i) { ret[i] = rhs.m_begin[i] - lhs.m_begin[i]; }
+    for (size_t i = 0; i < N; ++i) { ret[i] = rhs.begin[i] - lhs.begin[i]; }
     return ret;
 }
 
@@ -180,8 +180,8 @@ Box<N> translate(const Box<N>& box, std::array<index_type, N> amount) {
     auto ret(box);
 
     for (size_t i = 0; i < N; ++i) {
-        ret.m_begin[i] += amount[i];
-        ret.m_end[i] += amount[i];
+        ret.begin[i] += amount[i];
+        ret.end[i] += amount[i];
     }
 
     runtime_assert(ret.is_valid(), "Invalid box");
@@ -204,8 +204,8 @@ Box<N> expand(const Box<N>&             box,
 
     auto ret(box);
     for (size_t i = 0; i < N; ++i) {
-        ret.m_begin[i] -= begin_thickness[i];
-        ret.m_end[i] += end_thickness[i];
+        ret.begin[i] -= begin_thickness[i];
+        ret.end[i] += end_thickness[i];
     }
 
     runtime_assert(ret.is_valid(), "Invalid box");
@@ -239,8 +239,8 @@ template <size_t N> auto shared_edges(const Box<N>& b1, const Box<N>& b2) {
     std::array<bool, N> end_edges{};
     for (size_t i = 0; i < N; ++i) {
 
-        begin_edges[i] = (b1.m_begin[i] == b2.m_begin[i]);
-        end_edges[i]   = (b1.m_end[i] == b2.m_end[i]);
+        begin_edges[i] = (b1.begin[i] == b2.begin[i]);
+        end_edges[i]   = (b1.end[i] == b2.end[i]);
     }
 
     return std::make_pair(begin_edges, end_edges);

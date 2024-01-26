@@ -293,7 +293,7 @@ std::vector<T> to_vector(const DistributedArray<N, T>& array) {
         auto boxes = array.topology().get_boxes(rank);
         for (auto box : boxes) {
 
-            auto o_span = make_subspan(bigspan, box.box.m_begin, box.box.m_end);
+            auto o_span = make_subspan(bigspan, box.box.begin, box.box.end);
             T*   begin  = data.data() + offsets[j];
             span<T, N> i_span(begin, box.box.get_extent());
             transform(i_span, o_span, [](auto e) { return e; });
@@ -368,7 +368,7 @@ static inline void for_each_indexed(ExecutionPolicy&&       policy,
     auto boxes    = arr.local_boxes();
     auto subspans = make_subspans(arr);
     for (size_t i = 0; i < subspans.size(); ++i) {
-        auto offset = boxes[i].box.m_begin;
+        auto offset = boxes[i].box.begin;
         auto span   = subspans[i];
 
         auto F = [=](auto md_idx) {
@@ -466,7 +466,7 @@ static inline void transform_indexed(ExecutionPolicy&&               policy,
     for (size_t i = 0; i < i_subspans.size(); ++i) {
         auto i_span = i_subspans[i];
         auto o_span = o_subspans[i];
-        auto offset = boxes[i].box.m_begin;
+        auto offset = boxes[i].box.begin;
         auto F      = [=](auto md_idx) {
             o_span(md_idx) = f(elementwise_add(md_idx, offset), i_span(md_idx));
         };
@@ -582,5 +582,6 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
 
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
+
 
 } // namespace jada

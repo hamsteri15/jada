@@ -27,10 +27,10 @@ public:
 
     const auto& get_boxes() const { return m_boxes; }
     auto& get_boxes() { return m_boxes; }
-    
+
     const auto& get_periods() const {return m_periodic;}
 
-    
+
 
     auto get_boxes(int rank) const {
 
@@ -100,9 +100,9 @@ public:
             if (volume(inter) > 0) {
 
                 auto sb = global_to_local(
-                    sender, inter.m_begin, begin_padding, end_padding);
+                    sender, inter.begin, begin_padding, end_padding);
                 auto rb = global_to_local(
-                    receiver, inter.m_begin, begin_padding, end_padding);
+                    receiver, inter.begin, begin_padding, end_padding);
 
                 auto extent = extent_to_array(inter.get_extent());
 
@@ -130,7 +130,7 @@ public:
                 if ((volume(inter) > 0)) {
 
                     auto sb = global_to_local(
-                        sender, inter.m_begin, begin_padding, end_padding);
+                        sender, inter.begin, begin_padding, end_padding);
 
                     // Negate the translation vector to transform receiver back
                     // to original position
@@ -138,7 +138,7 @@ public:
 
                     // Translate back here
                     auto rb = global_to_local(receiver,
-                                              translate(inter, neg_t).m_begin,
+                                              translate(inter, neg_t).begin,
                                               begin_padding,
                                               end_padding);
 
@@ -239,7 +239,7 @@ private:
         auto box = expand(owner.box, begin_padding, end_padding);
 
         std::array<index_type, N> local{};
-        for (size_t i = 0; i < N; ++i) { local[i] = coord[i] - box.m_begin[i]; }
+        for (size_t i = 0; i < N; ++i) { local[i] = coord[i] - box.begin[i]; }
 
         return local;
     }
@@ -253,7 +253,7 @@ private:
 
         std::array<index_type, N> global{};
         for (size_t i = 0; i < N; ++i) {
-            global[i] = box.m_begin[i] + coord[i];
+            global[i] = box.begin[i] + coord[i];
         }
 
         runtime_assert(m_domain.contains(global), "Coordinate not in domain.");
@@ -277,7 +277,7 @@ std::ostream& operator<<(std::ostream& os, const Topology<L>& topo) {
         auto boxes = topo.get_boxes();
 
         for (auto box : boxes) {
-            auto subspan = make_subspan(span, box.box.m_begin, box.box.m_end);
+            auto subspan = make_subspan(span, box.box.begin, box.box.end);
             for_each(subspan, [=](auto& e) { e = box.rank; });
         }
 
@@ -308,7 +308,7 @@ auto make_subspans(Data& data, const Topology<N>& topo, int rank) {
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
-        ret.push_back(make_subspan(bigspan, pair.box.m_begin, pair.box.m_end));
+        ret.push_back(make_subspan(bigspan, pair.box.begin, pair.box.end));
     }
     return ret;
 }
@@ -322,7 +322,7 @@ auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
     auto bigspan = make_span(data, topo.get_domain().get_extent());
 
     for (auto pair : topo.get_boxes(rank)) {
-        ret.push_back(make_subspan(bigspan, pair.box.m_begin, pair.box.m_end));
+        ret.push_back(make_subspan(bigspan, pair.box.begin, pair.box.end));
     }
     return ret;
 }
