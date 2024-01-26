@@ -157,10 +157,104 @@ TEST_CASE("Test box") {
                 std::array{false, false, true}
             )
         );
+    }
+
+
+    SECTION("edge_bounds"){
+
+        Box<2> b({0,0}, {2, 3});
+
+        std::vector<int> data(flat_size(b.get_extent()));
+
+        auto span = make_span(data, b.get_extent());
+
+        SECTION("dir {1,0}"){
+
+            const std::array<index_type, 2> dir = {1, 0};
+            std::fill(data.begin(), data.end(), 0);
+
+            auto [begin, end] = edge_bounds(b, dir);
+
+            auto subspan = make_subspan(span, begin, end);
+
+            for_each(subspan, [](auto& e){e = 1;});
+
+
+            CHECK(data == std::vector<int>
+                {
+                    0,0,0,
+                    1,1,1
+                }
+            );
+        }
+
+        SECTION("dir {-1,0}"){
+
+            const std::array<index_type, 2> dir = {-1, 0};
+            std::fill(data.begin(), data.end(), 0);
+
+            auto [begin, end] = edge_bounds(b, dir);
+
+            auto subspan = make_subspan(span, begin, end);
+
+            for_each(subspan, [](auto& e){e = 1;});
+
+
+            CHECK(data == std::vector<int>
+                {
+                    1,1,1,
+                    0,0,0
+                }
+            );
+        }
+
+        SECTION("dir {1,1}"){
+
+            const std::array<index_type, 2> dir = {1, 1};
+            std::fill(data.begin(), data.end(), 0);
+
+            auto [begin, end] = edge_bounds(b, dir);
+
+            auto subspan = make_subspan(span, begin, end);
+
+            for_each(subspan, [](auto& e){e = 1;});
+
+
+            CHECK(data == std::vector<int>
+                {
+                    0,0,0,
+                    0,0,1
+                }
+            );
+        }
+
+    }
+
+
+    SECTION("edge_indices"){
+
+
+
+        Box<2> b({0,0}, {2, 3});
+
+        SECTION("dir {0, 1}"){
+
+            auto indices = edge_indices(b, std::array{0, 1});
+            auto [j1, i1] = indices[0];
+            CHECK(j1 == 0);
+            CHECK(i1 == 2);
+
+            auto [j2, i2] = indices[1];
+            CHECK(j2 == 1);
+            CHECK(i2 == 2);
+
+        }
 
 
 
     }
+
+
 
 }
 

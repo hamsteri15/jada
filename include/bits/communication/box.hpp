@@ -246,4 +246,49 @@ template <size_t N> auto shared_edges(const Box<N>& b1, const Box<N>& b2) {
     return std::make_pair(begin_edges, end_edges);
 }
 
+///
+/// @brief Determines the begin and end bounds of the edge which has a normal to
+/// the direction dir of the input box.
+///
+/// @param box The box to query the edge bounds of.
+/// @param dir A normal vector to determine which edge to query the bounds for,
+/// a negative value points towards beginning and a positive value towards end.
+/// @return a pair of arrays [begin, end] containing the bounds of the edge.
+template <size_t N>
+static constexpr auto edge_bounds(const Box<N>&                    box,
+                                  const std::array<index_type, N>& dir) {
+
+    const auto dims = box.get_extent();
+
+    std::array<index_type, rank(dims)> begin{};
+    std::array<index_type, rank(dims)> end{};
+
+    for (size_t i = 0; i < rank(dims); ++i) {
+        end[i] = index_type(dims.extent(i));
+    }
+
+    for (size_t i = 0; i < rank(dims); ++i) {
+        if (dir[i] == 1) { begin[i] = index_type(dims.extent(i)) - 1; }
+        if (dir[i] == -1) { end[i] = 1; }
+    }
+
+    return std::make_pair(begin, end);
+}
+
+///
+/// @brief Returns all indices of the edge which has a normal towards dir of the
+/// input box.
+///
+/// @param box The box the query the edge indices of.
+/// @param dir A normal vector to determine which edge to query the bounds for,
+/// a negative value points towards beginning and a positive value towards end.
+/// @return A view of all indices of the edge.
+template <size_t N>
+static constexpr auto edge_indices(const Box<N>&                    box,
+                                   const std::array<index_type, N>& dir) {
+
+    const auto [begin, end] = edge_bounds(box, dir);
+    return md_indices(begin, end);
+}
+
 } // namespace jada
