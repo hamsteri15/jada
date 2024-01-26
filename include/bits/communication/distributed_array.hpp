@@ -584,4 +584,25 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
 
+/*
+auto for_each_boundary_window(const DistributedArray<N, ET1>& input,
+                              std::array<index_type, N>       dir,
+                              auto                            f) {
+
+    auto boxes = input.get_local_boxes();
+    auto spans = make_subspans(input);
+
+    for (size_t i = 0; i < spans.size(); ++i){
+
+        for_each(shared_edge_indices())....
+
+
+
+
+
+    }
+
+}
+*/
+
 } // namespace jada

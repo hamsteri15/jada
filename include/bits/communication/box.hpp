@@ -246,6 +246,21 @@ template <size_t N> auto shared_edges(const Box<N>& b1, const Box<N>& b2) {
     return std::make_pair(begin_edges, end_edges);
 }
 
+template <size_t N>
+bool have_shared_edges(const Box<N>&                    b1,
+                       const Box<N>&                    b2,
+                       const std::array<index_type, N>& dir) {
+
+    auto [sh_begin, sh_end] = shared_edges(b1, b2);
+
+    for (size_t i = 0; i < N; ++i) {
+
+        if ((dir[i] == -1) && sh_begin[i]) { return true; }
+        if ((dir[i] == 1) && sh_end[i]) { return true; }
+    }
+    return false;
+}
+
 ///
 /// @brief Determines the begin and end bounds of the edge which has a normal to
 /// the direction dir of the input box.
@@ -289,6 +304,30 @@ static constexpr auto edge_indices(const Box<N>&                    box,
 
     const auto [begin, end] = edge_bounds(box, dir);
     return md_indices(begin, end);
+}
+
+template <size_t N>
+Box<N> get_edge(const Box<N>& b, std::array<index_type, N> dir) {
+
+    auto [beg, end] = edge_bounds(b, dir);
+
+    return Box<N>(beg, end);
+}
+
+template <size_t N>
+Box<N> shared_edge(const Box<N>&                   b1,
+                   const Box<N>&                   b2,
+                   const std::array<index_type, N> dir) {
+    return intersection(get_edge(b1, dir), get_edge(b2, dir));
+}
+
+template <size_t N>
+static constexpr auto shared_edge_indices(
+    const Box<N>& b1, const Box<N>& b2, const std::array<index_type, N>& dir) {
+
+    auto common = shared_edge(b1, b2, dir);
+
+    return md_indices(common.begin, common.end);
 }
 
 } // namespace jada

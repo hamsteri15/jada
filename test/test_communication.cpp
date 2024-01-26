@@ -250,9 +250,155 @@ TEST_CASE("Test box") {
 
         }
 
+    }
+    SECTION("get_edge"){
+
+        SECTION("Test 1"){
+            Box<2> b({0,0}, {2, 2});
+
+            CHECK
+            (
+                get_edge(b, {0, 1}) == Box<2>({0, 1}, {2, 2})
+            );
+        }
+
+        SECTION("Test 2"){
+            Box<2> b({0,0}, {3, 3});
+
+            CHECK
+            (
+                get_edge(b, {0, -1}) == Box<2>({0, 0}, {3, 1})
+            );
+        }
+
+        SECTION("Test 3"){
+            Box<2> b({1, 1}, {3, 3});
+
+            std::vector<int> data(flat_size(b.get_extent()), 0);
+            auto span = make_span(data, b.get_extent());
+
+            std::fill(data.begin(), data.end(), 0);
+            for (auto [j, i] : edge_indices(b, {0, -1})){
+                span(j, i) = 1;
+            }
+
+            CHECK(data ==
+                std::vector<int>
+                {
+                    1, 0,
+                    1, 0
+                }
+            );
+
+            std::fill(data.begin(), data.end(), 0);
+            for (auto [j, i] : edge_indices(b, {-1, 0})){
+                span(j, i) = 1;
+            }
+
+            CHECK(data ==
+                std::vector<int>
+                {
+                    1, 1,
+                    0, 0
+                }
+            );
+
+            std::fill(data.begin(), data.end(), 0);
+            for (auto [j, i] : edge_indices(b, {1, 1})){
+                span(j, i) = 1;
+            }
+
+            CHECK(data ==
+                std::vector<int>
+                {
+                    0, 0,
+                    0, 1
+                }
+            );
+
+        }
+
+    }
+
+    SECTION("shared_edge"){
+
+        SECTION("Test 1"){
+            const Box<2> domain({0,0}, {3,3});
+            const Box<2> sub({0, 0}, {2,2});
+
+            auto r1 = shared_edge(domain, sub, {0, 1});
+
+            CHECK(r1 == Box<2>({0,0}, {0,0}));
+        }
+
+        SECTION("Test 2"){
+            const Box<2> domain({0,0}, {3,3});
+            const Box<2> sub({0, 0}, {2,2});
+
+            auto r1 = shared_edge(domain, sub, {0, -1});
+
+            CHECK(r1 == Box<2>({0,0}, {2,1}));
+        }
+
+
 
 
     }
+
+    /*
+    SECTION("shared_edge_indices"){
+
+
+        SECTION("Test 1"){
+
+            const Box<2> domain({0,0}, {3,3});
+            const Box<2> sub({0, 0}, {2,2});
+
+            std::vector<int> data(flat_size(domain.get_extent()), 0);
+            auto span = make_span(data, domain.get_extent());
+
+
+
+            SECTION("dir {0, 1}"){
+                std::fill(data.begin(), data.end(), 0);
+                for (auto [j, i] : shared_edge_indices(domain, sub, {0,1})){
+                    span(j, i) = 1;
+                }
+
+                CHECK
+                (
+                    data ==
+                    std::vector<int> {0,0,0,
+                                      0,0,0,
+                                      0,0,0}
+                );
+            }
+
+
+
+            SECTION("dir {0, -1}"){
+                std::fill(data.begin(), data.end(), 0);
+                for (auto [j, i] : shared_edge_indices(domain, sub, {0,-1})){
+                    span(j, i) = 1;
+                    std::cout << j << " " << i << std::endl;
+                }
+
+                CHECK
+                (
+                    data ==
+                    std::vector<int> {1,0,0,
+                                      1,0,0,
+                                      0,0,0}
+                );
+            }
+
+
+
+        }
+
+
+    }
+    */
 
 
 
