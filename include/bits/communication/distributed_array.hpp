@@ -30,16 +30,16 @@ template <size_t N, class T> struct DistributedArray {
     }
 
     const auto& topology() const { return m_topology; }
-    const auto& local_data() const { return m_data; }
-    auto&       local_data() { return m_data; }
+    const auto& get_local_data() const { return m_data; }
+    auto&       get_local_data() { return m_data; }
 
-    auto begin_padding() const { return m_begin_padding; }
-    auto end_padding() const { return m_end_padding; }
+    auto get_begin_padding() const { return m_begin_padding; }
+    auto get_end_padding() const { return m_end_padding; }
 
-    size_t local_subdomain_count() const { return m_data.size(); }
+    size_t get_local_subdomain_count() const { return m_data.size(); }
 
     // Note this does not in general equal to number of processes
-    size_t global_subdomain_count() const {
+    size_t get_global_subdomain_count() const {
         return m_topology.get_boxes().size();
     }
 
@@ -52,7 +52,7 @@ template <size_t N, class T> struct DistributedArray {
     ///@return std::vector<BoxRankPair<N>> A vector of box-rank pairs where the
     /// rank is always m_rank.
     ///
-    std::vector<BoxRankPair<N>> local_boxes() const {
+    std::vector<BoxRankPair<N>> get_local_boxes() const {
         return m_topology.get_boxes(m_rank);
     }
 
@@ -74,7 +74,7 @@ private:
 template <size_t N, class T>
 static inline size_t local_element_count(const DistributedArray<N, T>& array) {
 
-    auto   boxes = array.local_boxes();
+    auto   boxes = array.get_local_boxes();
     size_t size  = 0;
     for (auto box : boxes) {
         auto ext = box.get_extent();
@@ -107,7 +107,7 @@ template <size_t N, class T>
 static inline size_t local_capacity(const DistributedArray<N, T>& array) {
 
     size_t size = 0;
-    for (const auto& v : array.local_data()) { size += v.size(); }
+    for (const auto& v : array.get_local_data()) { size += v.size(); }
     return size;
 }
 
@@ -122,11 +122,11 @@ auto make_subspans(const DistributedArray<N, T>& array) {
 
     std::vector<span_t> ret;
 
-    const auto& data  = array.local_data();
-    auto        boxes = array.local_boxes();
+    const auto& data  = array.get_local_data();
+    auto        boxes = array.get_local_boxes();
 
-    auto bpad = array.begin_padding();
-    auto epad = array.end_padding();
+    auto bpad = array.get_begin_padding();
+    auto epad = array.get_end_padding();
 
     for (size_t i = 0; i < data.size(); ++i) {
 
@@ -154,11 +154,11 @@ template <size_t N, class T> auto make_subspans(DistributedArray<N, T>& array) {
 
     std::vector<span_t> ret;
 
-    auto& data  = array.local_data();
-    auto  boxes = array.local_boxes();
+    auto& data  = array.get_local_data();
+    auto  boxes = array.get_local_boxes();
 
-    auto bpad = array.begin_padding();
-    auto epad = array.end_padding();
+    auto bpad = array.get_begin_padding();
+    auto epad = array.get_end_padding();
 
     for (size_t i = 0; i < data.size(); ++i) {
 
@@ -191,7 +191,7 @@ serialize_local(const DistributedArray<N, T>& array) {
 
     // Offsets in the output array where to begin writing
     std::vector<size_t> offsets = [&]() {
-        std::vector<size_t> ret(array.local_subdomain_count(), 0);
+        std::vector<size_t> ret(array.get_local_subdomain_count(), 0);
         for (size_t i = 1; i < ret.size(); ++i) {
             ret[i] = ret[i - 1] + spans[i - 1].size();
         }
@@ -268,7 +268,7 @@ std::vector<T> to_vector(const DistributedArray<N, T>& array) {
     std::vector<T> global(data.size());
 
     std::vector<size_t> sizes;
-    sizes.reserve(array.global_subdomain_count());
+    sizes.reserve(array.get_global_subdomain_count());
 
     for (int rank = 0; rank <= array.topology().get_max_rank(); ++rank) {
 
@@ -320,15 +320,16 @@ array) {
     return distribute(data,
                       new_topology,
                       array.get_rank(),
-                      array.begin_padding(),
-                      array.end_padding());
+                      array.get_begin_padding(),
+                      array.get_end_padding());
 
     // return global;
 }
 */
 
 /// @brief Applies the given function object f to every element of the input
-/// array. The algorithm is executed according to policy (not necessarily in order).
+/// array. The algorithm is executed according to policy (not necessarily in
+/// order).
 /// @param policy the execution policy to use. See execution policy for details.
 /// @param arr the input array.
 /// @param f function object, to be applied to the result of subspan(md_idx).
@@ -365,7 +366,7 @@ static inline void for_each_indexed(ExecutionPolicy&&       policy,
                                     DistributedArray<N, T>& arr,
                                     BinaryIndexFunction     f) {
 
-    auto boxes    = arr.local_boxes();
+    auto boxes    = arr.get_local_boxes();
     auto subspans = make_subspans(arr);
     for (size_t i = 0; i < subspans.size(); ++i) {
         auto offset = boxes[i].box.begin;
@@ -461,7 +462,7 @@ static inline void transform_indexed(ExecutionPolicy&&               policy,
 
     auto       i_subspans = make_subspans(input);
     auto       o_subspans = make_subspans(output);
-    const auto boxes      = input.local_boxes();
+    const auto boxes      = input.get_local_boxes();
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
         auto i_span = i_subspans[i];
@@ -582,6 +583,5 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
 
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
-
 
 } // namespace jada

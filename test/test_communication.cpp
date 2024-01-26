@@ -680,7 +680,7 @@ static inline auto make_test_array(bool add_padding){
     DistributedArray<2, int> arr(myrank, topo, bpad, epad);
 
 
-    for (auto& v : arr.local_data()){
+    for (auto& v : arr.get_local_data()){
         std::fill(v.begin(), v.end(), myrank + 1);
     }
 
@@ -698,8 +698,8 @@ TEST_CASE("Test DistributedArray")
     SECTION("local_element_count/local_capacity"){
         auto arr = make_test_array(true);
 
-        CHECK(local_element_count(arr) == arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size);
-        CHECK(local_capacity(arr) == arr.local_subdomain_count() * DistributedTestData::padded_subspan_size);
+        CHECK(local_element_count(arr) == arr.get_local_subdomain_count() * DistributedTestData::unpadded_subspan_size);
+        CHECK(local_capacity(arr) == arr.get_local_subdomain_count() * DistributedTestData::padded_subspan_size);
 
     }
 
@@ -740,7 +740,7 @@ TEST_CASE("Test DistributedArray")
             auto arr = make_test_array(false);
             auto serial = serialize_local(arr);
 
-            size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
+            size_t correct_size = arr.get_local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
             std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
 
             CHECK(serial == correct);
@@ -749,7 +749,7 @@ TEST_CASE("Test DistributedArray")
             auto arr = make_test_array(true);
             auto serial = serialize_local(arr);
 
-            size_t correct_size = arr.local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
+            size_t correct_size = arr.get_local_subdomain_count() * DistributedTestData::unpadded_subspan_size;
             std::vector<int> correct(correct_size, mpi::get_world_rank() + 1);
 
             CHECK(serial == correct);
@@ -1080,10 +1080,10 @@ TEST_CASE("Test DistributedArray")
                 auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
                 auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
 
-                for (auto& data : arr_a.local_data()){
+                for (auto& data : arr_a.get_local_data()){
                     std::fill(data.begin(), data.end(), 1);
                 }
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -1);
                 }
 
@@ -1098,10 +1098,10 @@ TEST_CASE("Test DistributedArray")
                 auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
                 auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
 
-                for (auto& data : arr_a.local_data()){
+                for (auto& data : arr_a.get_local_data()){
                     std::fill(data.begin(), data.end(), 1);
                 }
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -1);
                 }
 
@@ -1140,10 +1140,10 @@ TEST_CASE("Test DistributedArray")
                 auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
                 auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
 
-                for (auto& data : arr_a.local_data()){
+                for (auto& data : arr_a.get_local_data()){
                     std::fill(data.begin(), data.end(), 1);
                 }
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -1);
                 }
 
@@ -1151,7 +1151,7 @@ TEST_CASE("Test DistributedArray")
 
                 CHECK(to_vector(arr_b) == correct);
 
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -3);
                 }
 
@@ -1164,10 +1164,10 @@ TEST_CASE("Test DistributedArray")
                 auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
                 auto arr_b = distribute(b, topo, mpi::get_world_rank(), bpad, epad);
 
-                for (auto& data : arr_a.local_data()){
+                for (auto& data : arr_a.get_local_data()){
                     std::fill(data.begin(), data.end(), 1);
                 }
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -1);
                 }
 
@@ -1176,7 +1176,7 @@ TEST_CASE("Test DistributedArray")
 
                 CHECK(to_vector(arr_b) == correct);
 
-                for (auto& data : arr_b.local_data()){
+                for (auto& data : arr_b.get_local_data()){
                     std::fill(data.begin(), data.end(), -3);
                 }
 
