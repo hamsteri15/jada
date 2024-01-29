@@ -92,6 +92,8 @@ TEST_CASE("Test box") {
 
             CHECK(intersection(b1, b2) == Box<3>({0, 0, 0}, {0, 0, 0}));
         }
+
+
     }
 
     SECTION("Contains") {
@@ -231,6 +233,8 @@ TEST_CASE("Test box") {
     }
 
 
+
+
     SECTION("edge_indices"){
 
 
@@ -317,8 +321,10 @@ TEST_CASE("Test box") {
             );
 
         }
-
     }
+
+
+
 
     SECTION("shared_edge"){
 
@@ -329,6 +335,7 @@ TEST_CASE("Test box") {
             auto r1 = shared_edge(domain, sub, {0, 1});
 
             CHECK(r1 == Box<2>({0,0}, {0,0}));
+
         }
 
         SECTION("Test 2"){
@@ -340,18 +347,15 @@ TEST_CASE("Test box") {
             CHECK(r1 == Box<2>({0,0}, {2,1}));
         }
 
-
-
-
     }
 
-    /*
+
     SECTION("shared_edge_indices"){
 
 
         SECTION("Test 1"){
 
-            const Box<2> domain({0,0}, {3,3});
+            const Box<2> domain({0,0}, {3,4});
             const Box<2> sub({0, 0}, {2,2});
 
             std::vector<int> data(flat_size(domain.get_extent()), 0);
@@ -368,9 +372,9 @@ TEST_CASE("Test box") {
                 CHECK
                 (
                     data ==
-                    std::vector<int> {0,0,0,
-                                      0,0,0,
-                                      0,0,0}
+                    std::vector<int> {0,0,0,0,
+                                      0,0,0,0,
+                                      0,0,0,0}
                 );
             }
 
@@ -380,15 +384,44 @@ TEST_CASE("Test box") {
                 std::fill(data.begin(), data.end(), 0);
                 for (auto [j, i] : shared_edge_indices(domain, sub, {0,-1})){
                     span(j, i) = 1;
-                    std::cout << j << " " << i << std::endl;
                 }
 
                 CHECK
                 (
                     data ==
-                    std::vector<int> {1,0,0,
-                                      1,0,0,
-                                      0,0,0}
+                    std::vector<int> {1,0,0,0,
+                                      1,0,0,0,
+                                      0,0,0,0}
+                );
+            }
+
+            SECTION("dir {-1, -1}"){
+                std::fill(data.begin(), data.end(), 0);
+                for (auto [j, i] : shared_edge_indices(domain, sub, {-1,-1})){
+                    span(j, i) = 1;
+                }
+
+                CHECK
+                (
+                    data ==
+                    std::vector<int> {1,0,0,0,
+                                      0,0,0,0,
+                                      0,0,0,0}
+                );
+            }
+
+            SECTION("dir {1, 1}"){
+                std::fill(data.begin(), data.end(), 0);
+                for (auto [j, i] : shared_edge_indices(domain, sub, {1, 1})){
+                    span(j, i) = 1;
+                }
+
+                CHECK
+                (
+                    data ==
+                    std::vector<int> {0,0,0,0,
+                                      0,0,0,0,
+                                      0,0,0,0}
                 );
             }
 
@@ -398,7 +431,7 @@ TEST_CASE("Test box") {
 
 
     }
-    */
+
 
 
 

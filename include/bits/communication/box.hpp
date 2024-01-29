@@ -306,6 +306,13 @@ static constexpr auto edge_indices(const Box<N>&                    box,
     return md_indices(begin, end);
 }
 
+/// @brief Given a box and a direction (normal) vector. Returns a box of the
+/// indices at the boundary edge of the box desbribed by the normal.
+/// @param box The box the query the edge for.
+/// @param dir A normal vector to determine which edge to query the bounds for,
+/// a negative value points towards beginning and a positive value towards end.
+/// @return A box beginning at the begin of the edge and ending one pass the end
+/// of the edge.
 template <size_t N>
 Box<N> get_edge(const Box<N>& b, std::array<index_type, N> dir) {
 
@@ -314,13 +321,36 @@ Box<N> get_edge(const Box<N>& b, std::array<index_type, N> dir) {
     return Box<N>(beg, end);
 }
 
+/// @brief Given two boxes and a direction vector, determines the shared edge of
+/// the two boxes described by the direction vector. If no shared edge exists,
+/// an empty box is returned.
+/// @param b1 First box to test.
+/// @param b2 Second box to test.
+/// @param dir A normal vector to determine which edge to query the bounds for,
+/// a negative value points towards beginning and a positive value towards end.
+/// @return A box beginning at the begin of the shared edge and ending one pass
+/// the end of the shared edge. If no shared edge exists, an empty box is
+/// returned.
 template <size_t N>
 Box<N> shared_edge(const Box<N>&                   b1,
                    const Box<N>&                   b2,
                    const std::array<index_type, N> dir) {
-    return intersection(get_edge(b1, dir), get_edge(b2, dir));
+    if (have_shared_edges(b1, b2, dir)) {
+        return intersection(get_edge(b1, dir), get_edge(b2, dir));
+    }
+    std::array<index_type, N> beg{};
+    std::array<index_type, N> end{};
+    return Box<N>(beg, end);
 }
 
+/// @brief Given two boxes and a direction vector, determines the shared edge
+/// indices of the two boxes described by the direction vector. If no shared
+/// edge exists, an empty set of indices is returned.
+/// @param b1 First box to test.
+/// @param b2 Second box to test.
+/// @param dir A normal vector to determine which edge to query the indices for,
+/// a negative value points towards beginning and a positive value towards end.
+/// @return A set of indices at the shared edge of the two boxes.
 template <size_t N>
 static constexpr auto shared_edge_indices(
     const Box<N>& b1, const Box<N>& b2, const std::array<index_type, N>& dir) {
