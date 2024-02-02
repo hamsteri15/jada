@@ -1,8 +1,6 @@
 #pragma once
 
-#include "include/bits/core/extents.hpp"
-#include "include/bits/core/integer_types.hpp"
-#include "include/bits/core/utils.hpp"
+#include "include/bits/core/core.hpp"
 
 namespace jada {
 

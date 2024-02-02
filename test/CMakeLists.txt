@@ -1,6 +1,6 @@
 
 #Unit tests#
-add_executable(SerialTest.bin test_jada.cpp)
+add_executable(SerialTest.bin test_core.cpp test_algorithms.cpp test_geometry.cpp)
 
 target_link_libraries(SerialTest.bin PRIVATE catch_main project_options project_warnings)
 
@@ -34,4 +34,4 @@ add_test( NAME MpiTest2
 
 add_test( NAME MpiTest3
           COMMAND mpirun -np 3 --oversubscribe ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MpiTest.bin
-       )  
+       )
