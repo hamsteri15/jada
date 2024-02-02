@@ -333,12 +333,51 @@ template <size_t N>
 Box<N> shared_edge(const Box<N>&                   b1,
                    const Box<N>&                   b2,
                    const std::array<index_type, N> dir) {
+
+
+    std::array<index_type, N> beg{};
+    std::array<index_type, N> end{};
+
+
+
+   if (have_shared_edges(b1, b2, dir)){
+
+        for (size_t i = 0; i < N; ++i){
+
+            if (dir[i] == 1 && (b1.end[i] == b2.end[i])){
+                end[i] = b1.end[i];
+                beg[i] = end[i] - 1;
+            }
+            if (dir[i] == -1 && (b1.begin[i] == b2.begin[i])){
+                beg[i] = b1.begin[i];
+                end[i] = beg[i] + 1;
+            }
+
+            if (dir[i] == 0){
+                beg[i] = std::max(b1.begin[i], b2.begin[i]);
+                end[i] = std::min(b1.end[i], b2.end[i]);
+            }
+
+
+        }
+
+   }
+
+    return Box<N>(beg, end);
+
+
+    /*
+
+
     if (have_shared_edges(b1, b2, dir)) {
+
+
         return intersection(get_edge(b1, dir), get_edge(b2, dir));
     }
     std::array<index_type, N> beg{};
     std::array<index_type, N> end{};
     return Box<N>(beg, end);
+    */
 }
 
 /// @brief Given two boxes and a direction vector, determines the shared edge

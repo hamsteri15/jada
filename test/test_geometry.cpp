@@ -349,6 +349,16 @@ TEST_CASE("Test box") {
             CHECK(r1 == Box<2>({0,0}, {2,1}));
         }
 
+        SECTION("Test 3"){
+
+            const Box<2> domain({0,0}, {3,4});
+            const Box<2> sub({0, 2}, {3,4});
+
+            auto r1 = shared_edge(domain, sub, {0, 1});
+            CHECK(r1 == Box<2>({0,3}, {3, 4}));
+
+        }
+
     }
 
 
@@ -429,27 +439,14 @@ TEST_CASE("Test box") {
 
         }
 
-        /*
-        SECTION("boundary_loops"){
-
-            auto domain = Box<2>{{0,0}, {3, 4}};
-            auto topo = decompose(domain, 3, {false, false});
+        SECTION("Bug 1"){
+            const Box<2> domain({0,0}, {3,4});
+            const Box<2> sub({0, 2}, {3,4});
             std::vector<int> data(flat_size(domain.get_extent()), 0);
-
-            auto bigspan = make_span(data, domain.get_extent());
-
-            for (auto box : topo.get_boxes()){
-
-                auto subspan = make_subspan(bigspan, box.box.begin, box.box.end);
-
-                auto indices = shared_edge_indices(domain, box.box, {0, 1});
-
-                for (auto [j,i] : indices){
-                    subspan(j,i) = 1;
-                }
-
+            auto span = make_span(data, domain.get_extent());
+            for (auto [j, i] : shared_edge_indices(domain, sub, {0, 1})){
+                    span(j, i) = 1;
             }
-
             CHECK
             (
                 data ==
@@ -457,9 +454,44 @@ TEST_CASE("Test box") {
                                     0,0,0,1,
                                     0,0,0,1}
             );
-
         }
-        */
+
+
+
+        SECTION("boundary_loops"){
+
+            auto domain = Box<2>{{0,0}, {3, 4}};
+            auto topo = decompose(domain, 3, {false, false});
+
+            SECTION("dir {0, 1}"){
+                std::vector<int> data(flat_size(domain.get_extent()), 0);
+
+                auto bigspan = make_span(data, domain.get_extent());
+
+                for (auto box : topo.get_boxes()){
+
+                    auto subspan = make_subspan(bigspan, box.box.begin, box.box.end);
+
+                    //auto indices = shared_edge_indices(domain, box.box, {0, 1});
+
+                    for (auto [j,i] : shared_edge_indices(domain, box.box, {0, 1}))
+                    {
+                        bigspan(j,i) = 1;
+                    }
+
+                }
+
+                CHECK
+                (
+                    data ==
+                    std::vector<int> {0,0,0,1,
+                                      0,0,0,1,
+                                      0,0,0,1}
+                );
+            }
+        }
+
+
     }
 
 }
