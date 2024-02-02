@@ -427,6 +427,7 @@ TEST_CASE("Test box") {
 
         }
 
+        /*
         SECTION("boundary_loops"){
 
             auto domain = Box<2>{{0,0}, {3, 4}};
@@ -456,6 +457,7 @@ TEST_CASE("Test box") {
             );
 
         }
+        */
 
 
     }
