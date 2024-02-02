@@ -584,6 +584,68 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
 
+
+static constexpr auto boundary_indices(auto  dims,
+                                       auto dir) {
+
+    static_assert(rank(dims) == rank(dir),
+        "Dimension mismatch in boundary_indices.");
+    // runtime_assert(valid_direction(direction), "Invalid boundary direction in
+    // for_each_boundary_index");
+
+
+    std::array<index_type, rank(dims)> begin{};
+    std::array<index_type, rank(dims)> end{};
+
+    for (size_t i = 0; i < rank(dims); ++i) { end[i] = index_type(dims[i]); }
+
+    for (size_t i = 0; i < rank(dims); ++i) {
+        if (dir[i] == 1) { begin[i] = index_type(dims[i]) - 1; }
+        if (dir[i] == -1) { end[i] = 1; }
+    }
+
+    return std::make_pair(begin, end);
+
+}
+
+template <class ExecutionPolicy,
+          size_t N,
+          class ET,
+          class UnaryTileFunction>
+static inline void for_each_boundary_tile(ExecutionPolicy&&         policy,
+                                          DistributedArray<N, ET>& arr,
+                                          std::array<index_type, N> dir,
+                                          UnaryTileFunction         f) {
+
+    auto boxes    = arr.get_local_boxes();
+    auto subspans = make_subspans(arr);
+    for (size_t i = 0; i < subspans.size(); ++i) {
+        //auto offset = boxes[i].box.begin;
+        auto span   = subspans[i];
+
+        const auto indices = shared_edge_indices(boxes[i].box, arr.topology().get_domain(), dir);
+
+        //const auto indices = edge_indices(boxes[i].box, dir);
+
+        auto F = [=](auto md_idx){
+            f(span(md_idx));
+        };
+
+
+        detail::md_for_each(policy, indices, F);
+
+        //auto F =
+
+        /*
+        auto F = [=](auto md_idx) {
+            const auto copy = elementwise_add(md_idx, offset);
+            f(copy, span(md_idx));
+        };
+        detail::md_for_each(policy, all_indices(span), F);
+        */
+    }
+}
+
 /*
 auto for_each_boundary_window(const DistributedArray<N, ET1>& input,
                               std::array<index_type, N>       dir,

@@ -425,7 +425,35 @@ TEST_CASE("Test box") {
                 );
             }
 
+        }
 
+        SECTION("boundary_loops"){
+
+            auto domain = Box<2>{{0,0}, {3, 4}};
+            auto topo = decompose(domain, 3, {false, false});
+            std::vector<int> data(flat_size(domain.get_extent()), 0);
+
+            auto bigspan = make_span(data, domain.get_extent());
+
+            for (auto box : topo.get_boxes()){
+
+                auto subspan = make_subspan(bigspan, box.box.begin, box.box.end);
+
+                auto indices = shared_edge_indices(domain, box.box, {0, 1});
+
+                for (auto [j,i] : indices){
+                    subspan(j,i) = 1;
+                }
+
+            }
+
+            CHECK
+            (
+                data ==
+                std::vector<int> {0,0,0,1,
+                                    0,0,0,1,
+                                    0,0,0,1}
+            );
 
         }
 
@@ -1460,12 +1488,53 @@ TEST_CASE("Test DistributedArray")
         }
    }
 
-    SECTION("Boundary fill"){
+    /*
+   SECTION("for_each_boundary_tile"){
+
+        index_type ni = 4;
+        index_type nj = 3;
+
+        std::array<index_type, 2> bpad{1, 1};
+        std::array<index_type, 2> epad{1, 1};
+
+        const Box<2> domain({0,0}, {nj, ni});
+        const auto topo = decompose(domain, mpi::world_size(), {false, false});
+
+        const std::vector<int> a(size_t(ni*nj), 0);
+
+
+        auto op = [](auto& f) {
+            //f(0) = f(1) + f(2);
+            f = 2;
+        };
+
+        auto arr = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+
+
+        for (auto& data : arr.get_local_data()){
+                std::fill(data.begin(), data.end(), 1);
+        }
+
+
+        for_each_boundary_tile(std::execution::par_unseq, arr, {0, 1}, op );
+
+
+        std::vector<int> correct =
+        {
+            1, 1, 1, 2,
+            1, 1, 1, 2,
+            1, 1, 1, 2
+        };
 
 
 
+
+        CHECK(to_vector(arr) == correct);
 
     }
+    */
+
+
 
 }
 
