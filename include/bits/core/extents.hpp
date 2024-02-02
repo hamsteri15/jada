@@ -92,6 +92,18 @@ static constexpr auto add_padding(T extent, P begin_padding, P end_padding) {
     return make_extent(dims);
 }
 
+
+//TODO: REMOVE THIS AND MAKE SOMETHING GENRIC IN extents.hpp
+static auto get_end(auto begin, auto extent) {
+
+    auto ret = begin;
+    for (size_t i = 0; i < begin.size(); ++i) {
+        ret[i] += index_type(extent[i]);
+    }
+    return ret;
+}
+
+
 /// @brief Adds padding to the input extent
 /// @param extent unpadded extent
 /// @param padding the amount of padding to add on begin and end of the extent
@@ -129,5 +141,9 @@ static constexpr bool indices_in_bounds(T indices, Y dims) {
     return std::all_of(
         std::begin(arr), std::end(arr), [](bool b) { return b == true; });
 }
+
+
+
+
 
 } // namespace jada

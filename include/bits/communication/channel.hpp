@@ -1,7 +1,6 @@
 #pragma once
 
-#include "topology.hpp"
-#include "transfer_info.hpp"
+#include "include/bits/geometry/geometry.hpp"
 #include <map>
 
 namespace jada {
@@ -19,15 +18,7 @@ std::ostream& operator<<(std::ostream& os, const Channel<L, TT>& v) {
     return os;
 }
 
-//TODO: REMOVE THIS AND MAKE SOMETHING GENRIC IN extents.hpp
-static auto get_end(auto begin, auto extent) {
 
-    auto ret = begin;
-    for (size_t i = 0; i < begin.size(); ++i) {
-        ret[i] += index_type(extent[i]);
-    }
-    return ret;
-}
 
 template <class Data, size_t N>
 auto make_sendable_slice(const Data&               data,

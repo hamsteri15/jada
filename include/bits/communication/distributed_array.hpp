@@ -4,7 +4,7 @@
 #include "gather.hpp"
 #include "include/bits/algorithms/algorithms.hpp"
 #include "include/bits/core/tuple_extensions.hpp"
-#include "topology.hpp"
+#include "include/bits/geometry/geometry.hpp"
 
 namespace jada {
 

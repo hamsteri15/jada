@@ -1,6 +1,6 @@
 #pragma once
 
-#include "channel.hpp"
+//#include "channel.hpp"
 #include "divide_equally.hpp"
 #include "include/bits/core/utils.hpp"
 #include "topology.hpp"
