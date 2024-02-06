@@ -26,11 +26,9 @@ public:
     const auto& get_domain() const { return m_domain; }
 
     const auto& get_boxes() const { return m_boxes; }
-    auto& get_boxes() { return m_boxes; }
+    auto&       get_boxes() { return m_boxes; }
 
-    const auto& get_periods() const {return m_periodic;}
-
-
+    const auto& get_periods() const { return m_periodic; }
 
     auto get_boxes(int rank) const {
 
@@ -45,11 +43,9 @@ public:
 
     int get_max_rank() const {
         int max = 0;
-        for (const auto& box : m_boxes){
-            if (box.rank > max){
-                max = box.rank;
-            }
-            //max = std::max(box.rank, max);
+        for (const auto& box : m_boxes) {
+            if (box.rank > max) { max = box.rank; }
+            // max = std::max(box.rank, max);
         }
         return max;
     }
@@ -252,9 +248,7 @@ private:
         auto box = owner.box;
 
         std::array<index_type, N> global{};
-        for (size_t i = 0; i < N; ++i) {
-            global[i] = box.begin[i] + coord[i];
-        }
+        for (size_t i = 0; i < N; ++i) { global[i] = box.begin[i] + coord[i]; }
 
         runtime_assert(m_domain.contains(global), "Coordinate not in domain.");
 
@@ -327,7 +321,72 @@ auto make_subspans(const Data& data, const Topology<N>& topo, int rank) {
     return ret;
 }
 
+/// @brief Checks if the input box has a boundary on the input topology in the
+/// direction dir.
+/// @param box The box to check if it is on the boundary or not.
+/// @param topo The topology containing the global boundary.
+/// @param dir A direction vector describing the boundary to query. Should
+/// contain only values of 0, 1 or -1 where -1 points towards beginning and 1
+/// towards end of the index range spanned by a Cartesian multidimensional box.
+/// @return True if the box is on the boundary of the topology, false otherwise.
+template <size_t N>
+static constexpr bool box_on_boundary(const Box<N>&                    box,
+                                      const Topology<N>&               topo,
+                                      const std::array<index_type, N>& dir) {
+    const auto domain = topo.get_domain();
+    for (size_t i = 0; i < N; ++i) {
+        if (dir[i] == -1 && box.begin[i] != domain.begin[i]) { return false; }
+        if (dir[i] == 1 && box.end[i] != domain.end[i]) { return false; }
+    }
+    return true;
+}
 
+/// @brief Returns the _local_ indices on a boundary described by the vector dir
+/// if the local boundary of the box is also a global boundary based on the
+/// input topology. In case the local boundary is not also a global boundary, a
+/// null set of indices is returned.
+/// @param box The box to query the boundary indices of.
+/// @param topo The topology containing the global boundaries.
+/// @param dir A direction vector describing the boundary to query. Should
+/// contain only values of 0, 1 or -1 where -1 points towards beginning and 1
+/// towards end of the index range spanned by a Cartesian multidimensional box.
+/// @return A set of local indices on a global boundary. The local indices mean
+/// that they are relative to the beinning of the input box.
+template <size_t N>
+static constexpr auto
+local_boundary_indices(const Box<N>&                    box,
+                       const Topology<N>&               topo,
+                       const std::array<index_type, N>& dir) {
 
+    if (!box_on_boundary(box, topo, dir)) {
+        return md_indices(std::array<index_type, N>{},
+                          std::array<index_type, N>{});
+    }
+
+    std::array<index_type, N> beg{};
+    std::array<index_type, N> end{};
+
+    const auto domain = topo.get_domain();
+    const auto dims   = extent_to_array(box.get_extent());
+
+    for (size_t i = 0; i < N; ++i) {
+        if (dir[i] == -1) {
+            beg[i] = 0;
+            end[i] = 1;
+        }
+
+        if (dir[i] == 1) {
+            beg[i] = dims[i] - 1;
+            end[i] = dims[i];
+        }
+
+        if (dir[i] == 0) {
+            beg[i] = 0;
+            end[i] = dims[i];
+        }
+    }
+
+    return md_indices(beg, end);
+}
 
 } // namespace jada

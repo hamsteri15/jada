@@ -387,6 +387,21 @@ TEST_CASE("md_indices"){
     }
 
 
+    SECTION("Test empty"){
+
+        auto t = md_indices(std::array{0,0}, std::array{0,0});
+        std::vector<index_type> is;
+        std::vector<index_type> js;
+
+
+        for (auto tpl : t){
+
+            is.push_back(std::get<0>(tpl));
+            js.push_back(std::get<1>(tpl));
+        }
+        CHECK(is.empty());
+        CHECK(js.empty());
+    }
 
 
     SECTION("Parallel"){

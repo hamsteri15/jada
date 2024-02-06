@@ -139,361 +139,6 @@ TEST_CASE("Test box") {
         CHECK(distance(b1, b2) == std::array<index_type, 3>{2, 2, 2});
         CHECK(distance(b1, b3) == std::array<index_type, 3>{1, 2, 3});
     }
-
-    SECTION("shared_edges"){
-        Box<3> domain({0,0,0}, {1,2,3});
-
-
-        CHECK
-        (
-            shared_edges(Box<3>({0,0,0}, {1,2,3}), domain) == std::make_pair
-            (
-                std::array{true, true, true},
-                std::array{true, true, true}
-            )
-        );
-
-        CHECK
-        (
-            shared_edges(Box<3>({0,1,2}, {3,3,3}), domain) == std::make_pair
-            (
-                std::array{true, false, false},
-                std::array{false, false, true}
-            )
-        );
-    }
-
-
-    SECTION("edge_bounds"){
-
-        Box<2> b({0,0}, {2, 3});
-
-        std::vector<int> data(flat_size(b.get_extent()));
-
-        auto span = make_span(data, b.get_extent());
-
-        SECTION("dir {1,0}"){
-
-            const std::array<index_type, 2> dir = {1, 0};
-            std::fill(data.begin(), data.end(), 0);
-
-            auto [begin, end] = edge_bounds(b, dir);
-
-            auto subspan = make_subspan(span, begin, end);
-
-            for_each(subspan, [](auto& e){e = 1;});
-
-
-            CHECK(data == std::vector<int>
-                {
-                    0,0,0,
-                    1,1,1
-                }
-            );
-        }
-
-        SECTION("dir {-1,0}"){
-
-            const std::array<index_type, 2> dir = {-1, 0};
-            std::fill(data.begin(), data.end(), 0);
-
-            auto [begin, end] = edge_bounds(b, dir);
-
-            auto subspan = make_subspan(span, begin, end);
-
-            for_each(subspan, [](auto& e){e = 1;});
-
-
-            CHECK(data == std::vector<int>
-                {
-                    1,1,1,
-                    0,0,0
-                }
-            );
-        }
-
-        SECTION("dir {1,1}"){
-
-            const std::array<index_type, 2> dir = {1, 1};
-            std::fill(data.begin(), data.end(), 0);
-
-            auto [begin, end] = edge_bounds(b, dir);
-
-            auto subspan = make_subspan(span, begin, end);
-
-            for_each(subspan, [](auto& e){e = 1;});
-
-
-            CHECK(data == std::vector<int>
-                {
-                    0,0,0,
-                    0,0,1
-                }
-            );
-        }
-
-    }
-
-
-
-
-    SECTION("edge_indices"){
-
-
-
-        Box<2> b({0,0}, {2, 3});
-
-        SECTION("dir {0, 1}"){
-
-            auto indices = edge_indices(b, std::array{0, 1});
-            auto [j1, i1] = indices[0];
-            CHECK(j1 == 0);
-            CHECK(i1 == 2);
-
-            auto [j2, i2] = indices[1];
-            CHECK(j2 == 1);
-            CHECK(i2 == 2);
-
-        }
-
-    }
-    SECTION("get_edge"){
-
-        SECTION("Test 1"){
-            Box<2> b({0,0}, {2, 2});
-
-            CHECK
-            (
-                get_edge(b, {0, 1}) == Box<2>({0, 1}, {2, 2})
-            );
-        }
-
-        SECTION("Test 2"){
-            Box<2> b({0,0}, {3, 3});
-
-            CHECK
-            (
-                get_edge(b, {0, -1}) == Box<2>({0, 0}, {3, 1})
-            );
-        }
-
-        SECTION("Test 3"){
-            Box<2> b({1, 1}, {3, 3});
-
-            std::vector<int> data(flat_size(b.get_extent()), 0);
-            auto span = make_span(data, b.get_extent());
-
-            std::fill(data.begin(), data.end(), 0);
-            for (auto [j, i] : edge_indices(b, {0, -1})){
-                span(j, i) = 1;
-            }
-
-            CHECK(data ==
-                std::vector<int>
-                {
-                    1, 0,
-                    1, 0
-                }
-            );
-
-            std::fill(data.begin(), data.end(), 0);
-            for (auto [j, i] : edge_indices(b, {-1, 0})){
-                span(j, i) = 1;
-            }
-
-            CHECK(data ==
-                std::vector<int>
-                {
-                    1, 1,
-                    0, 0
-                }
-            );
-
-            std::fill(data.begin(), data.end(), 0);
-            for (auto [j, i] : edge_indices(b, {1, 1})){
-                span(j, i) = 1;
-            }
-
-            CHECK(data ==
-                std::vector<int>
-                {
-                    0, 0,
-                    0, 1
-                }
-            );
-
-        }
-    }
-
-
-
-
-    SECTION("shared_edge"){
-
-        SECTION("Test 1"){
-            const Box<2> domain({0,0}, {3,3});
-            const Box<2> sub({0, 0}, {2,2});
-
-            auto r1 = shared_edge(domain, sub, {0, 1});
-
-            CHECK(r1 == Box<2>({0,0}, {0,0}));
-
-        }
-
-        SECTION("Test 2"){
-            const Box<2> domain({0,0}, {3,3});
-            const Box<2> sub({0, 0}, {2,2});
-
-            auto r1 = shared_edge(domain, sub, {0, -1});
-
-            CHECK(r1 == Box<2>({0,0}, {2,1}));
-        }
-
-        SECTION("Test 3"){
-
-            const Box<2> domain({0,0}, {3,4});
-            const Box<2> sub({0, 2}, {3,4});
-
-            auto r1 = shared_edge(domain, sub, {0, 1});
-            CHECK(r1 == Box<2>({0,3}, {3, 4}));
-
-        }
-
-    }
-
-
-    SECTION("shared_edge_indices"){
-
-
-        SECTION("Test 1"){
-
-            const Box<2> domain({0,0}, {3,4});
-            const Box<2> sub({0, 0}, {2,2});
-
-            std::vector<int> data(flat_size(domain.get_extent()), 0);
-            auto span = make_span(data, domain.get_extent());
-
-
-
-            SECTION("dir {0, 1}"){
-                std::fill(data.begin(), data.end(), 0);
-                for (auto [j, i] : shared_edge_indices(domain, sub, {0,1})){
-                    span(j, i) = 1;
-                }
-
-                CHECK
-                (
-                    data ==
-                    std::vector<int> {0,0,0,0,
-                                      0,0,0,0,
-                                      0,0,0,0}
-                );
-            }
-
-
-
-            SECTION("dir {0, -1}"){
-                std::fill(data.begin(), data.end(), 0);
-                for (auto [j, i] : shared_edge_indices(domain, sub, {0,-1})){
-                    span(j, i) = 1;
-                }
-
-                CHECK
-                (
-                    data ==
-                    std::vector<int> {1,0,0,0,
-                                      1,0,0,0,
-                                      0,0,0,0}
-                );
-            }
-
-            SECTION("dir {-1, -1}"){
-                std::fill(data.begin(), data.end(), 0);
-                for (auto [j, i] : shared_edge_indices(domain, sub, {-1,-1})){
-                    span(j, i) = 1;
-                }
-
-                CHECK
-                (
-                    data ==
-                    std::vector<int> {1,0,0,0,
-                                      0,0,0,0,
-                                      0,0,0,0}
-                );
-            }
-
-            SECTION("dir {1, 1}"){
-                std::fill(data.begin(), data.end(), 0);
-                for (auto [j, i] : shared_edge_indices(domain, sub, {1, 1})){
-                    span(j, i) = 1;
-                }
-
-                CHECK
-                (
-                    data ==
-                    std::vector<int> {0,0,0,0,
-                                      0,0,0,0,
-                                      0,0,0,0}
-                );
-            }
-
-        }
-
-        SECTION("Bug 1"){
-            const Box<2> domain({0,0}, {3,4});
-            const Box<2> sub({0, 2}, {3,4});
-            std::vector<int> data(flat_size(domain.get_extent()), 0);
-            auto span = make_span(data, domain.get_extent());
-            for (auto [j, i] : shared_edge_indices(domain, sub, {0, 1})){
-                    span(j, i) = 1;
-            }
-            CHECK
-            (
-                data ==
-                std::vector<int> {0,0,0,1,
-                                    0,0,0,1,
-                                    0,0,0,1}
-            );
-        }
-
-
-
-        SECTION("boundary_loops"){
-
-            auto domain = Box<2>{{0,0}, {3, 4}};
-            auto topo = decompose(domain, 3, {false, false});
-
-            SECTION("dir {0, 1}"){
-                std::vector<int> data(flat_size(domain.get_extent()), 0);
-
-                auto bigspan = make_span(data, domain.get_extent());
-
-                for (auto box : topo.get_boxes()){
-
-                    auto subspan = make_subspan(bigspan, box.box.begin, box.box.end);
-
-                    //auto indices = shared_edge_indices(domain, box.box, {0, 1});
-
-                    for (auto [j,i] : shared_edge_indices(domain, box.box, {0, 1}))
-                    {
-                        bigspan(j,i) = 1;
-                    }
-
-                }
-
-                CHECK
-                (
-                    data ==
-                    std::vector<int> {0,0,0,1,
-                                      0,0,0,1,
-                                      0,0,0,1}
-                );
-            }
-        }
-
-
-    }
-
 }
 
 
@@ -730,6 +375,93 @@ TEST_CASE("Test topology") {
 
             }
         }
+
+    }
+
+
+    SECTION("boundary_indices"){
+        index_type nj = 3;
+        index_type ni = 4;
+        auto domain = Box<2>{{0,0}, {nj, ni}};
+        auto topo = decompose(domain, 3, {false, false});
+        std::vector<int> data(flat_size(domain.get_extent()), 0);
+        auto bigspan = make_span(data, domain.get_extent());
+        
+        auto fill_with_ones = [topo, bigspan](std::array<index_type, 2> dir){
+            for (auto box : topo.get_boxes()){
+                auto subspan 
+                    = make_subspan(bigspan, box.box.begin, box.box.end);
+                for (auto [j, i] : local_boundary_indices(box.box, topo, dir)){
+                    subspan(j, i) = 1;
+                }
+            }
+        };
+
+
+        SECTION("dir {0, 1}"){
+
+            std::fill(data.begin(), data.end(), 0);
+
+            fill_with_ones({0, 1});
+
+            CHECK
+            (
+                data ==
+                std::vector<int> {0,0,0,1,
+                                  0,0,0,1,
+                                  0,0,0,1}
+            );
+
+        }
+        SECTION("dir {0, -1}"){
+
+            std::fill(data.begin(), data.end(), 0);
+
+            fill_with_ones({0, -1});
+
+            CHECK
+            (
+                data ==
+                std::vector<int> {1,0,0,0,
+                                  1,0,0,0,
+                                  1,0,0,0}
+            );
+
+        }
+        SECTION("dir {-1, 0}"){
+
+            std::fill(data.begin(), data.end(), 0);
+
+            fill_with_ones({-1, 0});
+
+            CHECK
+            (
+                data ==
+                std::vector<int> {1,1,1,1,
+                                  0,0,0,0,
+                                  0,0,0,0}
+            );
+
+        }
+
+        SECTION("dir {-1, 1}"){
+
+            std::fill(data.begin(), data.end(), 0);
+
+            fill_with_ones({-1, 1});
+
+            CHECK
+            (
+                data ==
+                std::vector<int> {0,0,0,1,
+                                  0,0,0,0,
+                                  0,0,0,0}
+            );
+
+        }
+        
+        
+        
 
     }
 }
