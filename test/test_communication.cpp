@@ -901,6 +901,60 @@ TEST_CASE("Test DistributedArray")
         
         }
     
+
+        SECTION("tile_transform_boundary"){
+
+            const std::vector<int> a(size_t(ni*nj), 0);
+
+            auto op = [](auto f){
+                return f(1) + f(2);
+            };
+
+            auto arr_a = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+            auto arr_b = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+
+            SECTION("dir {0, 1}"){
+
+                for (auto& data : arr_a.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                tile_transform_boundary(std::execution::par_unseq, arr_a, arr_b, {0, 1}, op );
+
+                std::vector<int> correct =
+                {
+                    1, 1, 1, 2,
+                    1, 1, 1, 2,
+                    1, 1, 1, 2
+                };
+
+                CHECK(to_vector(arr_b) == correct);
+            }
+            SECTION("dir {0, -1}"){
+
+                for (auto& data : arr_a.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for (auto& data : arr_b.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                tile_transform_boundary(std::execution::par_unseq, arr_a, arr_b, {0, -1}, op );
+
+                std::vector<int> correct =
+                {
+                    2, 1, 1, 1,
+                    2, 1, 1, 1,
+                    2, 1, 1, 1
+                };
+
+                CHECK(to_vector(arr_b) == correct);
+            }
+
+            
+        }
+
     }
 
 

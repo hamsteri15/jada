@@ -7,6 +7,80 @@
 
 using namespace jada;
 
+TEST_CASE("Test index handles"){
+
+
+    SECTION("idxhandle_md_to_oned_base"){
+
+        std::vector<int> data = 
+        {
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12
+        };
+
+
+        auto span = make_span(data, std::array<index_type, 2>{3, 4});
+        std::array<index_type, 2> center = {1, 1};
+        SECTION("dir = {0, 1}"){
+            std::array<index_type, 2> dir  = {0, 1};
+            const auto handle = idxhandle_md_to_oned_base(span, center, dir);
+            
+            CHECK(handle(-1) == 5);
+            CHECK(handle(0) == 6);
+            CHECK(handle(1) == 7);
+        }
+        SECTION("dir = {0, -1}"){
+            std::array<index_type, 2> dir  = {0, -1};
+            const auto handle = idxhandle_md_to_oned_base(span, center, dir);
+            
+            CHECK(handle(-1) == 7);
+            CHECK(handle(0) == 6);
+            CHECK(handle(1) == 5);
+        }
+        SECTION("dir = {1, 0}"){
+            std::array<index_type, 2> dir  = {1, 0};
+            const auto handle = idxhandle_md_to_oned_base(span, center, dir);
+            
+            CHECK(handle(-1) == 2);
+            CHECK(handle(0) == 6);
+            CHECK(handle(1) == 10);
+        }
+        SECTION("dir = {1, 1}"){
+            std::array<index_type, 2> dir  = {1, 1};
+            const auto handle = idxhandle_md_to_oned_base(span, center, dir);
+            
+            CHECK(handle(-1) == 1);
+            CHECK(handle(0) == 6);
+            CHECK(handle(1) == 11);
+        }
+    }
+
+
+
+    SECTION("idxhandle_md_to_oned"){
+
+        std::vector<int> data = 
+        {
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12
+        };
+
+
+        auto span = make_span(data, std::array<index_type, 2>{3, 4});
+        std::array<index_type, 2> center = {1, 1};
+        const auto handle = idxhandle_md_to_oned<1>(span, center);
+        
+        CHECK(handle(-1) == 5);
+        CHECK(handle(0) == 6);
+        CHECK(handle(1) == 7);
+    
+    }
+
+
+}
+
 TEST_CASE("algorithms"){
 
     SECTION("for_each"){

@@ -7,6 +7,26 @@
 
 namespace jada {
 
+
+template<size_t N, class Span, class Idx>
+static constexpr auto idxhandle_md_to_oned_base(Span in, Idx center, const std::array<index_type, N>& dir)
+{
+    static_assert(rank(in) == rank(center),
+                  "Rank mismatch in idxhandle_md_to_oned.");
+   
+    const auto h = make_subspan(in, center);
+
+    return [=](index_type oned_idx) {
+        std::array<index_type, N> mod_idx{};
+        for (size_t i = 0; i < N; ++i){
+            mod_idx[i] = dir[i] * oned_idx;
+        }
+        //mod_idx[Dir] = oned_idx;
+        return h(mod_idx);
+    }; 
+
+}
+
 /// @brief Creates an index handle that maps multidimensional indices to
 /// one-dimensional offsets wrt. to the input index 'center' and the direction
 /// Dir. For example, if center = {1,2,3}, Dir = 1, the returned index handle
@@ -24,6 +44,15 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
                   "Rank mismatch in idxhandle_md_to_oned.");
     constexpr size_t N = rank(in);
 
+    std::array<index_type, N> dir{};
+    dir[Dir] = 1;
+    return idxhandle_md_to_oned_base(in, center, dir);
+
+    /*
+    static_assert(rank(in) == rank(center),
+                  "Rank mismatch in idxhandle_md_to_oned.");
+    constexpr size_t N = rank(in);
+
     // A subspan centered at 'center'
     const auto h = make_subspan(in, center);
 
@@ -32,6 +61,7 @@ static constexpr auto idxhandle_md_to_oned(Span in, Idx center) {
         mod_idx[Dir] = oned_idx;
         return h(mod_idx);
     };
+    */
 }
 
 /// @brief Applies the input unary tile function to all elements of the input

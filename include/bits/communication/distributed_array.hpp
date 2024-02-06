@@ -460,8 +460,8 @@ static inline void transform_indexed(ExecutionPolicy&&               policy,
                                      DistributedArray<N, ET2>&       output,
                                      UnaryWindowFunction             f) {
 
-    const auto       i_subspans = make_subspans(input);
-    const auto       o_subspans = make_subspans(output);
+    const auto i_subspans = make_subspans(input);
+    const auto o_subspans = make_subspans(output);
     const auto boxes      = input.get_local_boxes();
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
@@ -584,14 +584,14 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
 
-template <class ExecutionPolicy, size_t N, class ET, class UnaryTileFunction>
+template <class ExecutionPolicy, size_t N, class ET, class UnaryIndexFunction>
 static inline void for_each_boundary(ExecutionPolicy&&         policy,
                                      DistributedArray<N, ET>&  arr,
                                      std::array<index_type, N> dir,
-                                     UnaryTileFunction         f) {
+                                     UnaryIndexFunction        f) {
 
-    const auto       boxes    = arr.get_local_boxes();
-    const auto       subspans = make_subspans(arr);
+    const auto boxes    = arr.get_local_boxes();
+    const auto subspans = make_subspans(arr);
     const auto topo     = arr.topology();
     for (size_t i = 0; i < subspans.size(); ++i) {
         auto span = subspans[i];
@@ -605,10 +605,10 @@ static inline void for_each_boundary(ExecutionPolicy&&         policy,
     }
 }
 
-template <size_t N, class ET, class UnaryTileFunction>
+template <size_t N, class ET, class UnaryIndexFunction>
 static inline void for_each_boundary(DistributedArray<N, ET>&  arr,
                                      std::array<index_type, N> dir,
-                                     UnaryTileFunction         f) {
+                                     UnaryIndexFunction        f) {
     for_each_boundary(std::execution::par_unseq, arr, dir, f);
 }
 
@@ -618,8 +618,8 @@ static inline void for_each_indexed_boundary(ExecutionPolicy&&         policy,
                                              std::array<index_type, N> dir,
                                              BinaryIndexFunction       f) {
 
-    const auto       boxes    = arr.get_local_boxes();
-    const auto       subspans = make_subspans(arr);
+    const auto boxes    = arr.get_local_boxes();
+    const auto subspans = make_subspans(arr);
     const auto topo     = arr.topology();
     for (size_t i = 0; i < subspans.size(); ++i) {
         auto       span   = subspans[i];
@@ -634,6 +634,42 @@ static inline void for_each_indexed_boundary(ExecutionPolicy&&         policy,
             local_boundary_indices(boxes[i].box, arr.topology(), dir);
 
         detail::md_for_each(policy, indices, F);
+    }
+}
+
+template <class ExecutionPolicy,
+          size_t N,
+          class ET1,
+          class ET2,
+          class UnaryTileFunction>
+static inline void
+tile_transform_boundary(ExecutionPolicy&&               policy,
+                        const DistributedArray<N, ET1>& input,
+                        DistributedArray<N, ET2>&       output,
+                        std::array<index_type, N>       dir,
+                        UnaryTileFunction               f)
+
+{
+
+    const auto i_subspans = make_subspans(input);
+    const auto o_subspans = make_subspans(output);
+    const auto boxes = input.get_local_boxes();
+
+    for (size_t i = 0; i < i_subspans.size(); ++i) {
+        auto i_span = i_subspans[i];
+        auto o_span = o_subspans[i];
+
+        auto tile = [=](auto idx, auto span){
+            return idxhandle_md_to_oned_base(span, idx, dir);
+        };
+        auto func = [=](auto md_idx) { o_span(md_idx) = f(tile(md_idx, i_span)); };
+         
+        const auto indices =
+            local_boundary_indices(boxes[i].box, input.topology(), dir);
+
+        detail::md_for_each(policy, indices, func);
+
+        //tile_transform<Dir>(policy, i_span, o_span, f);
     }
 }
 
