@@ -788,10 +788,11 @@ TEST_CASE("Test DistributedArray")
 
             }
         }
-   }
+    }
 
-    /*
-   SECTION("for_each_boundary_tile"){
+    
+
+    SECTION("boundary_algorithms"){
 
         index_type ni = 4;
         index_type nj = 3;
@@ -802,39 +803,110 @@ TEST_CASE("Test DistributedArray")
         const Box<2> domain({0,0}, {nj, ni});
         const auto topo = decompose(domain, mpi::world_size(), {false, false});
 
-        const std::vector<int> a(size_t(ni*nj), 0);
+        SECTION("for_each_boundary"){
 
+            const std::vector<int> a(size_t(ni*nj), 0);
 
-        auto op = [](auto& f) {
-            //f(0) = f(1) + f(2);
-            f = 2;
-        };
+            auto op = [](auto& f) {
+                f = 2;
+            };
 
-        auto arr = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
+            auto arr = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
 
+            SECTION("dir {0, 1}"){
 
-        for (auto& data : arr.get_local_data()){
-                std::fill(data.begin(), data.end(), 1);
+                for (auto& data : arr.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for_each_boundary(std::execution::par_unseq, arr, {0, 1}, op );
+
+                std::vector<int> correct =
+                {
+                    1, 1, 1, 2,
+                    1, 1, 1, 2,
+                    1, 1, 1, 2
+                };
+
+                CHECK(to_vector(arr) == correct);
+            }
+
+            SECTION("dir {-1, 1}"){
+
+                for (auto& data : arr.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for_each_boundary(std::execution::par_unseq, arr, {-1, 1}, op );
+
+                std::vector<int> correct =
+                {
+                    1, 1, 1, 2,
+                    1, 1, 1, 1,
+                    1, 1, 1, 1
+                };
+
+                CHECK(to_vector(arr) == correct);
+            }
+        
         }
 
+        SECTION("for_each_indexed_boundary"){
 
-        for_each_boundary_tile(std::execution::par_unseq, arr, {0, 1}, op );
+            const std::vector<int> a(size_t(ni*nj), 0);
 
+            auto op_j = [](auto idx, int& e){
+                auto j = std::get<0>(idx);
+                e = j;
+            };
 
-        std::vector<int> correct =
-        {
-            1, 1, 1, 2,
-            1, 1, 1, 2,
-            1, 1, 1, 2
-        };
+            auto op_i = [](auto idx, int& e){
+                auto i = std::get<1>(idx);
+                e = i;
+            };
 
+            auto arr = distribute(a, topo, mpi::get_world_rank(), bpad, epad);
 
+            SECTION("dir {0, 1}"){
 
+                for (auto& data : arr.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for_each_indexed_boundary(std::execution::par_unseq, arr, {0, 1}, op_j );
 
-        CHECK(to_vector(arr) == correct);
+                std::vector<int> correct =
+                {
+                    1, 1, 1, 0,
+                    1, 1, 1, 1,
+                    1, 1, 1, 2
+                };
 
+                CHECK(to_vector(arr) == correct);
+            }
+
+            SECTION("dir {-1, 0}"){
+
+                for (auto& data : arr.get_local_data()){
+                    std::fill(data.begin(), data.end(), 1);
+                }
+                for_each_indexed_boundary(std::execution::par_unseq, arr, {-1, 0}, op_i );
+
+                std::vector<int> correct =
+                {
+                    0, 1, 2, 3,
+                    1, 1, 1, 1,
+                    1, 1, 1, 1
+                };
+
+                CHECK(to_vector(arr) == correct);
+            }
+        
+        }
+    
     }
-    */
+
+
+
+
+    
 
 
 

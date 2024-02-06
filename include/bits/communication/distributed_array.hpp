@@ -366,8 +366,8 @@ static inline void for_each_indexed(ExecutionPolicy&&       policy,
                                     DistributedArray<N, T>& arr,
                                     BinaryIndexFunction     f) {
 
-    auto boxes    = arr.get_local_boxes();
-    auto subspans = make_subspans(arr);
+    const auto boxes    = arr.get_local_boxes();
+    const auto subspans = make_subspans(arr);
     for (size_t i = 0; i < subspans.size(); ++i) {
         auto offset = boxes[i].box.begin;
         auto span   = subspans[i];
@@ -414,8 +414,8 @@ static inline void transform(ExecutionPolicy&&               policy,
                              DistributedArray<N, ET2>&       output,
                              UnaryFunction                   f) {
 
-    auto i_subspans = make_subspans(input);
-    auto o_subspans = make_subspans(output);
+    const auto i_subspans = make_subspans(input);
+    const auto o_subspans = make_subspans(output);
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
         auto i_span = i_subspans[i];
@@ -460,8 +460,8 @@ static inline void transform_indexed(ExecutionPolicy&&               policy,
                                      DistributedArray<N, ET2>&       output,
                                      UnaryWindowFunction             f) {
 
-    auto       i_subspans = make_subspans(input);
-    auto       o_subspans = make_subspans(output);
+    const auto       i_subspans = make_subspans(input);
+    const auto       o_subspans = make_subspans(output);
     const auto boxes      = input.get_local_boxes();
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
@@ -512,8 +512,8 @@ static inline void window_transform(ExecutionPolicy&&               policy,
                                     DistributedArray<N, ET2>&       output,
                                     UnaryWindowFunction             f) {
 
-    auto i_subspans = make_subspans(input);
-    auto o_subspans = make_subspans(output);
+    const auto i_subspans = make_subspans(input);
+    const auto o_subspans = make_subspans(output);
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
         auto i_span = i_subspans[i];
@@ -557,8 +557,8 @@ static inline void tile_transform(ExecutionPolicy&&               policy,
                                   DistributedArray<N, ET2>&       output,
                                   UnaryTileFunction               f) {
 
-    auto i_subspans = make_subspans(input);
-    auto o_subspans = make_subspans(output);
+    const auto i_subspans = make_subspans(input);
+    const auto o_subspans = make_subspans(output);
 
     for (size_t i = 0; i < i_subspans.size(); ++i) {
         auto i_span = i_subspans[i];
@@ -584,87 +584,59 @@ static inline void tile_transform(const DistributedArray<N, ET1>& input,
     tile_transform<Dir>(std::execution::seq, input, output, f);
 }
 
+template <class ExecutionPolicy, size_t N, class ET, class UnaryTileFunction>
+static inline void for_each_boundary(ExecutionPolicy&&         policy,
+                                     DistributedArray<N, ET>&  arr,
+                                     std::array<index_type, N> dir,
+                                     UnaryTileFunction         f) {
 
-static constexpr auto boundary_indices(auto  dims,
-                                       auto dir) {
-
-    static_assert(rank(dims) == rank(dir),
-        "Dimension mismatch in boundary_indices.");
-    // runtime_assert(valid_direction(direction), "Invalid boundary direction in
-    // for_each_boundary_index");
-
-
-    std::array<index_type, rank(dims)> begin{};
-    std::array<index_type, rank(dims)> end{};
-
-    for (size_t i = 0; i < rank(dims); ++i) { end[i] = index_type(dims[i]); }
-
-    for (size_t i = 0; i < rank(dims); ++i) {
-        if (dir[i] == 1) { begin[i] = index_type(dims[i]) - 1; }
-        if (dir[i] == -1) { end[i] = 1; }
-    }
-
-    return std::make_pair(begin, end);
-
-}
-
-template <class ExecutionPolicy,
-          size_t N,
-          class ET,
-          class UnaryTileFunction>
-static inline void for_each_boundary_tile(ExecutionPolicy&&         policy,
-                                          DistributedArray<N, ET>& arr,
-                                          std::array<index_type, N> dir,
-                                          UnaryTileFunction         f) {
-
-    auto boxes    = arr.get_local_boxes();
-    auto subspans = make_subspans(arr);
+    const auto       boxes    = arr.get_local_boxes();
+    const auto       subspans = make_subspans(arr);
+    const auto topo     = arr.topology();
     for (size_t i = 0; i < subspans.size(); ++i) {
-        //auto offset = boxes[i].box.begin;
-        auto span   = subspans[i];
+        auto span = subspans[i];
 
-        const auto indices = shared_edge_indices(boxes[i].box, arr.topology().get_domain(), dir);
+        auto F = [=](auto md_idx) { f(span(md_idx)); };
 
-        //const auto indices = edge_indices(boxes[i].box, dir);
-
-        auto F = [=](auto md_idx){
-            f(span(md_idx));
-        };
-
+        const auto indices =
+            local_boundary_indices(boxes[i].box, arr.topology(), dir);
 
         detail::md_for_each(policy, indices, F);
+    }
+}
 
-        //auto F =
+template <size_t N, class ET, class UnaryTileFunction>
+static inline void for_each_boundary(DistributedArray<N, ET>&  arr,
+                                     std::array<index_type, N> dir,
+                                     UnaryTileFunction         f) {
+    for_each_boundary(std::execution::par_unseq, arr, dir, f);
+}
 
-        /*
+template <class ExecutionPolicy, size_t N, class ET, class BinaryIndexFunction>
+static inline void for_each_indexed_boundary(ExecutionPolicy&&         policy,
+                                             DistributedArray<N, ET>&  arr,
+                                             std::array<index_type, N> dir,
+                                             BinaryIndexFunction       f) {
+
+    const auto       boxes    = arr.get_local_boxes();
+    const auto       subspans = make_subspans(arr);
+    const auto topo     = arr.topology();
+    for (size_t i = 0; i < subspans.size(); ++i) {
+        auto       span   = subspans[i];
+        const auto offset = boxes[i].box.begin;
+
         auto F = [=](auto md_idx) {
             const auto copy = elementwise_add(md_idx, offset);
             f(copy, span(md_idx));
         };
-        detail::md_for_each(policy, all_indices(span), F);
-        */
+
+        const auto indices =
+            local_boundary_indices(boxes[i].box, arr.topology(), dir);
+
+        detail::md_for_each(policy, indices, F);
     }
 }
 
-/*
-auto for_each_boundary_window(const DistributedArray<N, ET1>& input,
-                              std::array<index_type, N>       dir,
-                              auto                            f) {
 
-    auto boxes = input.get_local_boxes();
-    auto spans = make_subspans(input);
-
-    for (size_t i = 0; i < spans.size(); ++i){
-
-        for_each(shared_edge_indices())....
-
-
-
-
-
-    }
-
-}
-*/
 
 } // namespace jada
